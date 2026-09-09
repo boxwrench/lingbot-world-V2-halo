@@ -228,3 +228,39 @@ Raw output is
 [`r9700-gfx1201-rocm714-480x832.json`](../results/raw/vae/r9700-gfx1201-rocm714-480x832.json)
 (local and ignored).  The runner and exact command are in
 [`vae-repro-20260909.md`](vae-repro-20260909.md).
+
+## F9 — complete R9700 ROCm 7.14 LingBot baseline succeeds (2026-09-09)
+
+The pinned 1.3B causal-fast model generated valid finite output on the R9700
+under PyTorch `2.12.0+rocm7.14.0`, HIP `7.14.60850`, and MIOpen
+`3.5.2.cd957402`. The transformer ran in native BF16 and the attention backend
+was PyTorch SDPA. The run used five causal chunks at the requested 480×832
+area, `local_attn_size=18`, `sink_size=6`, seed 42, and no temporal Conv3d
+split. The upstream frame normalization produced 77 frames from the 81-frame
+request.
+
+The cold run took **167.341 s** after **31.390 s** model initialization; the
+warm repeated run took **160.674 s**. Mean DiT chunk time was **5.440 s** cold
+and **5.426 s** warm, while VAE encode took **50.981/49.695 s** and VAE
+decode **83.095/82.782 s**. Effective throughput was **2.773/2.888 FPS**.
+Output was `[77,464,832]`, finite, and exactly deterministic across the two
+runs for this seed.
+
+The first no-offload attempt failed at VAE encode because a roughly 14.91 GiB
+MIOpen allocation could not coexist with the resident transformer. The
+successful control therefore used an experiment-only transformer CPU
+offload boundary around VAE encode/decode plus
+`PYTORCH_NO_CUDA_MEMORY_CACHING=1`; this is explicitly not part of the
+hardware-agnostic upstream PR. Peak process RSS was 25.71 GB. The observed
+GPU process allocation was approximately 13.75 GB during the run, while
+post-generation PyTorch allocation was zero and is not a peak statistic.
+
+This establishes a complete newer-stack R9700 control and confirms that the
+MIOpen solver fix is enough for correctness, but the 32 GiB discrete-card
+capacity boundary still makes native no-offload VAE/transformer coexistence
+impractical in the observed host state.
+
+Detailed results are in
+[`r9700-rocm714-baseline-20260909.md`](r9700-rocm714-baseline-20260909.md);
+raw data is local under
+`results/raw/lingbot/r9700-rocm714-baseline/metrics.json`.
