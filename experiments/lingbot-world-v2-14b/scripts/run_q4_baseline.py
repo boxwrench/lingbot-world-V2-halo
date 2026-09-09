@@ -94,9 +94,19 @@ def load_module(name: str, path: Path, package: bool = False):
 def save_video(imageio, video, path: Path):
     import numpy as np
 
-    frames = (video.detach().float().cpu().clamp(0, 1).numpy() * 255).round().astype(np.uint8)
+    source = video.detach().float().cpu()
+    finite = bool(torch.isfinite(source).all())
+    source_min = float(source.min())
+    source_max = float(source.max())
+    frames = (source.clamp(0, 1).numpy() * 255).round().astype(np.uint8)
     imageio.mimwrite(str(path), frames, fps=16, codec="libx264", quality=8)
-    return {"shape": list(frames.shape), "dtype": str(video.dtype), "finite": bool(np.isfinite(frames).all())}
+    return {
+        "shape": list(frames.shape),
+        "dtype": str(video.dtype),
+        "finite": finite,
+        "source_min": source_min,
+        "source_max": source_max,
+    }
 
 
 def build_parser():
