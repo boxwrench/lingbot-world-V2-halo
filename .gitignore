@@ -1,0 +1,16 @@
+# Downloaded weights and generated media are intentionally not versioned.
+models/
+model-cache/
+.upstream/
+outputs/
+results/raw/
+results/*.mp4
+results/*.webm
+results/*.png
+results/*.jpg
+*.log
+__pycache__/
+*.py[cod]
+.venv/
+.git-experiment/
+.pytest_cache/

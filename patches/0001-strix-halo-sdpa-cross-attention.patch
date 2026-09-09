@@ -1,0 +1,10 @@
+diff --git a/wan/modules/model_fast.py b/wan/modules/model_fast.py
+index 4c1f3f0..8a7d31e 100644
+--- a/wan/modules/model_fast.py
++++ b/wan/modules/model_fast.py
+@@ -19,1 +19,1 @@
+-from .attention import flash_attention
++from .attention import attention
+@@ -208,1 +208,1 @@
+-        x = flash_attention(q, k, v, k_lens=context_lens)
++        x = attention(q, k, v, k_lens=context_lens)

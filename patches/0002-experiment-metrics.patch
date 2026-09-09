@@ -1,0 +1,140 @@
+diff --git a/wan/image2video.py b/wan/image2video.py
+index f78b07a..1af2683 100644
+--- a/wan/image2video.py
++++ b/wan/image2video.py
+@@ -53,6 +53,7 @@ class WanI2VCausal:
+         local_attn_size=-1,
+         sink_size=0,
+         infer_mode="causal_fast",
++        metrics=None,
+     ):
+         r"""
+         Initializes the image-to-video generation model components.
+@@ -102,6 +103,7 @@ class WanI2VCausal:
+         self.pipe_dtype = pipe_dtype
+         self.local_attn_size = local_attn_size
+         self.sink_size = sink_size
++        self.metrics = metrics
+ 
+         if t5_fsdp or dit_fsdp or use_sp:
+             self.init_on_cpu = False
+@@ -467,6 +469,9 @@ class WanI2VCausal:
+                 - W: Frame width from max_area)
+         """
+ 
++        generate_t0 = time.perf_counter()
++        if self.metrics is not None:
++            self.metrics["generate_started"] = True
+         if input_prompt is not None and isinstance(input_prompt, str):
+             batch_size = 1
+         elif input_prompt is not None and isinstance(input_prompt, list):
+@@ -498,6 +503,17 @@ class WanI2VCausal:
+         lat_f = (F - 1) // self.vae_stride[0] + 1
+         lat_f = int(lat_f - (lat_f % chunk_size))
+         F = (lat_f - 1) * 4 + 1
++        if self.metrics is not None:
++            self.metrics.update({
++                "frames": int(F),
++                "latent_frames": int(lat_f),
++                "latent_height": int(lat_h),
++                "latent_width": int(lat_w),
++                "chunk_size": int(chunk_size),
++                "frame_seqlen": int(lat_h * lat_w // 4),
++                "local_attn_size": int(self.local_attn_size),
++                "sink_size": int(self.sink_size),
++            })
+         max_seq_len = chunk_size * lat_h * lat_w // (
+             self.patch_size[1] * self.patch_size[2])
+         max_seq_len = int(math.ceil(max_seq_len / self.sp_size)) * self.sp_size
+@@ -537,7 +553,10 @@ class WanI2VCausal:
+         cache_key = hashlib.sha256(input_prompt.encode('utf-8')).hexdigest()
+         if cache_key in self._t5_cache:
+             context = self._t5_cache[cache_key]
++            if self.metrics is not None:
++                self.metrics["t5_cache_hit"] = True
+         else:
++            t5_t0 = time.perf_counter()
+             if not self.t5_cpu:
+                 self.text_encoder.model.to(self.device)
+                 context = self.text_encoder([input_prompt], self.device)
+@@ -547,6 +566,10 @@ class WanI2VCausal:
+                 context = self.text_encoder([input_prompt], torch.device('cpu'))
+                 context = [t.to(self.device) for t in context]
+             self._t5_cache[cache_key] = context
++            if self.metrics is not None:
++                torch.cuda.synchronize()
++                self.metrics["t5_encode_ms"] = (time.perf_counter() - t5_t0) * 1000.0
++                self.metrics["t5_cache_hit"] = False
+ 
+         Ks = torch.from_numpy(np.load(os.path.join(action_path, "intrinsics.npy"))).float()
+ 
+@@ -596,6 +619,9 @@ class WanI2VCausal:
+             wasd_action_tensor = rearrange(wasd_action_tensor, 'b (f h w) c -> b c f h w', f=lat_f, h=lat_h, w=lat_w).to(self.param_dtype)
+             c2ws_plucker_emb = torch.cat([c2ws_plucker_emb, wasd_action_tensor], dim=1)
+ 
++        if self.metrics is not None:
++            torch.cuda.synchronize()
++            vae_t0 = time.perf_counter()
+         y = self.vae.encode([
+             torch.concat([
+                 torch.nn.functional.interpolate(
+@@ -605,6 +631,9 @@ class WanI2VCausal:
+             ],
+                          dim=1).to(self.device)
+         ])[0]
++        if self.metrics is not None:
++            torch.cuda.synchronize()
++            self.metrics["vae_encode_ms"] = (time.perf_counter() - vae_t0) * 1000.0
+         y = torch.concat([msk, y])
+ 
+         @contextmanager
+@@ -647,6 +676,11 @@ class WanI2VCausal:
+             num_inference_chunk = len(latents_chunk)
+             pred_latent_chunks = []
+             for chunk_id in tqdm(range(num_inference_chunk)):
++                if self.metrics is not None:
++                    torch.cuda.synchronize()
++                    chunk_t0 = time.perf_counter()
++                    transformer_t0 = chunk_t0
++                    chunk_metrics = {"chunk_id": int(chunk_id)}
+                 current_latent = latents_chunk[chunk_id]
+                 current_condition = condition_chunk[chunk_id]
+                 current_c2ws_plucker_emb = c2ws_plucker_emb_chunk[chunk_id]
+@@ -707,6 +741,16 @@ class WanI2VCausal:
+                 self.model(x=[x0], t=timestep,
+                            cross_attn_first_call=False,
+                            **kwargs)
++                if self.metrics is not None:
++                    torch.cuda.synchronize()
++                    chunk_metrics["transformer_ms"] = (time.perf_counter() - transformer_t0) * 1000.0
++                    chunk_metrics["chunk_ms"] = (time.perf_counter() - chunk_t0) * 1000.0
++                    chunk_metrics["elapsed_ms"] = (time.perf_counter() - generate_t0) * 1000.0
++                    chunk_metrics["current_start"] = int(kwargs["current_start"])
++                    chunk_metrics["kv_tokens"] = int(kv_size)
++                    chunk_metrics["gpu_allocated_bytes"] = int(torch.cuda.memory_allocated(self.device))
++                    chunk_metrics["gpu_reserved_bytes"] = int(torch.cuda.memory_reserved(self.device))
++                    self.metrics.setdefault("chunks", []).append(chunk_metrics)
+ 
+             pred_latent_chunks = torch.cat(pred_latent_chunks, dim=1)
+ 
+@@ -715,7 +759,13 @@ class WanI2VCausal:
+                 torch.cuda.empty_cache()
+ 
+             if self.rank == 0:
++                if self.metrics is not None:
++                    torch.cuda.synchronize()
++                    vae_t0 = time.perf_counter()
+                 videos = self.vae.decode([pred_latent_chunks])
++                if self.metrics is not None:
++                    torch.cuda.synchronize()
++                    self.metrics["vae_decode_ms"] = (time.perf_counter() - vae_t0) * 1000.0
+ 
+         # del noise, latent, x0
+         # del sample_scheduler
+@@ -1032,4 +1082,4 @@ class WanI2VCausal:
+                 'is_init': False,
+             })
+ 
+-        return crossattn_cache
+\ No newline at end of file
++        return crossattn_cache
