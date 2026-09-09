@@ -54,6 +54,10 @@ link_file "$MODEL_DIR/umt5-xxl-encoder-Q4_K_S.gguf" \
 link_file "$MODEL_DIR/Wan2.1_VAE.pth" "$COMFY_DIR/models/vae/Wan2.1_VAE.pth"
 link_file "$ROOT_DIR/.upstream/lingbot-world-v2/examples/03" \
   "$COMFY_DIR/input/lingbot_actions/strix-example"
+# The pinned community node discovers ComfyUI-GGUF relative to its custom-node
+# directory. Keep the actual clone isolated above, but expose that expected
+# sibling path without copying or modifying either upstream checkout.
+link_file "$GGUF_DIR" "$COMMUNITY_DIR/ComfyUI-GGUF"
 
 mkdir -p "$EXTRA_DIR"
 "$PYTHON_BIN" -m pip install --disable-pip-version-check --no-deps --upgrade --target "$EXTRA_DIR" \
