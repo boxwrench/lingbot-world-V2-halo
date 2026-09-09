@@ -1,0 +1,29 @@
+{
+  "community_repository": {
+    "url": "https://github.com/RealRebelAI/Rebels_LingBot-World-V2_GGUF_ComfyUI",
+    "revision": "f310acc1109e7af447d5c6efb94f29fe746408a1"
+  },
+  "comfyui_gguf": {
+    "url": "https://github.com/city96/ComfyUI-GGUF",
+    "revision": "6ea2651e7df66d7585f6ffee804b20e92fb38b8a"
+  },
+  "huggingface_repository": {
+    "id": "realrebelai/LingBot_World_V2_ComfyUI",
+    "revision": "79be5d5f30d63327ac6020ced7f653cdbc301f49"
+  },
+  "files": {
+    "LingBot-World-14B-causal-fast_merged-Q4_K_M.gguf": {
+      "bytes": 12054188608,
+      "lfs_sha256": "71e0ae7d4d245288713c1aaf8132018d977605831f00c4ab2fc56939aac394d1"
+    },
+    "umt5-xxl-encoder-Q4_K_S.gguf": {
+      "bytes": 3497596768,
+      "lfs_sha256": "4a3176f32fd70c0a335b4419fcbf8c86cc875e23498c0fc06f5b4aa0930889e0"
+    },
+    "Wan2.1_VAE.pth": {
+      "bytes": 507609880,
+      "lfs_sha256": "38071ab59bd94681c686fa51d75a1968f64e470262043be31f7a094e442fd981"
+    }
+  },
+  "initial_lane": "merged Q4_K_M DiT + UMT5 Q4_K_S + Wan2.1 VAE"
+}
