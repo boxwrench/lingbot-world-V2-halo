@@ -10,6 +10,17 @@ GGUF_DIR="$RUNTIME_DIR/ComfyUI-GGUF"
 EXTRA_DIR="$RUNTIME_DIR/python-extra"
 PYTHON_BIN=${PYTHON_BIN:-"$ROOT_DIR/.venv/bin/python"}
 
+for required in \
+  "$MODEL_DIR/LingBot-World-14B-causal-fast_merged-Q4_K_M.gguf" \
+  "$MODEL_DIR/umt5-xxl-encoder-Q4_K_S.gguf" \
+  "$MODEL_DIR/Wan2.1_VAE.pth"; do
+  if [[ ! -f "$required" ]]; then
+    echo "missing asset: $required" >&2
+    echo "run download_q4_assets.sh first" >&2
+    exit 2
+  fi
+done
+
 clone_at() {
   local url=$1 dest=$2 rev=$3
   if [[ ! -d "$dest/.git" ]]; then
@@ -45,7 +56,7 @@ link_file "$ROOT_DIR/.upstream/lingbot-world-v2/examples/03" \
   "$COMFY_DIR/input/lingbot_actions/strix-example"
 
 mkdir -p "$EXTRA_DIR"
-"$PYTHON_BIN" -m pip install --disable-pip-version-check --no-deps --target "$EXTRA_DIR" \
+"$PYTHON_BIN" -m pip install --disable-pip-version-check --no-deps --upgrade --target "$EXTRA_DIR" \
   gguf torchsde trampoline pyyaml av simpleeval \
   comfy-kitchen==0.2.33 comfy-aimdo==0.5.3 >/dev/null
 
