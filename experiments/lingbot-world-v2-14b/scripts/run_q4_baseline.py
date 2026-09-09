@@ -96,7 +96,7 @@ def save_video(imageio, video, path: Path):
     import numpy as np
 
     source = video.detach().float().cpu()
-    finite = bool(torch.isfinite(source).all())
+    finite = bool(source.isfinite().all())
     source_min = float(source.min())
     source_max = float(source.max())
     frames = (source.clamp(0, 1).numpy() * 255).round().astype(np.uint8)
