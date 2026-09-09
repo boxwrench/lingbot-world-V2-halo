@@ -9,6 +9,7 @@ then calls the node's loader and sampler with a fixed 480x832/6+2 request.
 from __future__ import annotations
 
 import argparse
+import importlib
 import importlib.util
 import json
 import os
@@ -152,6 +153,7 @@ def main() -> int:
     import nodes
 
     gguf_nodes = load_module("ComfyUI_GGUF_pinned", gguf_dir, package=True)
+    gguf_runtime = importlib.import_module("ComfyUI_GGUF_pinned.nodes")
     from ComfyUI_Rebels_LingBotWorld.lbworld_nodes import LBWorldLoader, LBWorldSampler
     from wan.configs.wan_i2v_A14B import i2v_A14B
 
@@ -197,7 +199,7 @@ def main() -> int:
     # UMT5 is loaded by the actual ComfyUI-GGUF CLIP loader, not by upstream's
     # full-precision T5 path.
     t0 = time.perf_counter()
-    clip, = gguf_nodes.CLIPLoaderGGUF().load_clip(clip_path.name, type="wan")
+    clip, = gguf_runtime.CLIPLoaderGGUF().load_clip(clip_path.name, type="wan")
     report["timings_ms"]["clip_load"] = (time.perf_counter() - t0) * 1000
     t0 = time.perf_counter()
     positive, = nodes.CLIPTextEncode().encode(clip, PROMPT)
