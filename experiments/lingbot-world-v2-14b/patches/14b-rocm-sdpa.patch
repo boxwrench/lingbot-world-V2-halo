@@ -1,0 +1,11 @@
+diff --git a/ComfyUI_Rebels_LingBotWorld/wan/modules/model_fast.py b/ComfyUI_Rebels_LingBotWorld/wan/modules/model_fast.py
+--- a/ComfyUI_Rebels_LingBotWorld/wan/modules/model_fast.py
++++ b/ComfyUI_Rebels_LingBotWorld/wan/modules/model_fast.py
+@@ -205,7 +205,7 @@ class WanCrossAttention(WanSelfAttention):
+ 
+         # compute attention
+-        x = flash_attention(q, k, v, k_lens=context_lens)
++        x = attention(q, k, v, k_lens=context_lens)
+ 
+         # output
+         x = x.flatten(2)

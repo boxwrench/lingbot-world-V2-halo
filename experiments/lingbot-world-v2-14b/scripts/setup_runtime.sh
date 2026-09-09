@@ -38,6 +38,15 @@ clone_at https://github.com/RealRebelAI/Rebels_LingBot-World-V2_GGUF_ComfyUI.git
 clone_at https://github.com/city96/ComfyUI-GGUF.git \
   "$GGUF_DIR" 6ea2651e7df66d7585f6ffee804b20e92fb38b8a
 
+# The community pack directly calls FlashAttention for fast cross-attention.
+# Apply the narrow existing generic-dispatcher adaptation so ROCm can use the
+# pack's PyTorch SDPA fallback; causal self-attention remains untouched.
+PATCH_FILE="$ROOT_DIR/experiments/lingbot-world-v2-14b/patches/14b-rocm-sdpa.patch"
+COMMUNITY_FAST="$COMMUNITY_DIR/ComfyUI_Rebels_LingBotWorld/wan/modules/model_fast.py"
+if rg -q 'x = flash_attention\(q, k, v, k_lens=context_lens\)' "$COMMUNITY_FAST"; then
+  patch --directory "$COMMUNITY_DIR" --strip=1 --forward < "$PATCH_FILE" >/dev/null
+fi
+
 mkdir -p "$COMFY_DIR/models/diffusion_models" "$COMFY_DIR/models/text_encoders" \
   "$COMFY_DIR/models/vae" "$COMFY_DIR/input/lingbot_actions"
 
