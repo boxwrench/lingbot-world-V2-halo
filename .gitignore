@@ -4,6 +4,7 @@ model-cache/
 .upstream/
 outputs/
 results/raw/
+results/media/
 results/*.mp4
 results/*.webm
 results/*.png
