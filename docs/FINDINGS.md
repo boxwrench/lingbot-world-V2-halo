@@ -201,3 +201,30 @@ isolated VAE comparison only if that is needed for the platform study.
 
 Detailed commands, raw-log paths, and the cross-platform table are in
 [`r9700-solver-audit-20260909.md`](r9700-solver-audit-20260909.md).
+
+## F8 — R9700 ROCm 7.14 isolated VAE succeeds without temporal split (2026-09-09)
+
+The real Wan2.1 VAE was decoded independently on the R9700 / gfx1201 using
+the separate ROCm 7.14 environment: PyTorch `2.12.0+rocm7.14.0`, HIP
+`7.14.60850`, active MIOpen `3.5.2.cd957402`, and
+`WAN_VAE_CONV3D_TEMPORAL_SPLIT=0`.  The test used a zero latent of
+`[16,4,60,104]`, three synchronized decodes, and the same FP32 VAE weights as
+the Strix control.
+
+All outputs were finite with shape `[3,13,480,832]`.  Cold decode was **9.445
+s**; warm decodes were **7.802 s** and **7.837 s** (median **7.820 s**).
+Conv3d accounted for **22.109 s** across the three decodes.  Peak PyTorch
+allocation was **21.24 GiB**, reservation **27.15 GiB**, and peak process RSS
+was **2.52 GiB**.  The dominant `[1,96,4,480,832]` group consumed 10.042 s
+(45.42% of Conv3d time) across 54 calls.
+
+This confirms that the newer gfx1201 software stack makes the isolated VAE
+viable without the old-stack temporal split.  It does not prove that the full
+LingBot pipeline can keep the transformer resident at the same time; that
+separate smoke test initially failed because the large VAE workspace competed
+with the transformer and existing GPU users.
+
+Raw output is
+[`r9700-gfx1201-rocm714-480x832.json`](../results/raw/vae/r9700-gfx1201-rocm714-480x832.json)
+(local and ignored).  The runner and exact command are in
+[`vae-repro-20260909.md`](vae-repro-20260909.md).
