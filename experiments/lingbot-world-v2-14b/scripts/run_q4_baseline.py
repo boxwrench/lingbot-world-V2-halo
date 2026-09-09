@@ -100,7 +100,7 @@ def save_video(imageio, video, path: Path):
     source_min = float(source.min())
     source_max = float(source.max())
     frames = (source.clamp(0, 1).numpy() * 255).round().astype(np.uint8)
-    imageio.mimwrite(str(path), frames, fps=16, codec="libx264", quality=8)
+    imageio.mimwrite(str(path), frames, fps=16, codec="libx264")
     return {
         "shape": list(frames.shape),
         "dtype": str(video.dtype),
