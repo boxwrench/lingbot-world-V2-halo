@@ -145,13 +145,15 @@ def main() -> int:
     sys.argv = [runner_argv[0]]
     sys.path.insert(0, str(comfy_dir))
     sys.path.insert(0, str(community_dir))
-    sys.path.insert(0, str(gguf_dir))
     import torch
 
     import folder_paths  # noqa: F401
     import comfy.model_management  # noqa: F401
     import nodes
 
+    # ComfyUI-GGUF also contains a nodes.py, but it uses package-relative
+    # imports and must not shadow ComfyUI's top-level nodes module above.
+    sys.path.insert(0, str(gguf_dir))
     gguf_nodes = load_module("ComfyUI_GGUF_pinned", gguf_dir, package=True)
     gguf_runtime = importlib.import_module("ComfyUI_GGUF_pinned.nodes")
     from ComfyUI_Rebels_LingBotWorld.lbworld_nodes import LBWorldLoader, LBWorldSampler
