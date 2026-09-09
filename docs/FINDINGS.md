@@ -94,10 +94,110 @@ not a general failure of this mathematical shape on AMD ROCm. It does not yet
 establish whether the difference is caused by GPU architecture, MIOpen build,
 solver database contents, or their interaction.
 
-## F4 — next control: isolated real VAE
+## F4 — isolated real VAE control completed (2026-09-09)
 
-The synthetic control is decisive enough to justify the next bounded test:
-decode a 480×832-equivalent latent with the real Wan2.1 VAE, instrument every
-Conv3d call, and separate first/repeated decode time. No LingBot kernel or VAE
-optimization is introduced until that measurement is complete.
+The real Wan2.1 VAE was decoded independently from the LingBot transformer
+using a zero latent of shape `[16,4,60,104]`, equivalent to a 480×832 decode.
+The test used three synchronized decodes on gfx1151 with the VAE weights in
+FP32 and instrumented every `nn.Conv3d` without changing its arguments.
 
+All three outputs were finite and had shape `[3,13,480,832]`. The cold decode
+took **30.970 s**; the two warm decodes took **26.449 s** and **26.588 s**
+(warm median **26.518 s**). Conv3d accounted for **78.695 s of 84.006 s**
+across the three decodes (**93.68%** of measured decode time). Peak PyTorch
+allocation was **21.24 GiB** and peak reservation **27.15 GiB**; process RSS
+was approximately **2.0 GiB**.
+
+The dominant actual VAE shape was `[1,96,4,480,832]` with `[96,96,3,3,3]`
+weights: 54 calls, 29.686 s aggregate, or 37.72% of Conv3d time. This is
+the real VAE's depth-4 shape, not synthetic case B's explicitly pre-padded
+depth-6 input. The next-largest measured shapes were the 192-channel
+`[1,192,4,240,416]` convolution (28.67%) and the 384-channel
+`[1,384,2,120,208]` convolution (14.27%).
+
+Raw data is [`strix-gfx1151-480x832-aggregate.json`](../results/raw/vae/strix-gfx1151-480x832-aggregate.json)
+(local only); the instrumented runner is [`vae_repro.py`](../scripts/vae_repro.py).
+This establishes that the isolated VAE is numerically viable on Strix, while
+also identifying Conv3d as the dominant decode cost. It does not yet justify
+a VAE optimization.
+
+## F5 — live gfx1201 solver audit: old stack (2026-09-09)
+
+The matched reproducer was run on the live R9700 host (`nautilus`) with
+`HIP_VISIBLE_DEVICES=1`, using PyTorch
+`2.9.1+rocm7.2.1.gitff65f5bc`, HIP `7.2.53211-e1a6bc5663`, and active
+MIOpen `3.5.1.dabb6df2b9`. This is a fresh audit of the exact four-shape
+cases, not an estimate copied from the earlier reference run.
+
+With `MIOPEN_FIND_ENFORCE=1` and `MIOPEN_FIND_MODE=NORMAL`, MIOpen reported:
+
+| Case | `GemmFwdRest` workspace check | Successful candidates | Selected solver |
+|---|---|---|---|
+| A | `8,226,800,640` bytes | `ConvDirectNaiveConvFwd`, `GemmFwdRest` | `GemmFwdRest` |
+| B | `16,562,257,920 > 14,574,367,538` bytes | `ConvDirectNaiveConvFwd` | `ConvDirectNaiveConvFwd` |
+| C | `16,562,257,920 > 14,574,367,538` bytes | `ConvDirectNaiveConvFwd` | `ConvDirectNaiveConvFwd` |
+| D | `16,562,257,920 > 14,574,367,538` bytes | `ConvDirectNaiveConvFwd` | `ConvDirectNaiveConvFwd` |
+
+For B–D, the `GetWorkspaceSize` comparison is followed by
+`GemmFwdRest: Not applicable` in both workspace and search logging. The only
+successful candidate is the direct naive kernel
+`naive_conv_ab_nonpacked_fwd_ncdhw_float_double_float`, with zero workspace.
+The enforced-find log therefore identifies the rejection point rather than
+merely showing the final slow choice.
+
+The old-stack user FindDb contains the same outcome: GEMM for A, direct naive
+for B–D. The installed ROCm database has no gfx1201 entry; the active user
+database is
+`/home/boxwrench/.config/miopen/gfx1201_32.HIP.3_5_1_dabb6df2b9.ufdb.txt`,
+with kernel cache
+`/home/boxwrench/.cache/miopen/3.5.1.dabb6df2b9/gfx1201_32.ukdb`.
+
+The official MIOpen documentation says that `MIOPEN_DEBUG_FIND_ONLY_SOLVER`
+fails when a named solver is valid but not applicable. An old-stack test with
+`MIOPEN_DEBUG_FIND_ONLY_SOLVER=GemmFwdRest` and a direct
+`MIOpenDriver --solution GemmFwdRest` invocation both reproduced that behavior:
+the normal API could not force GEMM for B. This is a solver applicability
+failure, not evidence that the solver binary is absent.
+
+## F6 — newer gfx1201 stack removes the observed cliff (2026-09-09)
+
+As a bounded software control, the same live R9700 was run in the separate
+`comfyui-rocm714` environment: PyTorch `2.12.0+rocm7.14.0`, HIP
+`7.14.60850`, active MIOpen `3.5.2.cd957402`, with an isolated user FindDb.
+The microbenchmark used the same script, dtype, shapes, warmup, and timing
+methodology. It generated `GemmFwdRest` records for all four cases:
+
+| Case | First | Warm median | Effective |
+|---|---:|---:|---:|
+| A | 5.03898 s | 0.083286 s | 4.741 TFLOP/s |
+| B | 1.85430 s | 0.171255 s | 4.642 TFLOP/s |
+| C | 1.54249 s | 0.124190 s | 0.200 TFLOP/s |
+| D | 1.90291 s | 0.165354 s | 4.808 TFLOP/s |
+
+The generated user FindDb records B–D as `GemmFwdRest` with the same
+16,562,257,920-byte workspace requirement. Thus the gfx1201 hardware can
+execute the GEMM path for these shapes; the old ROCm 7.2.1/MIOpen 3.5.1 lane
+does not select it under its available-workspace gate. This strongly elevates
+the old software-stack/MIOpen selection path as the immediate cause. It does
+not isolate whether the change came from MIOpen policy, rocBLAS, database
+behavior, or their interaction, and it is not an architecture-only claim.
+
+## F7 — solver-audit conclusion and boundary (2026-09-09)
+
+The main question is reduced to a concrete, reproducible mechanism:
+
+* `GemmFwdRest` exists in the old gfx1201 MIOpen build and works for A.
+* For B/C/D, old MIOpen rejects it as not applicable because its required
+  workspace exceeds the reported `14,574,367,538`-byte ceiling.
+* The direct naive solver is the only remaining successful candidate and
+  causes the 5.032 s / 0.158 TFLOP/s B result.
+* The same gfx1201 card under the separate ROCm 7.14/MIOpen 3.5.2 stack uses
+  GEMM for B/C/D and reaches 4.6–4.8 TFLOP/s.
+
+This is enough evidence to stop before custom Conv3d decomposition or a
+LingBot/VAE rewrite. The next bounded question is which old-stack control
+changes the workspace ceiling or selection policy, followed by a clean
+isolated VAE comparison only if that is needed for the platform study.
+
+Detailed commands, raw-log paths, and the cross-platform table are in
+[`r9700-solver-audit-20260909.md`](r9700-solver-audit-20260909.md).

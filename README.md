@@ -75,6 +75,10 @@ reconstructed by `scripts/prepare_model.sh` and are not model-weight patches.
   reproduction notes.
 - [`docs/architecture-notes.md`](docs/architecture-notes.md): traced causal
   fast pipeline, cache/window behavior, and upstream-vs-used code.
+- [`docs/r9700-solver-audit-20260909.md`](docs/r9700-solver-audit-20260909.md):
+  live gfx1201 MIOpen solver audit and newer-stack control.
+- [`docs/vae-repro-20260909.md`](docs/vae-repro-20260909.md): isolated real
+  Wan VAE decode measurement on Strix.
 - [`docs/results.md`](docs/results.md): compact results table updated as runs
   complete.
 - [`docs/lingbot-world-v2-1.3b-strix-halo-bringup-20260909.md`](docs/lingbot-world-v2-1.3b-strix-halo-bringup-20260909.md): dated final report.
@@ -82,4 +86,3 @@ reconstructed by `scripts/prepare_model.sh` and are not model-weight patches.
 Model weights and large generated videos are not committed. Small media or
 external artifact references may be added only when they materially support a
 finding.
-
