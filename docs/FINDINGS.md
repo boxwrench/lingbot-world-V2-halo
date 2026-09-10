@@ -316,3 +316,62 @@ The output-shape wrapper issue found during this baseline is fixed in the
 experiment harness: upstream channel-first VAE output is normalized to
 `[frames,height,width,3]` and written through checked FFmpeg. This fix does
 not alter model computation.
+
+## F12 — persistent VAE divergence is in fused ROCm SDPA (2026-09-09)
+
+The first version of the incremental comparator had two harness errors: it
+omitted the VAE batch dimension and iterated over latent height instead of
+latent time. Those results are superseded. The corrected internal latent
+shape is `[1,16,1,58,104]`, with time taken from the public `[C,T,H,W]`
+dimension.
+
+With those errors removed, FP32 batch and one-frame incremental decode still
+diverged. `conv2` outputs were bit-identical for each latent frame, and the
+first divergent decoder submodule was `decoder.middle.1.proj`, the projection
+following Wan's spatial `AttentionBlock`. Instrumentation showed that Q, K,
+and V entering `torch.nn.functional.scaled_dot_product_attention` were
+bit-identical, while the fused ROCm SDPA output differed substantially (up to
+about 7.2 before projection) between the batch-slice and one-frame paths.
+Repeated identical decodes were deterministic, so this was not random output
+noise or an accumulating decoder-cache error.
+
+Selecting PyTorch's explicit `SDPBackend.MATH` for the VAE attention restored
+bit-exact batch/incremental output on the 3-latent `[16,3,58,104]` control;
+both paths remained finite. This is an experiment-local correctness fallback:
+the transformer continues to use its normal SDPA path, and the accepted
+batch baseline is unchanged. The persistent runner exposes
+`--vae-attention-backend default` for comparison, but its accepted streaming
+default is `math` until a faster ROCm VAE SDPA path is proven equivalent.
+
+## F13 — 1.3B persistent FP32 stream passes the long correctness gate (2026-09-09)
+
+The real LingBot 1.3B chunk-size-1 session was rerun with the VAE-only math
+SDPA fallback. It used the same pinned model, prompt, image, seed 42,
+requested 480x832, 81 frames, 21 latent chunks, `local_attn_size=18`, and
+`sink_size=6`. All 81 decoded frames were finite. The prior fused-SDPA run
+became non-finite; this run remained finite through the attention-window
+rollover and final output.
+
+| Metric | Result |
+|---|---:|
+| Session time | 217.621 s |
+| Time to first visible frame | 11.581 s |
+| Median action latency | 10.629 s |
+| VAE encode | 102.109 s |
+| DiT chunk 0 / steady after rollover | 1.877 / 3.53–3.59 s |
+| VAE decode chunk 0 / steady | 2.734 / 7.67–7.80 s |
+| Peak PyTorch allocation | 43.300 GB |
+| Peak process RSS | 25.867 GB |
+| Output | `[81,464,832,3]`, finite |
+
+KV state progressed from global/local `1508/1508` tokens to
+`31668/27144`; the local cap held after chunk 17 while global position
+continued advancing. This verifies the DiT/KV rollover and persistent VAE
+cache across the long run. Raw evidence is local at
+`results/raw/interactive-chunk1-stream-fp32-480x832-81f-math-sdpa/metrics.json`
+and the corresponding `interactive.mp4`.
+
+The correctness milestone is complete. The math SDPA fallback is currently a
+latency rejection for interactive use, not an optimization result; precision
+and overlap experiments remain deferred until a faster numerically valid VAE
+attention path is compared against this reference.
