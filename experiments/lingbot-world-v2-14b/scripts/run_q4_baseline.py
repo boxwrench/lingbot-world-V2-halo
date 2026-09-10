@@ -305,6 +305,9 @@ def main() -> int:
                 "transformer_state": model_runtime_state(torch, getattr(pipe, "model", None)),
                 "gguf_file_mapping": file_mapping(dit_path),
             })
+            (out_dir / "phase-events.json").write_text(
+                json.dumps(phase_events, indent=2, ensure_ascii=False) + "\n"
+            )
 
         pipe._experiment_phase_hook = phase_hook
         if args.cleanup_before_vae:
