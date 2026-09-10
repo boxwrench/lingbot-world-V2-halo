@@ -58,6 +58,11 @@ s, including a 51.740 s VAE decode. See
 [`benchmarks/q4-480x832-18plus6-phase-memory.json`](benchmarks/q4-480x832-18plus6-phase-memory.json)
 and the chronological interpretation in [`FINDINGS.md`](FINDINGS.md).
 
+The 14B result is now closed for this phase: it is viable on Strix Halo,
+including `18+6` causal context, but its approximately 0.10 FPS throughput is
+too slow for interactive world-model use. Q6/Q8 performance runs are paused;
+any completed downloads remain intact.
+
 ## What the reference implementation does
 
 The node reads GGUF tensors through `gguf.GGUFReader`. The quantized linear

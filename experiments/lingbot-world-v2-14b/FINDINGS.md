@@ -177,3 +177,23 @@ representative still are available locally as
 
 Q6/Q8 asset downloads may proceed, but their performance lanes remain held
 until this 18+6 boundary result is incorporated into the next experiment plan.
+
+## F6 — 14B conclusion: viable capacity, rejected interactive latency (2026-09-09)
+
+The 14B Q4 characterization is complete for this phase. The cleanup lane
+demonstrates that Strix Halo can sustain the larger causal world state and
+successfully decode a valid 21-frame output at 480x832-equivalent dimensions.
+The result is a capacity success, but its approximately 0.10 FPS throughput
+is too slow for the intended interactive world-model use:
+
+```text
+14B causal-fast Q4_K_M, 480x832 request, 18+6, chunk 3, 21 frames
+210.362 s total, 51.740 s VAE decode, 0.0998 FPS, finite output
+```
+
+No Q6 or Q8 performance benchmarks will be run in this branch. Their completed
+downloads, if present, are retained for possible future work, but this
+experiment now returns to the native BF16 1.3B baseline. The phase-cleanup
+technique and the distinction between the 29.648 GB formula estimate and the
+22.236 GB observed runtime self-KV total remain required findings for any
+future higher-precision or longer-context test.
