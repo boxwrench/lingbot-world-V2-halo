@@ -332,6 +332,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="opt-in exact Conv3d->Conv2d split for one decoder module path",
     )
+    parser.add_argument(
+        "--profile-dit-from-chunk",
+        type=int,
+        default=-1,
+        help="profile the DiT module tree starting at this chunk (steady-state use: 18)",
+    )
     return parser
 
 
@@ -464,6 +470,7 @@ def generate_chunk(
 ) -> dict[str, object]:
     """Run the five causal-fast DiT forwards for one latent chunk."""
     chunk_t0 = time.perf_counter()
+    prepare_t0 = chunk_t0
     max_seq_len = state["frame_seqlen"]
     kwargs = {
         "context": [state["context"][0]],
@@ -476,10 +483,14 @@ def generate_chunk(
         "max_attention_size": state["kv_size"],
         "frame_seqlen": state["frame_seqlen"],
     }
+    action_prepare_ms = (time.perf_counter() - prepare_t0) * 1000.0
     forward_records: list[dict[str, object]] = []
+    latent_postprocess_ms = 0.0
     transformer_t0 = time.perf_counter()
     for timestep_idx, current_timestep in enumerate(state["timesteps"]):
         forward_t0 = time.perf_counter()
+        cache_before = cache_positions(state["self_kv_cache"])
+        memory_before = cuda_memory(device)
         noise_pred = pipe.model(
             x=[current_latent],
             t=torch.stack([current_timestep]).to(device),
@@ -487,14 +498,28 @@ def generate_chunk(
             **kwargs,
         )[0]
         sync_fn()
+        memory_after = cuda_memory(device)
+        forward_ms = (time.perf_counter() - forward_t0) * 1000.0
         forward_records.append({
             "kind": "denoise",
             "index": timestep_idx,
             "timestep": float(current_timestep),
-            "elapsed_ms": (time.perf_counter() - forward_t0) * 1000.0,
+            "elapsed_ms": forward_ms,
+            "purpose": "denoise and clean-latent update",
+            "query_tokens": int(state["frame_seqlen"]),
+            "kv_length_before": cache_before["local_end_index"],
+            "kv_length_after": cache_positions(state["self_kv_cache"])["local_end_index"],
+            "kv_capacity_tokens": int(state["kv_size"]),
+            "cache_before": cache_before,
+            "cache_after": cache_positions(state["self_kv_cache"]),
+            "allocated_before_bytes": memory_before.get("allocated_bytes"),
+            "allocated_after_bytes": memory_after.get("allocated_bytes"),
+            "reserved_before_bytes": memory_before.get("reserved_bytes"),
+            "reserved_after_bytes": memory_after.get("reserved_bytes"),
             "finite": bool(torch.isfinite(noise_pred).all()),
         })
         pipe._cross_attn_initialized = True
+        post_t0 = time.perf_counter()
         x0 = pipe._convert_flow_pred_to_x0(noise_pred, current_latent, current_timestep, pipe.scheduler)
         if timestep_idx < len(state["timesteps"]) - 1:
             next_timestep = state["timesteps"][timestep_idx + 1]
@@ -503,9 +528,13 @@ def generate_chunk(
                 torch.randn(x0.shape, generator=state["seed_g"], device=device, dtype=x0.dtype),
                 next_timestep,
             )
+        sync_fn()
+        latent_postprocess_ms += (time.perf_counter() - post_t0) * 1000.0
 
     cache_t0 = time.perf_counter()
     zero_timestep = state["timesteps"][-1] * 0.0
+    cache_before = cache_positions(state["self_kv_cache"])
+    memory_before = cuda_memory(device)
     pipe.model(
         x=[x0],
         t=torch.stack([zero_timestep]).to(device),
@@ -513,11 +542,24 @@ def generate_chunk(
         **kwargs,
     )
     sync_fn()
+    memory_after = cuda_memory(device)
+    cache_after = cache_positions(state["self_kv_cache"])
     forward_records.append({
         "kind": "cache_update",
         "index": len(state["timesteps"]),
         "timestep": 0.0,
         "elapsed_ms": (time.perf_counter() - cache_t0) * 1000.0,
+        "purpose": "clean-latent self-attention KV-cache write; output discarded",
+        "query_tokens": int(state["frame_seqlen"]),
+        "kv_length_before": cache_before["local_end_index"],
+        "kv_length_after": cache_after["local_end_index"],
+        "kv_capacity_tokens": int(state["kv_size"]),
+        "cache_before": cache_before,
+        "cache_after": cache_after,
+        "allocated_before_bytes": memory_before.get("allocated_bytes"),
+        "allocated_after_bytes": memory_after.get("allocated_bytes"),
+        "reserved_before_bytes": memory_before.get("reserved_bytes"),
+        "reserved_after_bytes": memory_after.get("reserved_bytes"),
     })
     return {
         "chunk_id": chunk_id,
@@ -527,7 +569,42 @@ def generate_chunk(
         "cache": cache_positions(state["self_kv_cache"]),
         "cross_attention_initialized": int(state["cross_kv_cache"][0]["is_init"].item()),
         "transformer_ms": (time.perf_counter() - transformer_t0) * 1000.0,
+        "action_prepare_ms": action_prepare_ms,
+        "latent_postprocess_ms": latent_postprocess_ms,
         "forward_records": forward_records,
+    }
+
+
+def summarize_module_profile(profile: dict[str, object] | None) -> dict[str, object] | None:
+    """Aggregate a module-tree profile into operator class/shape buckets."""
+    if profile is None:
+        return None
+    groups: dict[tuple[str, str | None, str | None], dict[str, object]] = {}
+    for row in profile.get("operators", []):
+        key = (str(row["class"]), str(row.get("input_shape")), str(row.get("output_shape")))
+        group = groups.setdefault(key, {
+            "class": row["class"],
+            "input_shape": row.get("input_shape"),
+            "output_shape": row.get("output_shape"),
+            "calls": 0,
+            "exclusive_ms": 0.0,
+            "inclusive_ms": 0.0,
+            "modules": [],
+        })
+        group["calls"] += int(row["calls"])
+        group["exclusive_ms"] += float(row["exclusive_ms"])
+        group["inclusive_ms"] += float(row["inclusive_ms"])
+        group["modules"].append(row["module"])
+    rows = sorted(groups.values(), key=lambda row: -float(row["exclusive_ms"]))
+    total = sum(float(row["exclusive_ms"]) for row in rows)
+    cumulative = 0.0
+    for row in rows:
+        row["share_of_exclusive_ms"] = float(row["exclusive_ms"]) / total if total else 0.0
+        cumulative += float(row["exclusive_ms"])
+        row["cumulative_exclusive_share"] = cumulative / total if total else 0.0
+    return {
+        "exclusive_total_ms": total,
+        "operators": rows,
     }
 
 
@@ -547,12 +624,23 @@ def finish_action(
     overlap: bool = False,
     decoder_stats: dict[str, object] | None = None,
 ) -> None:
+    post_t0 = time.perf_counter()
     decoded_hwc_gpu = decoded_gpu.permute(1, 2, 3, 0).contiguous()
+    rgb_postprocess_ms = (time.perf_counter() - post_t0) * 1000.0
     visible_index = 1 if generated["chunk_id"] == 0 and decoded_hwc_gpu.shape[0] > 1 else 0
     # Copy all frames only after the VAE stream has completed.  The visible
     # frame copy is retained to make the first-visible boundary explicit.
+    visible_copy_t0 = time.perf_counter()
     _visible_frame = decoded_hwc_gpu[visible_index].float().cpu()
+    visible_copy_ms = (time.perf_counter() - visible_copy_t0) * 1000.0
+    host_first_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+    all_copy_t0 = time.perf_counter()
     all_frames = decoded_hwc_gpu.float().cpu()
+    all_copy_ms = (time.perf_counter() - all_copy_t0) * 1000.0
+    host_all_frames_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+    if not overlap:
+        first_visible_ms = host_first_visible_ms if generated["chunk_id"] > 0 else None
+        full_action_ms = host_all_frames_ms if generated["chunk_id"] > 0 else None
     outputs.append(all_frames)
     x0 = generated["x0"]
     cache = generated.get("cache", cache_positions(state["self_kv_cache"]))
@@ -582,6 +670,23 @@ def finish_action(
         "decoded_max": float(decoded_gpu.max()) if torch.isfinite(decoded_gpu).all() else None,
         "decoder_stats": stats,
         "overlap": overlap,
+        "waterfall_ms": {
+            "action_camera_conditioning_prepare": generated["action_prepare_ms"],
+            "dit_forward_1": generated["forward_records"][0]["elapsed_ms"],
+            "dit_forward_2": generated["forward_records"][1]["elapsed_ms"],
+            "dit_forward_3": generated["forward_records"][2]["elapsed_ms"],
+            "dit_forward_4": generated["forward_records"][3]["elapsed_ms"],
+            "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
+            "latent_postprocessing": generated["latent_postprocess_ms"],
+            "vae_decode": decode_ms,
+            "rgb_postprocessing": rgb_postprocess_ms,
+            "device_to_host_first_frame": visible_copy_ms,
+            "device_to_host_all_frames": all_copy_ms,
+            "presentation": 0.0,
+            "serialization": 0.0,
+            "sum_to_first_visible": first_visible_ms,
+            "sum_to_all_frames_host": host_all_frames_ms,
+        },
     })
 
 
@@ -595,6 +700,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         profile=args.profile_vae,
         temporal_split_module=args.vae_temporal_split_module,
     )
+    dit_profiler = None
     @contextmanager
     def noop_no_sync():
         yield
@@ -611,6 +717,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
             )):
                 if args.max_chunks and chunk_id >= args.max_chunks:
                     break
+                if args.profile_dit_from_chunk >= 0 and chunk_id == args.profile_dit_from_chunk:
+                    dit_profiler = DecoderProfiler(pipe.model)
                 main_start = torch.cuda.Event(enable_timing=True)
                 main_start.record(main_stream)
                 generated = generate_chunk(
@@ -648,6 +756,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
             )):
                 if args.max_chunks and chunk_id >= args.max_chunks:
                     break
+                if args.profile_dit_from_chunk >= 0 and chunk_id == args.profile_dit_from_chunk:
+                    dit_profiler = DecoderProfiler(pipe.model)
                 generated = generate_chunk(
                     pipe, state, chunk_id, current_latent, current_condition,
                     current_plucker, device, lambda: sync(device),
@@ -664,6 +774,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                 )
 
     profile = decoder.profile_report()
+    dit_profile = dit_profiler.report() if dit_profiler is not None else None
     output = torch.cat(outputs, dim=0)
     decoder.clear()
     session_ms = (time.perf_counter() - session_t0) * 1000.0
@@ -672,6 +783,9 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         "status": "success",
         "overlap": bool(args.overlap),
         "vae_profile": profile,
+        "dit_profile": dit_profile,
+        "dit_operator_summary": summarize_module_profile(dit_profile),
+        "profile_dit_from_chunk": args.profile_dit_from_chunk,
         "frames": int(output.shape[0]),
         "output": {
             "shape": list(output.shape),
