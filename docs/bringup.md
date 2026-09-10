@@ -32,12 +32,12 @@ Do not hand-edit a result JSON; add interpretation to the dated report.
 - [x] Host provenance captured before experiment files were added.
 - [x] Upstream source pinned and causal-fast path traced.
 - [x] 1.3B checkpoint availability and model revision verified.
-- [ ] Isolated environment installed.
-- [ ] Import/device smoke test.
-- [ ] Minimal valid video.
-- [ ] 480x832 BF16 baseline, cold and warm.
-- [ ] Determinism/finite-output check.
-- [ ] UMA allocation/RSS characterization.
+- [x] Isolated environment installed.
+- [x] Import/device smoke test.
+- [x] Minimal valid video.
+- [x] 480x832 BF16 baseline, cold and warm.
+- [x] Finite-output check; same-seed repeatability caveat recorded.
+- [x] UMA allocation/RSS characterization.
 - [ ] Window sweep.
 - [ ] Resolution sweep.
 - [ ] Long run.
@@ -49,4 +49,3 @@ PyTorch’s `total_memory`, DRM `mem_info_vram_total`, KFD APU pool, PyTorch
 allocated/reserved bytes, process RSS, and system used memory are different
 observables. Report them separately. The experiment will not label the 112
 GiB APU pool as dedicated VRAM without evidence.
-

@@ -264,3 +264,55 @@ Detailed results are in
 [`r9700-rocm714-baseline-20260909.md`](r9700-rocm714-baseline-20260909.md);
 raw data is local under
 `results/raw/lingbot/r9700-rocm714-baseline/metrics.json`.
+
+## F10 — native Strix 1.3B 21-frame baseline completes (2026-09-09)
+
+The native BF16 Strix lane now completes end-to-end with the released 1.3B
+checkpoint. It uses one `gfx1151` device, no quantization, no CPU offload,
+PyTorch SDPA, requested 480x832, 21 frames, `chunk_size=3`,
+`local_attn_size=18`, `sink_size=6`, seed 42, and the fixed examples/03
+prompt/image/actions. The upstream normalization produces exactly 21 frames
+because six latent frames divide into two three-frame chunks.
+
+| Measurement | Cold | Warm repeat |
+|---|---:|---:|
+| Model initialization | 35.218 s | same process |
+| T5 encode | 2.238 s | cache hit |
+| VAE encode | 30.719 s | 25.059 s |
+| DiT, two chunks | 13.553 s | 13.348 s |
+| VAE decode | 44.070 s | 42.288 s |
+| Generation | **90.893 s** | **80.886 s** |
+| Effective FPS | **5.105** | **5.736** |
+
+The outputs are finite and the corrected harness writes valid 832x464 H.264
+video with 21 frames. The native transformer has 1,709,502,016 BF16
+parameters on `cuda:0`; the VAE is also device-resident and T5 parameters are
+CPU-resident outside prompt encoding. Peak PyTorch allocation was 43.475 GB,
+peak reservation 52.647 GB cold (57.363 GB warm), and peak process RSS was
+25.864 GB. PyTorch reports 120.259 GB of device-visible memory; the host DRM
+surfaces separately report 4 GB VRAM and 120.259 GB GTT.
+
+The instrumented per-forward record confirms four denoising forwards at
+timesteps 999/937/833/624 plus one zero-timestep cache update per chunk. The
+tracked patch is `patches/0003-per-forward-metrics.patch`; setup is idempotent
+even when this later patch overlaps the earlier metrics patch.
+
+## F11 — same-seed repeat is finite but not bit-identical (2026-09-09)
+
+The warm repeat used the same prompt, image, actions, seed, model, and causal
+settings, but its raw generated tensor differed from the cold tensor:
+
+```text
+max absolute difference:  1.9584124
+mean absolute difference: 0.03384074
+```
+
+This is a reproducibility caveat, not an optimization target. It is preserved
+in the raw JSON and compact benchmark record. The likely source is not yet
+assigned; a later bounded stage-by-stage repeatability test should separate
+T5, VAE encode, DiT, and VAE decode behavior before any kernel change.
+
+The output-shape wrapper issue found during this baseline is fixed in the
+experiment harness: upstream channel-first VAE output is normalized to
+`[frames,height,width,3]` and written through checked FFmpeg. This fix does
+not alter model computation.

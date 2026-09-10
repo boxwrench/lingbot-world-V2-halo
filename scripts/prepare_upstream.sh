@@ -23,14 +23,40 @@ apply_once() {
         patch --forward --batch -d "$UPSTREAM_DIR" -p1 < "$patch_file" >/dev/null
     elif patch --dry-run --reverse --batch -d "$UPSTREAM_DIR" -p1 < "$patch_file" >/dev/null 2>&1; then
         :
+    elif patch_is_present "$patch_file"; then
+        # A later experiment patch may add lines inside an earlier patch's
+        # context, making reverse-dry-run too strict for an already-stacked
+        # checkout. Require distinctive markers before accepting that state.
+        :
     else
         echo "error: cannot apply or identify already-applied patch $patch_file" >&2
         exit 1
     fi
 }
 
+patch_is_present() {
+    case "$(basename "$1")" in
+        0001-strix-halo-sdpa-cross-attention.patch)
+            rg -q 'from \.attention import attention' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
+                rg -q 'x = attention\(q, k, v, k_lens=context_lens\)' "$UPSTREAM_DIR/wan/modules/model_fast.py"
+            ;;
+        0002-experiment-metrics.patch)
+            rg -q 'self\.metrics = metrics' "$UPSTREAM_DIR/wan/image2video.py" &&
+                rg -q 'self\.metrics\["vae_decode_ms"\]' "$UPSTREAM_DIR/wan/image2video.py"
+            ;;
+        0003-per-forward-metrics.patch)
+            rg -q 'forward_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py" &&
+                rg -q 'cache_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 apply_once "$ROOT_DIR/patches/0001-strix-halo-sdpa-cross-attention.patch"
 apply_once "$ROOT_DIR/patches/0002-experiment-metrics.patch"
+apply_once "$ROOT_DIR/patches/0003-per-forward-metrics.patch"
 
 echo "upstream: $(git -C "$UPSTREAM_DIR" rev-parse HEAD)"
 echo "working tree patches:"

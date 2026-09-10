@@ -1,0 +1,44 @@
+diff --git a/wan/image2video.py b/wan/image2video.py
+index 1af2683..8867b5b 100644
+--- a/wan/image2video.py
++++ b/wan/image2video.py
+@@ -710,10 +710,20 @@ class WanI2VCausal:
+ 
+                     timestep = torch.stack(current_timestep).to(self.device)
+ 
++                    if self.metrics is not None:
++                        forward_t0 = time.perf_counter()
+                     noise_pred = self.model(
+                         x=latent_model_input, t=timestep,
+                         cross_attn_first_call=not self._cross_attn_initialized,
+                         **kwargs)[0]
++                    if self.metrics is not None:
++                        torch.cuda.synchronize()
++                        chunk_metrics.setdefault("forwards", []).append({
++                            "kind": "denoise",
++                            "index": int(timestep_idx),
++                            "timestep": float(current_timestep[0]),
++                            "elapsed_ms": (time.perf_counter() - forward_t0) * 1000.0,
++                        })
+                     self._cross_attn_initialized = True
+ 
+                     if offload_model:
+@@ -738,9 +748,19 @@ class WanI2VCausal:
+                 # Update kv cache
+                 context_timestep = [timesteps[-1] * 0.0]
+                 timestep = torch.stack(context_timestep).to(self.device)
++                if self.metrics is not None:
++                    cache_t0 = time.perf_counter()
+                 self.model(x=[x0], t=timestep,
+                            cross_attn_first_call=False,
+                            **kwargs)
++                if self.metrics is not None:
++                    torch.cuda.synchronize()
++                    chunk_metrics.setdefault("forwards", []).append({
++                        "kind": "cache_update",
++                        "index": len(timesteps),
++                        "timestep": float(context_timestep[0]),
++                        "elapsed_ms": (time.perf_counter() - cache_t0) * 1000.0,
++                    })
+                 if self.metrics is not None:
+                     torch.cuda.synchronize()

@@ -21,7 +21,6 @@ from PIL import Image
 from wan import WanI2VCausal
 from wan.configs import MAX_AREA_CONFIGS, WAN_CONFIGS
 from wan.modules import attention as attention_module
-from wan.utils.utils import save_video
 
 
 def rss_bytes() -> int:
@@ -84,8 +83,35 @@ def rocm_smi_snapshot() -> str:
         return f"{type(exc).__name__}: {exc}"
 
 
-def tensor_summary(video: torch.Tensor) -> dict[str, object]:
+def normalize_video(video: torch.Tensor) -> torch.Tensor:
+    """Convert upstream VAE output to [frames, height, width, channels]."""
     cpu = video.detach().float().cpu()
+    if cpu.ndim == 4 and cpu.shape[0] in (1, 3) and cpu.shape[-1] not in (1, 3):
+        cpu = cpu.permute(1, 2, 3, 0)
+    elif cpu.ndim == 3:
+        cpu = cpu.unsqueeze(-1)
+    if cpu.ndim != 4 or cpu.shape[-1] not in (1, 3):
+        raise ValueError(f"unexpected generated video shape: {tuple(cpu.shape)}")
+    if cpu.shape[-1] == 1:
+        cpu = cpu.expand(-1, -1, -1, 3)
+    return cpu.contiguous()
+
+
+def write_video(video: torch.Tensor, path: Path, fps: int = 16) -> None:
+    """Write a checked RGB MP4 without relying on upstream's shape assumptions."""
+    frames = ((video.clamp(-1, 1) + 1.0) * 127.5).round().byte().numpy()
+    height, width = frames.shape[1:3]
+    subprocess.run(
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}",
+         "-r", str(fps), "-i", "-", "-an", "-c:v", "libx264",
+         "-pix_fmt", "yuv420p", str(path)],
+        input=frames.tobytes(), check=True,
+    )
+
+
+def tensor_summary(video: torch.Tensor) -> dict[str, object]:
+    cpu = normalize_video(video)
     finite = bool(torch.isfinite(cpu).all())
     summary: dict[str, object] = {
         "shape": list(cpu.shape),
@@ -96,8 +122,8 @@ def tensor_summary(video: torch.Tensor) -> dict[str, object]:
         "mean": float(cpu.mean()),
         "std": float(cpu.std()),
     }
-    if cpu.ndim == 4 and cpu.shape[1] > 1:
-        frame_delta = (cpu[:, 1:] - cpu[:, :-1]).abs().mean(dim=(0, 2, 3))
+    if cpu.shape[0] > 1:
+        frame_delta = (cpu[1:] - cpu[:-1]).abs().mean(dim=(1, 2, 3))
         summary["mean_adjacent_frame_delta"] = float(frame_delta.mean())
         summary["max_adjacent_frame_delta"] = float(frame_delta.max())
     return {"summary": summary, "cpu_tensor": cpu}
@@ -135,7 +161,7 @@ def run_one(
         torch.cuda.reset_peak_memory_stats(device)
     torch.cuda.synchronize(device)
     generation_t0 = time.perf_counter()
-    video = pipe.generate(
+    generated = pipe.generate(
         args.prompt,
         Image.open(args.image).convert("RGB"),
         action_path=args.action_path,
@@ -144,7 +170,12 @@ def run_one(
         frame_num=args.frames,
         seed=args.seed,
         offload_model=args.offload_model,
-    )[0]
+    )
+    if isinstance(generated, (list, tuple)):
+        if len(generated) != 1:
+            raise ValueError(f"unexpected generated result container: {len(generated)} items")
+        generated = generated[0]
+    video = generated
     torch.cuda.synchronize(device)
     generation_ms = (time.perf_counter() - generation_t0) * 1000.0
 
@@ -172,14 +203,7 @@ def run_one(
 
     if args.save_video:
         output_path = result_dir / f"generated-{run_index}.mp4"
-        save_video(
-            tensor=video_cpu[None],
-            save_file=str(output_path),
-            fps=16,
-            nrow=1,
-            normalize=True,
-            value_range=(-1, 1),
-        )
+        write_video(video_cpu, output_path)
         metrics["video_path"] = str(output_path)
 
     return {"metrics": copy.deepcopy(metrics), "video_cpu": video_cpu}
@@ -303,4 +327,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

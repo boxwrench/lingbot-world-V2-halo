@@ -10,10 +10,12 @@ Strix Halo, rather than a general-purpose AMD benchmark collection.
 
 ## Current result
 
-The experiment is in progress. The host-level ROCm probe succeeds in native
-BF16: PyTorch sees one Radeon 8060S (`gfx1151`), reports BF16 support, and a
-BF16 matmul completes. The final model result and timings are recorded in the
-dated report under [`docs/`](docs/).
+The native 1.3B BF16 path succeeds end-to-end on one Radeon 8060S
+(`gfx1151`). The 480x832 / 21-frame / 18+6 / chunk-3 baseline produces finite
+valid video in 90.893 s cold and 80.886 s warm (5.105 / 5.736 FPS), with
+43.475 GB peak PyTorch allocation and 25.864 GB peak process RSS. The same-seed
+repeat is finite but not bit-identical; that caveat is preserved in the dated
+report and benchmark JSON.
 
 ## Target configuration
 
@@ -32,8 +34,8 @@ known-working ROCm PyTorch environment. They never install CUDA Torch or
 standard CUDA-only FlashAttention.
 
 ```bash
-git clone https://github.com/<account>/StrixHalo-LingBot.git
-cd StrixHalo-LingBot
+git clone https://github.com/boxwrench/lingbot-world-V2-halo.git
+cd lingbot-world-V2-halo
 
 # Capture provenance before changing the environment.
 bash scripts/env_report.sh results/raw/provenance
