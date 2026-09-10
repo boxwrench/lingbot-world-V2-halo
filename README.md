@@ -25,6 +25,13 @@ canonical FP16 VAE remains the default/reference decoder because TAEHV is
 softer in fine detail. See [`docs/taehv-20260910.md`](docs/taehv-20260910.md)
 for the pinned source, latent contract, raw paths, and quality caveats.
 
+To try the model as a bounded keyboard-driven live viewer rather than an MP4
+run, use [`scripts/run_live.sh`](scripts/run_live.sh). It opens a Tk/Pillow
+window using the validated TAEHV presentation path. `Q`/`ESC` quits, `Ctrl-C`
+in the launch terminal is an emergency stop, and GNU `timeout` supplies a
+second hard limit. Details and controls are in
+[`docs/live-viewer.md`](docs/live-viewer.md).
+
 ## Target configuration
 
 - CPU/APU: AMD Ryzen AI MAX+ 395, 16 cores / 32 threads
