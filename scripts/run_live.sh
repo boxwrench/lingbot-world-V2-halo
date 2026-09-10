@@ -14,8 +14,10 @@ if [[ ! -d "$MODEL_DIR" ]]; then bash "$ROOT_DIR/scripts/prepare_model.sh"; fi
 mkdir -p "$OUTPUT_DIR"
 echo "Live viewer safety: press Q/ESC in the viewer, Ctrl-C in this terminal, or wait for the ${TIMEOUT_SECONDS}s hard timeout."
 
+LIVE_PYTHONPATH="$UPSTREAM_DIR:$ROOT_DIR/scripts${PYTHONPATH:+:$PYTHONPATH}"
 exec timeout --foreground --signal=INT --kill-after=20s "${TIMEOUT_SECONDS}s" \
-  env PYTHONUNBUFFERED=1 "$PYTHON" "$ROOT_DIR/scripts/run_live.py" \
+  env PYTHONUNBUFFERED=1 PYTHONPATH="$LIVE_PYTHONPATH" \
+  "$PYTHON" "$ROOT_DIR/scripts/run_live.py" \
     --upstream-dir "$UPSTREAM_DIR" \
     --model-dir "$MODEL_DIR" \
     --output-dir "$OUTPUT_DIR" \
