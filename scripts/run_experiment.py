@@ -189,7 +189,7 @@ def run_one(
     metrics["output"] = tensor_info["summary"]
     metrics["reported_rocm_smi_after_generation"] = rocm_smi_snapshot()
     metrics["run_index"] = run_index
-    metrics["effective_fps"] = float(video_cpu.shape[1] / (generation_ms / 1000.0))
+    metrics["effective_fps"] = float(video_cpu.shape[0] / (generation_ms / 1000.0))
     chunks = metrics.get("chunks", [])
     if chunks:
         chunk_times = [float(chunk["chunk_ms"]) for chunk in chunks]

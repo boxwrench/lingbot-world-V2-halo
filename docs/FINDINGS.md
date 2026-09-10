@@ -276,13 +276,13 @@ because six latent frames divide into two three-frame chunks.
 
 | Measurement | Cold | Warm repeat |
 |---|---:|---:|
-| Model initialization | 35.218 s | same process |
+| Model initialization | 36.115 s | same process |
 | T5 encode | 2.238 s | cache hit |
-| VAE encode | 30.719 s | 25.059 s |
-| DiT, two chunks | 13.553 s | 13.348 s |
-| VAE decode | 44.070 s | 42.288 s |
-| Generation | **90.893 s** | **80.886 s** |
-| Effective FPS | **5.105** | **5.736** |
+| VAE encode | 31.228 s | 24.930 s |
+| DiT, two chunks | 13.492 s | 13.328 s |
+| VAE decode | 42.658 s | 42.748 s |
+| Generation | **89.940 s** | **81.216 s** |
+| Effective FPS | **0.2335** | **0.2586** |
 
 The outputs are finite and the corrected harness writes valid 832x464 H.264
 video with 21 frames. The native transformer has 1,709,502,016 BF16

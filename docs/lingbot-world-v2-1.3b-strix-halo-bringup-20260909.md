@@ -8,11 +8,11 @@ BF16 transformer weights, one HIP device, and the PyTorch SDPA attention
 fallback. The requested 480x832, 21-frame run produced finite output with
 shape `[21,464,832,3]`, encoded as a valid 832x464 MP4.
 
-The measured 21-frame lane took 90.893 s for generation cold and 80.886 s for
-an in-process warm repeat. Including the 35.218 s model initialization, cold
-end-to-end time was 126.112 s. The main costs were VAE encode/decode rather
-than DiT: warm VAE encode was 25.059 s, DiT was 13.348 s, and VAE decode was
-42.288 s.
+The measured 21-frame lane took 89.940 s for generation cold and 81.216 s for
+an in-process warm repeat. Including the 36.115 s model initialization, cold
+end-to-end time was 126.055 s. The main costs were VAE encode/decode rather
+than DiT: warm VAE encode was 24.930 s, DiT was 13.328 s, and VAE decode was
+42.748 s.
 
 Both repeats were finite, but they were not bit-identical at the tensor level
 (`max_abs_diff=1.9584`, `mean_abs_diff=0.03384`). This is retained as a
@@ -107,18 +107,18 @@ the 13-frame truncation that would result from requesting 21 with chunk size 4.
 
 | Measurement | Cold | Warm repeat |
 |---|---:|---:|
-| Model initialization | 35.218 s | same process |
+| Model initialization | 36.115 s | same process |
 | T5 encode | 2.238 s | cache hit |
-| VAE encode | 30.719 s | 25.059 s |
-| DiT, two chunks | 13.553 s | 13.348 s |
-| VAE decode | 44.070 s | 42.288 s |
-| Generation total | **90.893 s** | **80.886 s** |
-| Cold end-to-end incl. initialization | **126.112 s** | — |
-| Effective output rate | **5.105 FPS** | **5.736 FPS** |
+| VAE encode | 31.228 s | 24.930 s |
+| DiT, two chunks | 13.492 s | 13.328 s |
+| VAE decode | 42.658 s | 42.748 s |
+| Generation total | **89.940 s** | **81.216 s** |
+| Cold end-to-end incl. initialization | **126.055 s** | — |
+| Effective output rate | **0.2335 FPS** | **0.2586 FPS** |
 
-The first chunk elapsed time was 39.601 s cold and 31.379 s warm. It includes
-VAE encode plus the first chunk; the subsequent chunk took 7.151 s cold and
-7.147 s warm.
+The first chunk elapsed time was 40.105 s cold and 31.265 s warm. It includes
+VAE encode plus the first chunk; the subsequent chunk took 7.107 s cold and
+7.131 s warm.
 
 ### Per-chunk and per-forward timings
 
@@ -127,10 +127,10 @@ individual values below are milliseconds, in execution order:
 
 | Run | Chunk | Denoise 999 | Denoise 937 | Denoise 833 | Denoise 624 | Cache update 0 | Chunk total |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Cold | 0 | 1318.6 | 1248.7 | 1247.9 | 1252.6 | 1253.6 | 6402.4 |
-| Cold | 1 | 1412.4 | 1434.9 | 1436.5 | 1432.5 | 1429.1 | 7150.7 |
-| Warm | 0 | 1250.5 | 1243.1 | 1242.1 | 1230.9 | 1228.5 | 6200.1 |
-| Warm | 1 | 1432.6 | 1426.9 | 1436.7 | 1416.5 | 1429.8 | 7147.5 |
+| Cold | 0 | 1323.2 | 1247.0 | 1244.2 | 1248.4 | 1239.0 | 6384.9 |
+| Cold | 1 | 1403.7 | 1427.2 | 1423.2 | 1423.3 | 1423.5 | 7106.7 |
+| Warm | 0 | 1246.2 | 1235.6 | 1238.3 | 1237.9 | 1234.3 | 6197.2 |
+| Warm | 1 | 1428.9 | 1415.5 | 1429.8 | 1427.5 | 1424.5 | 7130.9 |
 
 The per-forward values are collected with synchronization around the measured
 model call and are intended as component measurements, not as a separate
@@ -195,13 +195,13 @@ not an equal-frame/equal-chunk apples-to-apples timing.
 |---|---:|---:|
 | ROCm/PyTorch | ROCm 7.15 / PyTorch 2.13 | ROCm 7.14 / PyTorch 2.12 |
 | Attention | SDPA | SDPA |
-| Cold generation | 90.893 s | 167.341 s |
-| Warm generation | 80.886 s | 160.674 s |
-| Cold/warm FPS | 5.105 / 5.736 | 2.773 / 2.888 |
+| Cold generation | 89.940 s | 167.341 s |
+| Warm generation | 81.216 s | 160.674 s |
+| Cold/warm FPS | 0.2335 / 0.2586 | 2.773 / 2.888 |
 | T5 encode | 2.238 s | 3.702 s |
-| VAE encode | 30.719 / 25.059 s | 50.981 / 49.695 s |
-| DiT total | 13.553 / 13.348 s | 27.198 / 27.129 s |
-| VAE decode | 44.070 / 42.288 s | 83.095 / 82.782 s |
+| VAE encode | 31.228 / 24.930 s | 50.981 / 49.695 s |
+| DiT total | 13.492 / 13.328 s | 27.198 / 27.129 s |
+| VAE decode | 42.658 / 42.748 s | 83.095 / 82.782 s |
 | Mean DiT chunk | 6.777 / 6.674 s | 5.440 / 5.426 s |
 | Output | finite, 21x464x832x3 | finite, 77x464x832 |
 

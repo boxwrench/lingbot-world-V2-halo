@@ -12,7 +12,7 @@ Strix Halo, rather than a general-purpose AMD benchmark collection.
 
 The native 1.3B BF16 path succeeds end-to-end on one Radeon 8060S
 (`gfx1151`). The 480x832 / 21-frame / 18+6 / chunk-3 baseline produces finite
-valid video in 90.893 s cold and 80.886 s warm (5.105 / 5.736 FPS), with
+valid video in 89.940 s cold and 81.216 s warm (0.2335 / 0.2586 FPS), with
 43.475 GB peak PyTorch allocation and 25.864 GB peak process RSS. The same-seed
 repeat is finite but not bit-identical; that caveat is preserved in the dated
 report and benchmark JSON.
