@@ -314,6 +314,46 @@ def main() -> int:
             # The boundary runtime wraps this marker to clear the sampler's
             # model references before invoking the hook in image2video.py.
             pipe._experiment_before_vae_cleanup = lambda: None
+
+        original_vae_decode = pipe.vae.decode
+
+        def timed_vae_decode(*decode_args, **decode_kwargs):
+            torch.cuda.reset_peak_memory_stats(device)
+            vae_start = time.perf_counter()
+            phase_events.append({
+                "phase": "vae_start",
+                "cuda_memory": cuda_memory(torch, device),
+                "process_rss_bytes": current_rss_bytes(),
+                "max_process_rss_bytes": rss_bytes(),
+                "system_memory": {
+                    key: host_memory().get(key, 0)
+                    for key in ("MemTotal", "MemAvailable", "MemFree", "SwapFree",
+                                "Mapped", "AnonPages", "Shmem")
+                },
+            })
+            (out_dir / "phase-events.json").write_text(
+                json.dumps(phase_events, indent=2, ensure_ascii=False) + "\n"
+            )
+            decoded = original_vae_decode(*decode_args, **decode_kwargs)
+            torch.cuda.synchronize(device)
+            phase_events.append({
+                "phase": "vae_complete",
+                "elapsed_ms": (time.perf_counter() - vae_start) * 1000,
+                "cuda_memory": cuda_memory(torch, device),
+                "process_rss_bytes": current_rss_bytes(),
+                "max_process_rss_bytes": rss_bytes(),
+                "system_memory": {
+                    key: host_memory().get(key, 0)
+                    for key in ("MemTotal", "MemAvailable", "MemFree", "SwapFree",
+                                "Mapped", "AnonPages", "Shmem")
+                },
+            })
+            (out_dir / "phase-events.json").write_text(
+                json.dumps(phase_events, indent=2, ensure_ascii=False) + "\n"
+            )
+            return decoded
+
+        pipe.vae.decode = timed_vae_decode
     report["phase_memory"] = phase_events
     sampler = LBWorldSampler()
     image_path = Path(folder_paths.get_input_directory()) / "lingbot_actions" / "strix-example" / "image.jpg"
