@@ -15,6 +15,7 @@ import json
 import os
 import platform
 import resource
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -92,7 +93,7 @@ def load_module(name: str, path: Path, package: bool = False):
     return module
 
 
-def save_video(imageio, video, path: Path):
+def save_video(video, path: Path):
     import numpy as np
 
     source = video.detach().float().cpu()
@@ -100,7 +101,14 @@ def save_video(imageio, video, path: Path):
     source_min = float(source.min())
     source_max = float(source.max())
     frames = (source.clamp(0, 1).numpy() * 255).round().astype(np.uint8)
-    imageio.mimwrite(str(path), frames, fps=16, codec="libx264")
+    height, width = frames.shape[1:3]
+    subprocess.run(
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+         "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}",
+         "-r", "16", "-i", "-", "-an", "-c:v", "libx264",
+         "-pix_fmt", "yuv420p", str(path)],
+        input=frames.tobytes(), check=True,
+    )
     return {
         "shape": list(frames.shape),
         "dtype": str(video.dtype),
@@ -247,8 +255,7 @@ def main() -> int:
         torch.cuda.synchronize(device)
         elapsed_ms = (time.perf_counter() - t0) * 1000
         result_path = out_dir / f"generated-{run_index}.mp4"
-        import imageio.v2 as imageio
-        summary = save_video(imageio, result, result_path)
+        summary = save_video(result, result_path)
         current = {
             "run_index": run_index,
             "elapsed_ms": elapsed_ms,
