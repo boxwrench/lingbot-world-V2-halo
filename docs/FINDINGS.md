@@ -488,3 +488,90 @@ it is not part of the default path.
 Raw controls are local at
 `results/raw/interactive-test-fp16-9f-math-sdpa-profile-v2/metrics.json` and
 `results/raw/interactive-test-fp16-9f-math-sdpa-temporal-split-u12r2/metrics.json`.
+
+## F18 — steady-state chunk-size-1 action and DiT profile (2026-09-09)
+
+The accepted FP16/math-SDPA/native-Conv3d interactive path was run for the
+full 81-frame traversal, with DiT profiling enabled only from chunk 18 after
+the 18-frame local window had filled. The run remained finite and ended at
+global/local KV positions `31668/27144`. The profiling control itself took
+78.949 s, with first action first-visible latency **2.962 s** and median
+action latency **3.801 s**; the previously accepted uninstrumented lane
+remains the performance baseline at **2.935 s first-visible** and **3.772 s
+median**.
+
+For the three profiled steady-state actions (chunks 18–20), the synchronized
+waterfall averaged:
+
+| Stage | Mean |
+|---|---:|
+| Action/camera/conditioning preparation | 0.039 ms |
+| DiT forward 1 | 762.925 ms |
+| DiT forward 2 | 711.242 ms |
+| DiT forward 3 | 709.672 ms |
+| DiT forward 4 | 710.738 ms |
+| DiT forward 5, clean-latent KV write | 710.868 ms |
+| Latent postprocessing | 4.357 ms |
+| Persistent FP16 VAE decode | 950.694 ms |
+| RGB layout conversion | 0.078 ms |
+| First-frame device-to-host copy | 0.364 ms |
+| First-visible total | **4562.323 ms** |
+| All-frame host copy completion | 0.368 ms after first-frame boundary |
+
+Presentation and video serialization were not on this harness's first-visible
+path; the latter remains out of band. The profiled tail is slower than the
+first action because self-attention cost increases as the causal state fills,
+so the 2.935 s accepted first-visible number and the 4.56 s filled-window
+waterfall describe different points in the same persistent session.
+
+The DiT profile recorded 10.773 s of exclusive module time across 15 forwards
+(three chunks × five forwards). The groups below account for 94.50% of that
+exclusive time; shape-grouped `Linear` rows intentionally merge projections
+with the same tensor shape, while the raw module paths remain in the JSON:
+
+| Operator group | Calls | Aggregate | Share |
+|---|---:|---:|---:|
+| `CausalWanSelfAttention`, `[1,1508,1536]` | 450 | 6216.9 ms | 57.71% |
+| `Linear`, `[1,1508,1536] -> [1,1508,1536]` | 4560 | 1415.9 ms | 13.14% |
+| `CausalWanAttentionBlock` exclusive work | 450 | 828.2 ms | 7.69% |
+| `Linear`, `[1,1508,1536] -> [1,1508,8960]` | 450 | 606.1 ms | 5.63% |
+| `Linear`, `[1,1508,1536] -> [1,1508,9216]` | 15 | 584.8 ms | 5.43% |
+| `Linear`, `[1,1508,8960] -> [1,1508,1536]` | 450 | 528.9 ms | 4.91% |
+
+The dominant remaining DiT cost is therefore self-attention, not VAE or host
+presentation overhead. Peak PyTorch allocation was 37.226 GB, peak RSS was
+25.867 GB, and PyTorch reported 120,259,084,288 bytes of device-visible
+memory. Raw evidence is local at
+`results/raw/interactive-chunk1-dit-profile-81f/metrics.json`.
+
+## F19 — fifth forward is a clean-latent state write, not cache bookkeeping (2026-09-09)
+
+The five-forward trace records a 1508-token query on every forward. At the
+filled-window point, the local cache remains capped at 27,144 tokens while
+the global position advances by 1,508 tokens per action. The fifth forward
+has the exact call form:
+
+```text
+pipe.model(x=[x0], t=0, cross_attn_first_call=False, ...)
+```
+
+where `x0` is the final clean latent from denoising and the model output is
+discarded. It is required because the causal self-attention implementation
+writes K/V for every transformer call: the four denoising calls write state
+for intermediate noisy latents, while this final call overwrites the current
+chunk's K/V with state derived from the clean latent that persists into the
+next chunk. Cross-attention K/V is already initialized and reused.
+
+The fifth call averaged **710.868 ms**, within the same range as denoising
+forwards 2–4. Forward 4 cannot safely supply its K/V because it consumes a
+different latent; the clean-latent K/V depends on the transformer block
+sequence applied to `x0`. No fifth-forward removal or approximation was
+accepted. A partial state-producing subgraph would need to preserve the
+block-by-block dependencies and is not yet a correctness-preserving bounded
+optimization.
+
+The instrumentation and exact per-forward/cache/memory records are in commit
+`d18b819` and the raw profile above. The next evidence-backed intervention is
+therefore a narrowly scoped analysis of whether the fifth call can omit only
+provably output-independent work; broad attention or kernel changes are
+deferred until that dependency question is resolved.
