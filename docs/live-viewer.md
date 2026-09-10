@@ -20,6 +20,18 @@ the bounded action count or output directory without editing files:
 LINGBOT_LIVE_MAX_ACTIONS=8 bash scripts/run_live.sh
 ```
 
+For a longer persistence test that fills and rolls the 18-frame world window
+multiple times:
+
+```bash
+LINGBOT_LIVE_MAX_ACTIONS=40 \
+LINGBOT_LIVE_TIMEOUT_SECONDS=900 \
+bash scripts/run_live.sh
+```
+
+The supplied example pose path provides up to 67 user actions; larger values
+are automatically limited by the available path.
+
 ## Controls
 
 ```text

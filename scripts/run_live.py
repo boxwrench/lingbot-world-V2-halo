@@ -246,7 +246,10 @@ def main() -> int:
     # The session preparation uses the existing action path for the initial
     # image-conditioning layout and allocates enough deterministic noise/state
     # for the bounded viewer session.  Later camera embeddings come from keys.
-    args.frames = min(int(args.frames), 4 * (int(args.max_actions) + 1) + 1)
+    # The live action count, rather than the batch runner's historical 81-frame
+    # default, determines the requested session length.  prepare_session still
+    # caps it at the available pose-path length (67 user actions here).
+    args.frames = 4 * (int(args.max_actions) + 1) + 1
     if args.frames < 5:
         raise SystemExit("use at least one action; --frames must allow a bootstrap and action")
 
