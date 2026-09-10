@@ -436,6 +436,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional custom Wan-compatible area; overrides --size for one controlled geometry test",
     )
     parser.add_argument("--frames", type=int, default=81)
+    parser.add_argument(
+        "--denoise-schedule",
+        choices=("4", "3-drop-957"),
+        default="4",
+        help="causal-fast schedule: upstream four points, or one controlled three-point drop of 957",
+    )
     parser.add_argument("--local-attn-size", type=int, default=18)
     parser.add_argument("--sink-size", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
@@ -524,7 +530,15 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
     mask = mask.view(1, mask.shape[1] // 4, 4, lat_h, lat_w).transpose(1, 2)[0]
 
     pipe.scheduler.set_timesteps(pipe.num_train_timesteps, shift=5.0)
-    timesteps = pipe.scheduler.timesteps[[0, 179, 358, 679]]
+    full_timestep_indices = [0, 179, 358, 679]
+    if args.denoise_schedule == "4":
+        timestep_indices = full_timestep_indices
+    else:
+        # The released causal-fast path hard-codes these four distilled
+        # points.  This is one controlled approximation: remove the second
+        # point while retaining the trained endpoints and lower-noise stages.
+        timestep_indices = [0, 358, 679]
+    timesteps = pipe.scheduler.timesteps[timestep_indices]
     prompt_key = hashlib.sha256(args.prompt.encode("utf-8")).hexdigest()
     if prompt_key in pipe._t5_cache:
         context = pipe._t5_cache[prompt_key]
@@ -591,6 +605,9 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
         "plucker_chunks": plucker.split(1, dim=2),
         "context": context,
         "timesteps": timesteps,
+        "timestep_indices": timestep_indices,
+        "timestep_values": [int(timestep) for timestep in timesteps],
+        "denoise_schedule": args.denoise_schedule,
         "seed_g": seed_g,
         "self_kv_cache": self_kv_cache,
         "cross_kv_cache": cross_kv_cache,
@@ -824,6 +841,42 @@ def finish_action(
     x0 = generated["x0"]
     cache = generated.get("cache", cache_positions(state["self_kv_cache"]))
     stats = decoder_stats if decoder_stats is not None else decoder.last_stats.copy()
+    waterfall = {
+        "action_camera_conditioning_prepare": generated["action_prepare_ms"],
+        "clean_kv_on_first_visible_path": (
+            generated["clean_kv_ms"]
+            if not generated.get("clean_kv_deferred", False) else 0.0
+        ),
+        "clean_kv_after_first_visible": (
+            generated["clean_kv_ms"]
+            if generated.get("clean_kv_deferred", False) else 0.0
+        ),
+        "latent_postprocessing": generated["latent_postprocess_ms"],
+        "vae_decode": decode_ms,
+        "rgb_postprocessing": rgb_postprocess_ms,
+        "device_to_host_first_frame": visible_copy_ms,
+        "device_to_host_all_frames": all_copy_ms,
+        "presentation": 0.0,
+        "serialization": 0.0,
+        "sum_to_first_visible": first_visible_ms,
+        "sum_to_all_frames_host": host_all_frames_ms,
+        "state_ready": generated.get("state_ready_ms"),
+        "next_action_ready": host_all_frames_ms,
+    }
+    for record in generated["forward_records"]:
+        if record["kind"] == "denoise":
+            waterfall[f"dit_forward_{int(record['index']) + 1}"] = record["elapsed_ms"]
+        else:
+            waterfall["clean_kv_forward"] = record["elapsed_ms"]
+    ordered_waterfall = {"action_camera_conditioning_prepare": waterfall.pop("action_camera_conditioning_prepare")}
+    for record in generated["forward_records"]:
+        key = (
+            f"dit_forward_{int(record['index']) + 1}"
+            if record["kind"] == "denoise" else "clean_kv_forward"
+        )
+        ordered_waterfall[key] = waterfall.pop(key)
+    ordered_waterfall.update(waterfall)
+
     actions.append({
         "chunk_id": generated["chunk_id"],
         "current_start": generated["kwargs"]["current_start"],
@@ -831,6 +884,7 @@ def finish_action(
         "new_visible_frame_index": visible_index,
         "transformer_ms": generated["transformer_ms"],
         "forward_ms": generated["forward_records"],
+        "denoise_forward_count": sum(record["kind"] == "denoise" for record in generated["forward_records"]),
         "vae_decode_ms": decode_ms,
         "keypress_to_first_visible_ms": first_visible_ms,
         "full_action_ms": full_action_ms,
@@ -853,33 +907,7 @@ def finish_action(
         "clean_kv_ms": generated.get("clean_kv_ms"),
         "state_ready_ms": generated.get("state_ready_ms"),
         "next_action_ready_ms": host_all_frames_ms,
-        "waterfall_ms": {
-            "action_camera_conditioning_prepare": generated["action_prepare_ms"],
-            "dit_forward_1": generated["forward_records"][0]["elapsed_ms"],
-            "dit_forward_2": generated["forward_records"][1]["elapsed_ms"],
-            "dit_forward_3": generated["forward_records"][2]["elapsed_ms"],
-            "dit_forward_4": generated["forward_records"][3]["elapsed_ms"],
-            "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
-            "clean_kv_on_first_visible_path": (
-                generated["forward_records"][4]["elapsed_ms"]
-                if not generated.get("clean_kv_deferred", False) else 0.0
-            ),
-            "clean_kv_after_first_visible": (
-                generated["forward_records"][4]["elapsed_ms"]
-                if generated.get("clean_kv_deferred", False) else 0.0
-            ),
-            "latent_postprocessing": generated["latent_postprocess_ms"],
-            "vae_decode": decode_ms,
-            "rgb_postprocessing": rgb_postprocess_ms,
-            "device_to_host_first_frame": visible_copy_ms,
-            "device_to_host_all_frames": all_copy_ms,
-            "presentation": 0.0,
-            "serialization": 0.0,
-            "sum_to_first_visible": first_visible_ms,
-            "sum_to_all_frames_host": host_all_frames_ms,
-            "state_ready": generated.get("state_ready_ms"),
-            "next_action_ready": host_all_frames_ms,
-        },
+        "waterfall_ms": ordered_waterfall,
     })
 
 
@@ -993,6 +1021,9 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         "status": "success",
         "overlap": bool(args.overlap),
         "defer_clean_kv": bool(args.defer_clean_kv),
+        "denoise_schedule": state["denoise_schedule"],
+        "timestep_indices": state["timestep_indices"],
+        "timestep_values": state["timestep_values"],
         "vae_profile": profile,
         "dit_profile": dit_profile,
         "dit_operator_summary": summarize_module_profile(dit_profile),
@@ -1075,7 +1106,7 @@ def main() -> int:
         report["session_prepare_ms"] = (time.perf_counter() - state_t0) * 1000.0
         report["session_config"] = {
             key: value for key, value in state.items()
-            if key in ("lat_f", "lat_h", "lat_w", "height", "width", "max_area_pixels", "frame_seqlen", "kv_size", "frames", "t5_encode_ms", "t5_cache_hit", "vae_encode_ms")
+            if key in ("lat_f", "lat_h", "lat_w", "height", "width", "max_area_pixels", "frame_seqlen", "kv_size", "frames", "timestep_indices", "timestep_values", "denoise_schedule", "t5_encode_ms", "t5_cache_hit", "vae_encode_ms")
         }
         current = run_session(pipe, state, args, device)
         report.update(current["result"])
