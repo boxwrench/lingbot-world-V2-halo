@@ -1,7 +1,7 @@
 diff --git a/ComfyUI_Rebels_LingBotWorld/wan/image2video.py b/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
 --- a/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
 +++ b/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
-@@ -700,8 +700,39 @@ class WanI2V:
+@@ -700,6 +700,31 @@ class WanI2V:
              if offload_model:
                  self.model.cpu()
                  torch.cuda.empty_cache()

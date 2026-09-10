@@ -1,7 +1,7 @@
 diff --git a/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py b/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
 --- a/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
 +++ b/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
-@@ -496,6 +496,15 @@ class LBWorldSampler:
+@@ -493,6 +493,16 @@ class LBWorldSampler:
                  v.device = dev
              except Exception as e:
                  print("[LBWorld] vae move to {} failed: {}".format(dev, e))
@@ -18,7 +18,7 @@ diff --git a/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py b/ComfyUI_Rebels_LingB
 +
          try:
              model.to(device)
-@@ -512,7 +521,8 @@ class LBWorldSampler:
+@@ -510,10 +520,11 @@ class LBWorldSampler:
                      offload_model=True,
                  )
          finally:
