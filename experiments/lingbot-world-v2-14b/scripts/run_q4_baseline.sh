@@ -5,6 +5,7 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 MODEL_DIR=${MODEL_DIR:-"$ROOT_DIR/models/lingbot-world-v2-14b-community"}
 RUNTIME_DIR=${RUNTIME_DIR:-"$ROOT_DIR/model-cache/lingbot-world-v2-14b-runtime"}
 COMFY_DIR=${COMFY_DIR:-"$RUNTIME_DIR/ComfyUI"}
+OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/results/raw/14b/q4-480x832-6plus2"}
 
 bash "$(dirname "${BASH_SOURCE[0]}")/setup_runtime.sh"
 
@@ -19,5 +20,5 @@ exec "$ROOT_DIR/.venv/bin/python" \
   --community-dir "$RUNTIME_DIR/community" \
   --gguf-dir "$RUNTIME_DIR/ComfyUI-GGUF" \
   --model-dir "$MODEL_DIR" \
-  --output-dir "$ROOT_DIR/results/raw/14b/q4-480x832-6plus2" \
+  --output-dir "$OUTPUT_DIR" \
   "$@"
