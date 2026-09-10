@@ -56,6 +56,140 @@ KEY_ACTIONS = {
 }
 
 
+def normalize_input_key(key: str) -> str:
+    """Map Tk keysyms to the canonical one-character action keys."""
+    aliases = {
+        "up": "i",
+        "down": "k",
+        "left": "j",
+        "right": "l",
+        "space": " ",
+        "esc": "escape",
+    }
+    return aliases.get(str(key).lower(), str(key).lower())
+
+
+class PendingInputState:
+    """Bounded input policy independent of Tk and model execution.
+
+    Tk may deliver several buffered key events at the next ``root.update``.
+    While an action is busy, retain only the newest valid action key. Quit is
+    sticky and always wins over ordinary movement. This class deliberately
+    contains no model or threading behavior so its policy can be tested alone.
+    """
+
+    def __init__(self, time_origin: float) -> None:
+        self.time_origin = time_origin
+        self.busy = False
+        self.current_action: str | None = None
+        self.pending_key: str | None = None
+        self.pending_record: dict[str, object] | None = None
+        self.waiting_key: str | None = None
+        self.waiting_record: dict[str, object] | None = None
+        self.quit_requested = False
+        self._active_events: list[dict[str, object]] = []
+        self._selection: dict[str, object] | None = None
+        self._generation_start_ms: float | None = None
+
+    def now_ms(self) -> float:
+        return (time.perf_counter() - self.time_origin) * 1000.0
+
+    def request_quit(self) -> None:
+        self.quit_requested = True
+
+    def begin_action(self, action: str) -> None:
+        self.busy = True
+        self.current_action = action
+        self._active_events = []
+        self._generation_start_ms = self.now_ms()
+        # A key delivered in the small interval between the previous action
+        # and this call belongs to the action after the one now in flight.
+        if self.waiting_key is not None:
+            key = self.waiting_key
+            record = dict(self.waiting_record or {"key": key})
+            record["stored_ms"] = self.now_ms()
+            record["replaced_pending"] = self.pending_key is not None
+            self.pending_key = key
+            self.pending_record = record
+            self._active_events.append(dict(record))
+            self.waiting_key = None
+            self.waiting_record = None
+
+    def finish_action(self) -> dict[str, object]:
+        report = self.action_report()
+        self.busy = False
+        self.current_action = None
+        self._active_events = []
+        self._generation_start_ms = None
+        return report
+
+    def observe(self, raw_key: str) -> str | None:
+        key = normalize_input_key(raw_key)
+        if key in ("q", "escape"):
+            self.request_quit()
+            return "escape"
+        if self.quit_requested:
+            return None
+        if len(key) != 1 or ord(key) not in KEY_ACTIONS:
+            # Invalid input must not erase either waiting or pending input.
+            return None
+
+        observed_ms = self.now_ms()
+        if self.busy:
+            replaced = self.pending_key is not None
+            record: dict[str, object] = {
+                "key": key,
+                "observed_ms": observed_ms,
+                "stored_ms": observed_ms,
+                "replaced_pending": replaced,
+            }
+            self.pending_key = key
+            self.pending_record = record
+            self._active_events.append(dict(record))
+        else:
+            self.waiting_key = key
+            self.waiting_record = {
+                "key": key,
+                "observed_ms": observed_ms,
+            }
+        return key
+
+    def take_waiting(self) -> str | None:
+        key = self.waiting_key
+        if key is None:
+            return None
+        record = dict(self.waiting_record or {"key": key})
+        record["selected_ms"] = self.now_ms()
+        self._selection = record
+        self.waiting_key = None
+        self.waiting_record = None
+        return key
+
+    def take_pending(self) -> str | None:
+        key = self.pending_key
+        if key is None:
+            return None
+        record = dict(self.pending_record or {"key": key})
+        record["selected_ms"] = self.now_ms()
+        self._selection = record
+        self.pending_key = None
+        self.pending_record = None
+        return key
+
+    def action_report(self) -> dict[str, object]:
+        pending = dict(self.pending_record) if self.pending_record is not None else None
+        selected = dict(self._selection) if self._selection is not None else None
+        return {
+            "current_action": self.current_action,
+            "generation_start_ms": self._generation_start_ms,
+            "selected_input": selected,
+            "busy_input_events": [dict(item) for item in self._active_events],
+            "pending_key_after_action": self.pending_key,
+            "pending_record_after_action": pending,
+            "quit_requested": self.quit_requested,
+        }
+
+
 def live_parser() -> argparse.ArgumentParser:
     from run_interactive import build_parser
 
@@ -161,7 +295,7 @@ def make_plucker(
 
 
 class LiveViewer:
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str, time_origin: float) -> None:
         self.root = tk.Tk()
         self.root.title(title)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
@@ -178,7 +312,7 @@ class LiveViewer:
             font=("TkFixedFont", 11),
         )
         self.status_label.pack(fill="x")
-        self.last_key: str | None = None
+        self.input_state = PendingInputState(time_origin)
         self.closed = False
         self.photo: ImageTk.PhotoImage | None = None
         self.root.bind("<KeyPress>", self.on_key)
@@ -186,11 +320,11 @@ class LiveViewer:
         self.update()
 
     def on_key(self, event) -> None:
-        self.last_key = str(event.keysym).lower()
+        self.input_state.observe(str(event.keysym))
 
     def close(self) -> None:
         self.closed = True
-        self.last_key = "escape"
+        self.input_state.request_quit()
 
     def update(self) -> None:
         if self.closed:
@@ -206,16 +340,28 @@ class LiveViewer:
         self.image_label.configure(image=self.photo)
         self.status_label.configure(text=status)
         self.update()
-        key, self.last_key = self.last_key, None
-        return key
+        if self.input_state.quit_requested:
+            return "escape"
+        return None
 
     def wait_for_key(self) -> str | None:
-        self.last_key = None
-        while not self.closed and self.last_key is None:
+        self.input_state.waiting_key = None
+        self.input_state.waiting_record = None
+        while not self.closed and not self.input_state.quit_requested and self.input_state.waiting_key is None:
             self.update()
             time.sleep(0.01)
-        key, self.last_key = self.last_key, None
-        return key
+        if self.closed or self.input_state.quit_requested:
+            return "escape"
+        return self.input_state.take_waiting()
+
+    def begin_action(self, action: str) -> None:
+        self.input_state.begin_action(action)
+
+    def finish_action(self) -> dict[str, object]:
+        return self.input_state.finish_action()
+
+    def take_pending_action(self) -> str | None:
+        return self.input_state.take_pending()
 
 
 def frame_rgb(frame: torch.Tensor) -> np.ndarray:
@@ -236,13 +382,7 @@ def show_frame(viewer: LiveViewer, frame: torch.Tensor, status: str) -> str | No
 
 
 def action_from_key(key: str) -> tuple[str, torch.Tensor] | None:
-    aliases = {
-        "up": "i",
-        "down": "k",
-        "left": "j",
-        "right": "l",
-    }
-    key = aliases.get(key.lower(), key.lower())
+    key = normalize_input_key(key)
     if len(key) != 1 or ord(key) not in KEY_ACTIONS:
         return "ignored", torch.eye(4)
     name, x, yaw, z = KEY_ACTIONS[ord(key)]
@@ -250,7 +390,9 @@ def action_from_key(key: str) -> tuple[str, torch.Tensor] | None:
 
 
 def choose_action(viewer: LiveViewer) -> tuple[str, torch.Tensor] | None:
-    key = viewer.wait_for_key()
+    key = viewer.take_pending_action()
+    if key is None:
+        key = viewer.wait_for_key()
     if key in (None, "q", "escape"):
         return None
     return action_from_key(key)
@@ -355,6 +497,12 @@ def main() -> int:
         "status": "running",
         "mode": "keyboard_live_taehv",
         "arguments": vars(args),
+        "input_policy": {
+            "max_pending_actions": 1,
+            "replacement": "latest_valid_command",
+            "quit_priority": True,
+            "generation_barrier": "exact_clean_kv_commit",
+        },
         "actions": [],
     }
     viewer: LiveViewer | None = None
@@ -364,7 +512,7 @@ def main() -> int:
     recorded_video_chunks: list[torch.Tensor] = []
     stopped = False
     try:
-        viewer = LiveViewer(args.window_title)
+        viewer = LiveViewer(args.window_title, start)
         print("Loading LingBot and preparing the persistent session; Ctrl-C is the emergency stop.", flush=True)
         pipe = WanI2VCausal(
             config=WAN_CONFIGS["i2v-A14B"],
@@ -393,6 +541,7 @@ def main() -> int:
         def run_one(chunk_id: int, plucker: torch.Tensor, label: str) -> tuple[torch.Tensor, dict[str, object]]:
             # Match the accepted runner: the DiT has BF16 parameters and must
             # receive the same CUDA/HIP autocast context as run_session().
+            viewer.begin_action(label)
             cache_before_action = cache_positions(state["self_kv_cache"])
             profile_payload: dict[str, object] = {}
             dit_profiler = None
@@ -431,12 +580,15 @@ def main() -> int:
                 )
                 if key in ("q", "escape"):
                     raise KeyboardInterrupt
+                first_rgb_presented_ms = viewer.input_state.now_ms()
                 clean_profiler = DecoderProfiler(pipe.model) if chunk_id in profile_contexts else None
                 clean_attention_probe = (
                     DitAttentionProbe(len(pipe.model.blocks))
                     if chunk_id in profile_contexts else None
                 )
+                clean_kv_start_ms = viewer.input_state.now_ms()
                 commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
+                clean_kv_end_ms = viewer.input_state.now_ms()
                 if clean_profiler is not None:
                     profile_payload["clean_module_profile"] = clean_profiler.report()
                 if clean_attention_probe is not None:
@@ -445,11 +597,21 @@ def main() -> int:
                 # Keep the newest decoded frame in the viewer while waiting for
                 # the next key.  The first frame was already displayed at the
                 # latency boundary; no video is serialized by this viewer.
-                show_frame(
+                key = show_frame(
                     viewer,
                     decoded[:, -1],
                     f"{label} | next action ready {((time.perf_counter() - generated['chunk_t0']) * 1000.0):.0f} ms | Q/ESC quit",
                 )
+                if key in ("q", "escape"):
+                    raise KeyboardInterrupt
+                next_action_permitted_ms = viewer.input_state.now_ms()
+                input_control = viewer.finish_action()
+                input_control.update({
+                    "first_rgb_presented_ms": first_rgb_presented_ms,
+                    "clean_kv_start_ms": clean_kv_start_ms,
+                    "clean_kv_end_ms": clean_kv_end_ms,
+                    "next_action_permitted_ms": next_action_permitted_ms,
+                })
                 row = {
                     "chunk_id": chunk_id,
                     "action": label,
@@ -471,6 +633,7 @@ def main() -> int:
                     "memory": cuda_memory(device),
                     "rss_bytes": current_rss_bytes(),
                     "host_memory": host_memory(),
+                    "input_control": input_control,
                 }
                 cache_after_action = cache_positions(state["self_kv_cache"])
                 row["occupancy"] = occupancy_record(
@@ -534,6 +697,8 @@ def main() -> int:
         report["error"] = f"{type(exc).__name__}: {exc}"
         raise
     finally:
+        if viewer is not None and viewer.input_state.busy:
+            viewer.finish_action()
         if decoder is not None:
             decoder.clear()
         if viewer is not None:

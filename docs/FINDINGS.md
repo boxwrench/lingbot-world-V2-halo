@@ -1030,3 +1030,27 @@ with the remainder not yet separately isolated because the first-visible
 boundary is immediately before Tk presentation. Detailed branch metrics and
 artifacts are in `docs/action-response-20260910.md` and
 `results/raw/action-response-12-v3/` / `results/raw/action-response-14/`.
+
+## F33 — bounded pending input survives the busy action (2026-09-10)
+
+The live viewer now has a one-slot input controller. While model work is in
+flight, the newest valid movement/look/no-op replaces any older pending key;
+invalid keys are ignored and quit remains sticky. At the legal end of the
+current action, the pending key is consumed before normal input waiting. The
+exact clean t=0 KV pass remains mandatory before the next DiT generation.
+
+Model-free tests pass for replacement, same-key repeats, invalid input,
+pre-bootstrap promotion, and quit priority. A real X11 run sent `D` during a
+measured clean interval (`63801.4–64032.5 ms`). Tk delivered it at `64066.3
+ms`, selected it at `64076.4 ms`, and started the next generation at `64078.4
+ms`, with no second keypress. A separate real run observed and stored a
+movement key at `78244.2 ms` on the busy update boundary; it was selected at
+`78245.6 ms` and generation began at `78246.7 ms`.
+
+The first run demonstrates survival through Tk/X11 buffering; the second
+demonstrates the explicit busy-time pending slot. Real multi-key X11 timing
+was not treated as proof of replacement semantics; those semantics are
+covered by the deterministic controller tests. The change adds no model work
+and leaves the accepted rolled 12-frame product baseline (`~1033.2 ms`
+first-new RGB, `~1418.4 ms` next-action-ready) unchanged. Details and raw
+metrics are in `docs/pending-input-20260910.md`.

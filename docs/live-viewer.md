@@ -109,3 +109,13 @@ as a user keypress. Each subsequent recognized key generates one new latent
 chunk. Decoder selection is fixed for the fresh session; no mid-session
 canonical/TAE cache migration exists. The clean t=0 KV pass remains exact and
 is still required before another DiT action may begin.
+
+While an action is in flight, the viewer retains at most one valid pending
+movement/look/no-op command. New valid input replaces the older pending key;
+invalid keys do not erase it. Q/ESC/window close remain priority quit signals.
+When the clean-KV barrier and remaining presentation work finish, a pending
+command is consumed immediately instead of making the user press the key
+again. Per-action input observation, replacement, selection, and generation
+timestamps are written to `live_metrics.json`. See
+[`pending-input-20260910.md`](pending-input-20260910.md) for the real Tk/X11
+validation and limitations.
