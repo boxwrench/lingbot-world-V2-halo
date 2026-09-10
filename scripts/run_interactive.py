@@ -86,7 +86,12 @@ class IncrementalCausalDecoder:
         self.last_stats: dict[str, object] = {}
 
     @torch.no_grad()
-    def decode_latent(self, latent: torch.Tensor, device: torch.device) -> torch.Tensor:
+    def decode_latent(
+        self,
+        latent: torch.Tensor,
+        device: torch.device,
+        synchronize: bool = True,
+    ) -> torch.Tensor:
         # WanVAE_.decode() performs this normalization once, then calls
         # decoder() once per latent frame while retaining _feat_map.  conv2 is
         # a temporal 1x1x1 projection, so applying it to one frame at a time
@@ -118,7 +123,8 @@ class IncrementalCausalDecoder:
             )
         self.last_stats["attention_backend"] = self.attention_backend
         self.last_stats["vae_dtype"] = str(self.dtype)
-        sync(device)
+        if synchronize:
+            sync(device)
         return output.float().clamp_(-1, 1).squeeze(0)
 
     def clear(self) -> None:
@@ -151,6 +157,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("fp32", "fp16", "bf16"),
         default="fp16",
         help="persistent VAE decoder compute/weight dtype",
+    )
+    parser.add_argument(
+        "--overlap",
+        action="store_true",
+        help="experimental queued VAE/DiT stream overlap; serial is the default",
     )
     return parser
 
@@ -272,6 +283,139 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
     }
 
 
+def generate_chunk(
+    pipe: WanI2VCausal,
+    state: dict[str, object],
+    chunk_id: int,
+    current_latent: torch.Tensor,
+    current_condition: torch.Tensor,
+    current_plucker: torch.Tensor,
+    device: torch.device,
+    sync_fn,
+) -> dict[str, object]:
+    """Run the five causal-fast DiT forwards for one latent chunk."""
+    chunk_t0 = time.perf_counter()
+    max_seq_len = state["frame_seqlen"]
+    kwargs = {
+        "context": [state["context"][0]],
+        "seq_len": max_seq_len,
+        "y": [current_condition],
+        "dit_cond_dict": {"c2ws_plucker_emb": current_plucker.chunk(1, dim=0)},
+        "kv_cache": state["self_kv_cache"],
+        "crossattn_cache": state["cross_kv_cache"],
+        "current_start": chunk_id * state["frame_seqlen"],
+        "max_attention_size": state["kv_size"],
+        "frame_seqlen": state["frame_seqlen"],
+    }
+    forward_records: list[dict[str, object]] = []
+    transformer_t0 = time.perf_counter()
+    for timestep_idx, current_timestep in enumerate(state["timesteps"]):
+        forward_t0 = time.perf_counter()
+        noise_pred = pipe.model(
+            x=[current_latent],
+            t=torch.stack([current_timestep]).to(device),
+            cross_attn_first_call=not pipe._cross_attn_initialized,
+            **kwargs,
+        )[0]
+        sync_fn()
+        forward_records.append({
+            "kind": "denoise",
+            "index": timestep_idx,
+            "timestep": float(current_timestep),
+            "elapsed_ms": (time.perf_counter() - forward_t0) * 1000.0,
+            "finite": bool(torch.isfinite(noise_pred).all()),
+        })
+        pipe._cross_attn_initialized = True
+        x0 = pipe._convert_flow_pred_to_x0(noise_pred, current_latent, current_timestep, pipe.scheduler)
+        if timestep_idx < len(state["timesteps"]) - 1:
+            next_timestep = state["timesteps"][timestep_idx + 1]
+            current_latent = pipe.scheduler.add_noise(
+                x0,
+                torch.randn(x0.shape, generator=state["seed_g"], device=device, dtype=x0.dtype),
+                next_timestep,
+            )
+
+    cache_t0 = time.perf_counter()
+    zero_timestep = state["timesteps"][-1] * 0.0
+    pipe.model(
+        x=[x0],
+        t=torch.stack([zero_timestep]).to(device),
+        cross_attn_first_call=False,
+        **kwargs,
+    )
+    sync_fn()
+    forward_records.append({
+        "kind": "cache_update",
+        "index": len(state["timesteps"]),
+        "timestep": 0.0,
+        "elapsed_ms": (time.perf_counter() - cache_t0) * 1000.0,
+    })
+    return {
+        "chunk_id": chunk_id,
+        "chunk_t0": chunk_t0,
+        "kwargs": kwargs,
+        "x0": x0,
+        "cache": cache_positions(state["self_kv_cache"]),
+        "cross_attention_initialized": int(state["cross_kv_cache"][0]["is_init"].item()),
+        "transformer_ms": (time.perf_counter() - transformer_t0) * 1000.0,
+        "forward_records": forward_records,
+    }
+
+
+def finish_action(
+    pipe: WanI2VCausal,
+    state: dict[str, object],
+    args: argparse.Namespace,
+    device: torch.device,
+    decoder: IncrementalCausalDecoder,
+    generated: dict[str, object],
+    decoded_gpu: torch.Tensor,
+    decode_ms: float,
+    actions: list[dict[str, object]],
+    outputs: list[torch.Tensor],
+    first_visible_ms: float | None,
+    full_action_ms: float | None,
+    overlap: bool = False,
+    decoder_stats: dict[str, object] | None = None,
+) -> None:
+    decoded_hwc_gpu = decoded_gpu.permute(1, 2, 3, 0).contiguous()
+    visible_index = 1 if generated["chunk_id"] == 0 and decoded_hwc_gpu.shape[0] > 1 else 0
+    # Copy all frames only after the VAE stream has completed.  The visible
+    # frame copy is retained to make the first-visible boundary explicit.
+    _visible_frame = decoded_hwc_gpu[visible_index].float().cpu()
+    all_frames = decoded_hwc_gpu.float().cpu()
+    outputs.append(all_frames)
+    x0 = generated["x0"]
+    cache = generated.get("cache", cache_positions(state["self_kv_cache"]))
+    stats = decoder_stats if decoder_stats is not None else decoder.last_stats.copy()
+    actions.append({
+        "chunk_id": generated["chunk_id"],
+        "current_start": generated["kwargs"]["current_start"],
+        "frames_decoded": int(all_frames.shape[0]),
+        "new_visible_frame_index": visible_index,
+        "transformer_ms": generated["transformer_ms"],
+        "forward_ms": generated["forward_records"],
+        "vae_decode_ms": decode_ms,
+        "keypress_to_first_visible_ms": first_visible_ms,
+        "full_action_ms": full_action_ms,
+        "cache": cache,
+        "cross_attention_initialized": generated.get(
+            "cross_attention_initialized",
+            int(state["cross_kv_cache"][0]["is_init"].item()),
+        ),
+        "memory_after_action": cuda_memory(device),
+        "rss_bytes": current_rss_bytes(),
+        "host_memory": host_memory(),
+        "output_finite": bool(torch.isfinite(all_frames).all()),
+        "latent_finite": bool(torch.isfinite(x0).all()),
+        "decoded_finite": bool(torch.isfinite(decoded_gpu).all()),
+        "decoded_min": float(decoded_gpu.min()) if torch.isfinite(decoded_gpu).all() else None,
+        "decoded_max": float(decoded_gpu.max()) if torch.isfinite(decoded_gpu).all() else None,
+        "decoder_stats": stats,
+        "overlap": overlap,
+    })
+
+
 def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Namespace, device: torch.device) -> dict[str, object]:
     outputs: list[torch.Tensor] = []
     actions: list[dict[str, object]] = []
@@ -283,103 +427,66 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
 
     session_t0 = time.perf_counter()
     with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad(), no_sync_model():
-        for chunk_id, (current_latent, current_condition, current_plucker) in enumerate(zip(
-            state["noise_chunks"], state["condition_chunks"], state["plucker_chunks"]
-        )):
-            if args.max_chunks and chunk_id >= args.max_chunks:
-                break
-            chunk_t0 = time.perf_counter()
-            max_seq_len = state["frame_seqlen"]
-            kwargs = {
-                "context": [state["context"][0]],
-                "seq_len": max_seq_len,
-                "y": [current_condition],
-                "dit_cond_dict": {"c2ws_plucker_emb": current_plucker.chunk(1, dim=0)},
-                "kv_cache": state["self_kv_cache"],
-                "crossattn_cache": state["cross_kv_cache"],
-                "current_start": chunk_id * state["frame_seqlen"],
-                "max_attention_size": state["kv_size"],
-                "frame_seqlen": state["frame_seqlen"],
-            }
-            forward_records: list[dict[str, object]] = []
-            transformer_t0 = time.perf_counter()
-            for timestep_idx, current_timestep in enumerate(state["timesteps"]):
-                forward_t0 = time.perf_counter()
-                noise_pred = pipe.model(
-                    x=[current_latent],
-                    t=torch.stack([current_timestep]).to(device),
-                    cross_attn_first_call=not pipe._cross_attn_initialized,
-                    **kwargs,
-                )[0]
-                sync(device)
-                forward_records.append({
-                    "kind": "denoise",
-                    "index": timestep_idx,
-                    "timestep": float(current_timestep),
-                    "elapsed_ms": (time.perf_counter() - forward_t0) * 1000.0,
-                    "finite": bool(torch.isfinite(noise_pred).all()),
-                })
-                pipe._cross_attn_initialized = True
-                x0 = pipe._convert_flow_pred_to_x0(noise_pred, current_latent, current_timestep, pipe.scheduler)
-                if timestep_idx < len(state["timesteps"]) - 1:
-                    next_timestep = state["timesteps"][timestep_idx + 1]
-                    current_latent = pipe.scheduler.add_noise(
-                        x0,
-                        torch.randn(x0.shape, generator=state["seed_g"], device=device, dtype=x0.dtype),
-                        next_timestep,
-                    )
+        main_stream = torch.cuda.current_stream(device)
+        if args.overlap:
+            vae_stream = torch.cuda.Stream(device=device)
+            pending: list[tuple[dict[str, object], torch.Tensor, torch.cuda.Event, torch.cuda.Event, dict[str, object], torch.cuda.Event]] = []
+            for chunk_id, (current_latent, current_condition, current_plucker) in enumerate(zip(
+                state["noise_chunks"], state["condition_chunks"], state["plucker_chunks"]
+            )):
+                if args.max_chunks and chunk_id >= args.max_chunks:
+                    break
+                main_start = torch.cuda.Event(enable_timing=True)
+                main_start.record(main_stream)
+                generated = generate_chunk(
+                    pipe, state, chunk_id, current_latent, current_condition,
+                    current_plucker, device, main_stream.synchronize,
+                )
+                # x0 is produced on the main stream.  The explicit dependency
+                # plus record_stream keeps the allocator from recycling it
+                # while the VAE stream consumes it.
+                vae_stream.wait_stream(main_stream)
+                generated["x0"].record_stream(vae_stream)
+                start_event = torch.cuda.Event(enable_timing=True)
+                end_event = torch.cuda.Event(enable_timing=True)
+                with torch.cuda.stream(vae_stream):
+                    start_event.record(vae_stream)
+                    decoded_gpu = decoder.decode_latent(generated["x0"], device, synchronize=False)
+                    decoder_stats = decoder.last_stats.copy()
+                    end_event.record(vae_stream)
+                pending.append((generated, decoded_gpu, start_event, end_event, decoder_stats, main_start))
 
-            cache_t0 = time.perf_counter()
-            zero_timestep = state["timesteps"][-1] * 0.0
-            pipe.model(
-                x=[x0],
-                t=torch.stack([zero_timestep]).to(device),
-                cross_attn_first_call=False,
-                **kwargs,
-            )
-            sync(device)
-            forward_records.append({
-                "kind": "cache_update",
-                "index": len(state["timesteps"]),
-                "timestep": 0.0,
-                "elapsed_ms": (time.perf_counter() - cache_t0) * 1000.0,
-            })
-            transformer_ms = (time.perf_counter() - transformer_t0) * 1000.0
-
-            decode_t0 = time.perf_counter()
-            decoded_gpu = decoder.decode_latent(x0, device)
-            decode_ms = (time.perf_counter() - decode_t0) * 1000.0
-            decoded_hwc_gpu = decoded_gpu.permute(1, 2, 3, 0).contiguous()
-            visible_index = 1 if chunk_id == 0 and decoded_hwc_gpu.shape[0] > 1 else 0
-            visible_frame = decoded_hwc_gpu[visible_index].float().cpu()
-            first_visible_ms = (time.perf_counter() - chunk_t0) * 1000.0
-            all_frames = decoded_hwc_gpu.float().cpu()
-            outputs.append(all_frames)
-            full_action_ms = (time.perf_counter() - chunk_t0) * 1000.0
-
-            cache = cache_positions(state["self_kv_cache"])
-            actions.append({
-                "chunk_id": chunk_id,
-                "current_start": kwargs["current_start"],
-                "frames_decoded": int(all_frames.shape[0]),
-                "new_visible_frame_index": visible_index,
-                "transformer_ms": transformer_ms,
-                "forward_ms": forward_records,
-                "vae_decode_ms": decode_ms,
-                "keypress_to_first_visible_ms": first_visible_ms if chunk_id > 0 else None,
-                "full_action_ms": full_action_ms if chunk_id > 0 else None,
-                "cache": cache,
-                "cross_attention_initialized": int(state["cross_kv_cache"][0]["is_init"].item()),
-                "memory_after_action": cuda_memory(device),
-                "rss_bytes": current_rss_bytes(),
-                "host_memory": host_memory(),
-                "output_finite": bool(torch.isfinite(all_frames).all()),
-                "latent_finite": bool(torch.isfinite(x0).all()),
-                "decoded_finite": bool(torch.isfinite(decoded_gpu).all()),
-                "decoded_min": float(decoded_gpu.min()) if torch.isfinite(decoded_gpu).all() else None,
-                "decoded_max": float(decoded_gpu.max()) if torch.isfinite(decoded_gpu).all() else None,
-                "decoder_stats": decoder.last_stats.copy(),
-            })
+            vae_stream.synchronize()
+            for generated, decoded_gpu, start_event, end_event, decoder_stats, main_start in pending:
+                decode_ms = float(start_event.elapsed_time(end_event))
+                completion_ms = float(main_start.elapsed_time(end_event))
+                finish_action(
+                    pipe, state, args, device, decoder, generated, decoded_gpu,
+                    decode_ms, actions, outputs,
+                    completion_ms if generated["chunk_id"] > 0 else None,
+                    completion_ms if generated["chunk_id"] > 0 else None,
+                    overlap=True, decoder_stats=decoder_stats,
+                )
+        else:
+            for chunk_id, (current_latent, current_condition, current_plucker) in enumerate(zip(
+                state["noise_chunks"], state["condition_chunks"], state["plucker_chunks"]
+            )):
+                if args.max_chunks and chunk_id >= args.max_chunks:
+                    break
+                generated = generate_chunk(
+                    pipe, state, chunk_id, current_latent, current_condition,
+                    current_plucker, device, lambda: sync(device),
+                )
+                decode_t0 = time.perf_counter()
+                decoded_gpu = decoder.decode_latent(generated["x0"], device)
+                decode_ms = (time.perf_counter() - decode_t0) * 1000.0
+                action_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+                finish_action(
+                    pipe, state, args, device, decoder, generated, decoded_gpu,
+                    decode_ms, actions, outputs,
+                    action_ms if chunk_id > 0 else None,
+                    action_ms if chunk_id > 0 else None,
+                )
 
     output = torch.cat(outputs, dim=0)
     decoder.clear()
@@ -387,6 +494,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
     action_rows = [row for row in actions if row["full_action_ms"] is not None]
     result: dict[str, object] = {
         "status": "success",
+        "overlap": bool(args.overlap),
         "frames": int(output.shape[0]),
         "output": {
             "shape": list(output.shape),

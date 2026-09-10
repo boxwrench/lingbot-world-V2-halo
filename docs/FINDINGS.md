@@ -407,3 +407,26 @@ Raw evidence is local under
 `results/raw/interactive-chunk1-stream-fp16-480x832-81f-math-sdpa/metrics.json`
 and
 `results/raw/interactive-chunk1-stream-bf16-480x832-81f-math-sdpa/metrics.json`.
+
+## F15 — same-device VAE/DiT overlap is not retained (2026-09-09)
+
+Because FP16 substantially reduced VAE time, one bounded queued-stream test
+was run with three 480x832 latent chunks, FP16 VAE, math SDPA, and the same
+seed/prompt/action inputs. The test launched VAE decode on a second HIP stream
+while the main stream generated the next DiT chunk, with explicit stream
+dependencies and allocator lifetime tracking. Output was finite and the KV
+state remained valid.
+
+The matched post-refactor serial run took **8.390 s**, with **3.000 s** first
+visible and **2.932 s** median action latency. The overlap run took **8.419 s**,
+with **3.039 s** first visible and **2.967 s** median action latency. The
+small total difference is within run-to-run noise, while action latency was
+slightly worse under contention. The overlap mode is retained as an explicit
+`--overlap` reproducibility control, but serial scheduling remains the
+accepted default; UMA does not by itself make same-device compute overlap a
+benefit.
+
+Raw controls are local at
+`results/raw/interactive-test-fp16-9f-math-sdpa-serial-postoverlap/metrics.json`
+and
+`results/raw/interactive-test-fp16-9f-math-sdpa-overlap/metrics.json`.
