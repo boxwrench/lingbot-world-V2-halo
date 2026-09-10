@@ -1003,3 +1003,30 @@ catastrophic drift was observed. Classification: **BOTH MODES JUSTIFIED**.
 Keep 12 as the minimum-latency interactive option, expose 14 as a higher-
 quality interactive option, and retain 18 as quality/reference. The dedicated
 report is `docs/window-12-vs-14-20260910.md`.
+
+## F32 — first new RGB is already action-responsive (2026-09-10)
+
+A matched-state closed-loop probe compared no-op versus strong turn and
+forward versus reverse after the local window had filled. Each branch cloned
+the persistent self-KV, cross-attention cache, RNG state, and TAE setup, so
+the intended independent variable was the action. At both 12 and 14 frames,
+RGB0 was already materially different for both control pairs: 12-frame MAD
+was `0.0459` / `0.0257`, and 14-frame MAD was `0.0421` / `0.0245`, with
+12.2–21.2% of pixels above the supporting threshold. This indicates that the
+first newly displayed frame is action-responsive for the tested controls;
+there was no measured RGB1-or-later response delay.
+
+A virtual input observer also placed an arrival at `1071.6 ms` inside the
+12-frame no-op branch's exact clean-KV interval (`1020.0–1349.0 ms`). The
+current viewer has no explicit application queue, so this proves only that
+the clean barrier protects GPU generation; it does not promise retention of
+a physical key pressed during that interval. The next justified technical
+experiment is a bounded one-slot pending-input queue.
+
+The accepted rolled 12-frame product baseline remains approximately
+`1033.2 ms` first-new RGB, `333.9 ms` clean commit, and `1418.4 ms` next
+action. Its residual gap is `51.3 ms`; known TAE tail work is about 17–18 ms,
+with the remainder not yet separately isolated because the first-visible
+boundary is immediately before Tk presentation. Detailed branch metrics and
+artifacts are in `docs/action-response-20260910.md` and
+`results/raw/action-response-12-v3/` / `results/raw/action-response-14/`.
