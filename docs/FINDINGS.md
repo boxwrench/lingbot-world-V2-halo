@@ -716,3 +716,123 @@ Raw evidence is local at
 `results/raw/attention-probe-384x672-81f/metrics.json`. No second resolution
 was started; the bounded resolution experiment stops here pending a product
 quality decision.
+
+## F24 — the causal-fast sampler is a four-point flow update, not a scheduler step loop (2026-09-09)
+
+The current checkout's actual causal-fast schedule is selected by hard-coded
+indices `[0,179,358,679]` after `set_timesteps(..., shift=5.0)`. On this
+machine those indices produce timestep values `[999,957,899,702]`; the
+previous approximate values `[999,967,908,768]` do not describe this pinned
+source/model pair.
+
+The causal loop does not call the scheduler's ordinary `step()` method. For a
+model flow prediction `v`, current latent `x_t`, and scheduler sigma
+`sigma_t`, upstream converts the prediction to
+
+```text
+x0 = x_t - sigma_t * v
+```
+
+and, between denoising points, calls `scheduler.add_noise(x0, noise,
+next_timestep)`. The final accepted `x0` is followed by the exact separate
+zero-timestep transformer pass that writes the persistent self-attention KV
+state. That clean pass remains mandatory in the approximation experiment.
+
+This makes a larger interval algebraically representable by the existing
+flow-matching update code, but it does not prove that the released checkpoint
+was distilled for that interval. The single controlled candidate therefore
+drops only the second hard-coded point, retaining the first endpoint, the
+`899` lower-noise stage, and the final `702` stage:
+
+```text
+four-step: 999 -> 957 -> 899 -> 702
+three-step: 999 -> 899 -> 702
+clean KV:  0 (exact separate pass)
+```
+
+The runner records both the schedule name and resolved timestep values in each
+metrics file. No timestep sweep was performed.
+
+## F25 — dropping the 957 denoising point buys approximately 390 ms (2026-09-09)
+
+The candidate was run independently at actual `384x672`, chunk size 1, local
+window/sink `18+6`, BF16 transformer, FP16 VAE, math VAE SDPA, native Conv3d,
+deferred exact clean-KV commit, seed 42, and the same prompt/image/action
+sequence as the four-step reference. The short warmed control confirmed three
+denoising records plus one clean-KV record; the long run independently evolved
+its own persistent state for 81 visible frames and 21 latent chunks.
+
+### Matched warmed control
+
+The 9-frame controls started from the same fresh model/session configuration.
+The first action is affected by the session's initial state, so the filled-
+window measurements below are the primary A/B metric. The warmed short control
+still showed the expected reduction in per-action work:
+
+| Schedule | Denoising forwards | Short-control median action | Raw metrics |
+|---|---:|---:|---|
+| 4 point | 4 + exact clean pass | 1910.7 ms | `results/raw/interactive-384x672-4step-deferred-9f-warm/metrics.json` |
+| 3 point | 3 + exact clean pass | 1669.9 ms | `results/raw/interactive-384x672-3step-deferred-9f/metrics.json` |
+
+Both short outputs were finite and retained the expected cache progression.
+
+### Filled-window performance
+
+The 3-step long run completed with finite output shape `[81,384,672,3]`,
+output range `[-1,1]`, and no non-finite action/forward result. The final
+window remained capped at `18144` local KV tokens while global position
+advanced through the full 21-chunk session. Comparing chunks 18–20 against
+the existing four-step 384x672 reference:
+
+| Filled-window metric | 4 point | 3 point | Change |
+|---|---:|---:|---:|
+| Denoise total | 1594.0 ms | 1202.3 ms | -391.8 ms |
+| Denoise forward 1 | 424.0 ms | 421.8 ms | -2.2 ms |
+| Denoise forward 2 | 390.0 ms | 390.6 ms | +0.6 ms |
+| Denoise forward 3 | 389.8 ms | 389.9 ms | +0.0 ms |
+| Denoise forward 4 | 390.2 ms | — | — |
+| Exact clean-KV pass | 391.9 ms | 391.2 ms | -0.7 ms |
+| VAE decode | 632.3 ms | 634.0 ms | +1.7 ms |
+| First-visible | 2230.8 ms | **1840.7 ms** | **-390.1 ms** |
+| Next-action-ready | 2623.1 ms | **2232.3 ms** | **-390.8 ms** |
+
+The result is close to the cost of one removed denoising evaluation, with no
+measurable VAE or clean-KV regression. The 21-chunk candidate session took
+41.028 s; this total includes session setup and is not used as the primary
+steady-state comparison. Its median action latency was 1924.1 ms and the
+last-five mean was 2209.6 ms.
+
+### Persistent-world behavior
+
+The independent 81-frame candidate stayed finite through multiple local-window
+rollovers. The recorded KV lengths remained bounded at `18144` in the filled
+window, and the output statistics were:
+
+```text
+mean: 0.28545
+std:  0.58217
+mean adjacent-frame delta: 0.15863
+```
+
+Manual inspection of sampled beginning, middle, direction-change, and late
+frames found a coherent lake/tree scene with continued camera motion, no
+catastrophic collapse, no frozen output, and no obvious chunk seam. The
+three-step frames show somewhat more texture/water variation and softer detail
+than the four-step reference; this is a qualitative observation, not a formal
+image-quality score. The run is therefore a successful persistent-world
+control, but longer and broader human quality evaluation would still be
+appropriate before treating the approximation as universally preferable.
+
+The candidate video and raw metrics are local at
+`results/raw/interactive-384x672-3step-deferred-81f-video/interactive.mp4` and
+`results/raw/interactive-384x672-3step-deferred-81f-video/metrics.json`.
+
+### Recommendation
+
+Retain `3-drop-957` as a validated low-latency candidate for Strix interactive
+use. It removes one exact denoising evaluation while preserving the separate
+clean-KV commit, improves filled-window first-visible from about `2.23 s` to
+`1.84 s`, and improves next-action-ready from about `2.62 s` to `2.23 s`.
+Keep the four-point schedule as the quality/reference mode until a deliberate
+human or task-level evaluation decides whether the observed texture variation
+is acceptable for the intended application.
