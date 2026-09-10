@@ -167,6 +167,7 @@ def tae_decode(
     # LingBot stores normalized Wan VAE latents as NCTHW. TAEHV's Wan 2.1
     # checkpoint consumes the raw Wan VAE latent in NTCHW, with no additional
     # TAE-specific scale or shift.
+    latents = latents.to(device)
     raw = latents.float() / vae.scale[1].float().view(1, 16, 1, 1, 1)
     raw = raw + vae.scale[0].float().view(1, 16, 1, 1, 1)
     raw = raw.to(device=device, dtype=dtype).permute(0, 2, 1, 3, 4).contiguous()
