@@ -1,0 +1,46 @@
+{
+  "status": "success",
+  "date": "2026-09-09",
+  "community_revision": "f310acc1109e7af447d5c6efb94f29fe746408a1",
+  "comfyui_gguf_revision": "6ea2651e7df66d7585f6ffee804b20e92fb38b8a",
+  "hf_revision": "79be5d5f30d63327ac6020ced7f653cdbc301f49",
+  "device": "gfx1151 / AMD Radeon 8060S Graphics",
+  "torch": "2.13.0+rocm7.15.0a20260728",
+  "hip": "7.15.0",
+  "dtype": "BF16 compute with Q4_K_M/Q4_K_S GGUF storage",
+  "requested_resolution": "480x832",
+  "frames": 21,
+  "chunk_size": 3,
+  "local_attn_size": 6,
+  "sink_size": 2,
+  "seed": 42,
+  "load_seconds": 1.304,
+  "t5_load_seconds": 15.295,
+  "t5_encode_seconds": 7.577,
+  "runs": [
+    {
+      "kind": "cold_generation",
+      "seconds": 215.674377,
+      "fps": 0.097369,
+      "peak_device_allocated_gb_decimal": 31.404,
+      "peak_device_reserved_gb_decimal": 45.303,
+      "peak_process_rss_gb_decimal": 28.598,
+      "output_shape": [21, 464, 832, 3],
+      "finite": true
+    },
+    {
+      "kind": "warm_repeat",
+      "seconds": 216.380107,
+      "fps": 0.097051,
+      "peak_device_allocated_gb_decimal": 31.404,
+      "peak_device_reserved_gb_decimal": 45.303,
+      "peak_process_rss_gb_decimal": 28.741,
+      "output_shape": [21, 464, 832, 3],
+      "finite": true,
+      "repeat_max_abs_diff": 0.0,
+      "repeat_mean_abs_diff": 0.0
+    }
+  ],
+  "raw_metrics": "../../../results/raw/14b/q4-480x832-6plus2/metrics.json",
+  "raw_console_log": "/tmp/lingbot14b-q4-baseline-6.log"
+}

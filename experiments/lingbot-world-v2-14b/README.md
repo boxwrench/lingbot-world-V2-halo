@@ -39,6 +39,17 @@ in [`asset-manifest.json`](asset-manifest.json). Weights are downloaded into
 the ignored `models/lingbot-world-v2-14b-community/` directory and are never
 committed.
 
+## Current result
+
+The initial Q4_K_M lane succeeds on gfx1151 in native BF16 compute. The
+21-frame requested-480x832 run uses `local_attn_size=6`, `sink_size=2`, and
+finishes in 215.674 s cold / 216.380 s warm (0.09737 / 0.09705 fps). Peak
+PyTorch allocation is 31.40 GB and peak process RSS is 28.74 GB. The output
+is finite, repeatable for the same seed, and the raw JSON plus MP4s are under
+`results/raw/14b/q4-480x832-6plus2/` locally. See
+[`benchmarks/q4-480x832-6plus2.json`](benchmarks/q4-480x832-6plus2.json) and
+[`FINDINGS.md`](FINDINGS.md) for the exact lane and limitations.
+
 ## What the reference implementation does
 
 The node reads GGUF tensors through `gguf.GGUFReader`. The quantized linear

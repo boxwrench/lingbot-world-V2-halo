@@ -32,7 +32,50 @@ and Wan VAE from the pinned Hub snapshot. Exact sizes and LFS object hashes
 are in `asset-manifest.json`. No 14B weights were present on the host before
 this lane was added.
 
-## F3 — Q4 execution
+## F3 — Q4_K_M baseline succeeds on gfx1151 (2026-09-09)
 
-Pending download and runtime validation.
+The first complete run used the pinned merged Q4_K_M DiT, UMT5 Q4_K_S,
+and Wan VAE at requested 480x832, 21 frames, chunk size 3,
+`local_attn_size=6`, `sink_size=2`, `pin_gb=2`, seed 42, and the community
+sampler's four causal-fast denoising steps per chunk. It ran on one
+`gfx1151` device with BF16 compute and no CUDA binary extension.
 
+The run succeeded twice in one process. Both outputs were finite and the
+same-seed repeat had max/mean absolute difference 0.0/0.0. The encoded video
+has 21 frames at 832x464; 480x832 is the requested model resolution and the
+height reduction is the community VAE/output path's valid latent crop.
+
+| measurement | run 1 (cold generation) | run 2 (warm repeat) |
+|---|---:|---:|
+| total generation, including VAE encode/decode | 215.674 s | 216.380 s |
+| effective output rate | 0.09737 fps | 0.09705 fps |
+| causal chunks | 2 | 2 |
+| causal progress time, from tqdm | ~125 s | ~125 s |
+| output | finite, 21x464x832x3 | finite, 21x464x832x3 |
+
+The run-level instrumentation measured UMT5 GGUF load at 15.295 s, prompt
+encoding at 7.577 s, and DiT/VAE object construction at 1.304 s. It did not
+yet split individual DiT forwards from VAE encode/decode; the console trace
+does show two causal chunks at roughly 60--65 s each, with the remaining
+run time spent in the VAE path and surrounding work.
+
+At load, the node attached 1,421 tensors with zero unmatched or meta tensors.
+The Q4 linear weights remained file-backed/CPU-side and the first active
+linear reported `x.device=cuda:0`, `x.dtype=torch.bfloat16`,
+`qdata.device=cpu`. The loader pinned 2.16 GB of quantized data and the
+resident GGUF mapping reached 12.04 GB. Peak PyTorch device allocation was
+31.40 GB, peak reserved was 45.30 GB, and peak process RSS was 28.74 GB.
+The final device allocation fell back to 89 MB after the community sampler's
+model/VAE offload cleanup. `rocm-smi` reported 99% GPU busy during DiT work;
+its VRAM percentage is not used as a UMA capacity measurement here.
+
+The required ROCm compatibility patch is tracked at
+`patches/14b-rocm-sdpa.patch`: only fast cross-attention changes from a direct
+FlashAttention call to the existing generic `attention()` dispatcher. This
+selects PyTorch SDPA when FlashAttention is absent. Causal self-attention,
+KV-cache updates, local-window rolling, and sink handling were not changed.
+
+The raw report is `results/raw/14b/q4-480x832-6plus2/metrics.json` and the
+representative outputs are `generated-1.mp4` and `generated-2.mp4` in that
+directory. These files remain local/ignored because model and media artifacts
+are not committed.
