@@ -575,3 +575,42 @@ The instrumentation and exact per-forward/cache/memory records are in commit
 therefore a narrowly scoped analysis of whether the fifth call can omit only
 provably output-independent work; broad attention or kernel changes are
 deferred until that dependency question is resolved.
+
+## F20 — transactional clean-KV commit after first display (2026-09-09)
+
+The exact clean-latent KV forward was moved after the first decoded RGB frame
+was copied to the host. No model math was removed: the next chunk was not
+allowed to begin until the clean K/V state had been committed. The current
+serial runner remains the state-machine boundary, so an input arriving during
+the deferred interval cannot launch speculative GPU work; only the completed
+commit can make the next action eligible.
+
+The 9-frame control first verified finite output and matching aggregate output
+statistics. The full 81-frame A/B then exercised the filled 18-frame window
+and multiple rollovers:
+
+| Metric | Current-order A | Deferred clean-KV B |
+|---|---:|---:|
+| Early first-visible | 3.015 s | 2.575 s |
+| Filled-window first-visible, chunks 18–20 mean | 4.544 s | **3.851 s** |
+| Filled-window state-ready, chunks 18–20 mean | 3.593 s | 4.564 s |
+| Filled-window next-action-ready, chunks 18–20 mean | 4.545 s | 4.565 s |
+| Filled-window clean-KV cost | 0.705 s | 0.713 s |
+| 81-frame session | 79.194 s | 79.206 s |
+
+The deferred lane therefore removes approximately **0.69 s** from the
+display-critical path, close to the full clean-forward cost, while preserving
+the complete action cadence. Its output summary was exactly equal to the
+current-order lane (`[81,464,832,3]`, finite, identical aggregate mean/std and
+adjacent-frame delta), and both ended at global/local KV positions
+`31668/27144`. The state machine is intentionally conservative: one queued
+input may be parsed on the CPU in a future UI integration, but GPU generation
+must wait for `state_ready`.
+
+The waterfall now labels the clean pass separately as either
+`clean_kv_on_first_visible_path` or `clean_kv_after_first_visible`. This is a
+real scheduling candidate, not an approximation, and is retained for further
+interactive testing. Raw A/B evidence is local at
+`results/raw/clean-kv-order-serial-81f/metrics.json` and
+`results/raw/clean-kv-order-deferred-81f/metrics.json`; the runner change is
+in commit `67ba075` plus the critical-path labeling follow-up.

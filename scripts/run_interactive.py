@@ -713,7 +713,15 @@ def finish_action(
             "dit_forward_2": generated["forward_records"][1]["elapsed_ms"],
             "dit_forward_3": generated["forward_records"][2]["elapsed_ms"],
             "dit_forward_4": generated["forward_records"][3]["elapsed_ms"],
-        "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
+            "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
+            "clean_kv_on_first_visible_path": (
+                generated["forward_records"][4]["elapsed_ms"]
+                if not generated.get("clean_kv_deferred", False) else 0.0
+            ),
+            "clean_kv_after_first_visible": (
+                generated["forward_records"][4]["elapsed_ms"]
+                if generated.get("clean_kv_deferred", False) else 0.0
+            ),
             "latent_postprocessing": generated["latent_postprocess_ms"],
             "vae_decode": decode_ms,
             "rgb_postprocessing": rgb_postprocess_ms,
