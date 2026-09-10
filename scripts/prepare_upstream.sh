@@ -34,19 +34,31 @@ apply_once() {
     fi
 }
 
+search_q() {
+    local pattern=$1
+    local file=$2
+    if command -v rg >/dev/null 2>&1; then
+        rg -q "$pattern" "$file"
+    else
+        # Keep reproduction usable on minimal hosts that do not have ripgrep.
+        # These markers are extended-regular-expression compatible.
+        grep -Eq "$pattern" "$file"
+    fi
+}
+
 patch_is_present() {
     case "$(basename "$1")" in
         0001-strix-halo-sdpa-cross-attention.patch)
-            rg -q 'from \.attention import attention' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
-                rg -q 'x = attention\(q, k, v, k_lens=context_lens\)' "$UPSTREAM_DIR/wan/modules/model_fast.py"
+            search_q 'from \.attention import attention' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
+                search_q 'x = attention\(q, k, v, k_lens=context_lens\)' "$UPSTREAM_DIR/wan/modules/model_fast.py"
             ;;
         0002-experiment-metrics.patch)
-            rg -q 'self\.metrics = metrics' "$UPSTREAM_DIR/wan/image2video.py" &&
-                rg -q 'self\.metrics\["vae_decode_ms"\]' "$UPSTREAM_DIR/wan/image2video.py"
+            search_q 'self\.metrics = metrics' "$UPSTREAM_DIR/wan/image2video.py" &&
+                search_q 'self\.metrics\["vae_decode_ms"\]' "$UPSTREAM_DIR/wan/image2video.py"
             ;;
         0003-per-forward-metrics.patch)
-            rg -q 'forward_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py" &&
-                rg -q 'cache_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py"
+            search_q 'forward_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py" &&
+                search_q 'cache_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py"
             ;;
         *)
             return 1
