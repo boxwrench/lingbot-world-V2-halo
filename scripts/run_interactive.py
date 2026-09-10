@@ -290,6 +290,139 @@ class DecoderProfiler:
         }
 
 
+class DitAttentionProbe:
+    """Record real DiT attention dispatch, SDPA, and tensor layouts."""
+
+    def __init__(self) -> None:
+        from wan.modules import model_fast
+
+        self.model_fast = model_fast
+        self.original_dispatch = model_fast.attention
+        self.original_sdpa = F.scaled_dot_product_attention
+        self.calls: list[dict[str, object]] = []
+        self.active: dict[str, object] | None = None
+        self.backend_flags = {
+            "flash_enabled": bool(torch.backends.cuda.flash_sdp_enabled()),
+            "mem_efficient_enabled": bool(torch.backends.cuda.mem_efficient_sdp_enabled()),
+            "math_enabled": bool(torch.backends.cuda.math_sdp_enabled()),
+            "cudnn_enabled": bool(torch.backends.cuda.cudnn_sdp_enabled()),
+            "sdp_priority_order": list(torch._C._get_sdp_priority_order()),
+        }
+
+        def dispatch(q, k, v, *args, **kwargs):
+            call = {
+                "kind": "self" if int(k.shape[1]) > 1024 else "cross",
+                "q_shape": list(q.shape),
+                "k_shape": list(k.shape),
+                "v_shape": list(v.shape),
+                "q_dtype": str(q.dtype),
+                "k_dtype": str(k.dtype),
+                "v_dtype": str(v.dtype),
+                "q_strides": list(q.stride()),
+                "k_strides": list(k.stride()),
+                "v_strides": list(v.stride()),
+                "q_contiguous": bool(q.is_contiguous()),
+                "k_contiguous": bool(k.is_contiguous()),
+                "v_contiguous": bool(v.is_contiguous()),
+                "q_lens_present": kwargs.get("q_lens") is not None,
+                "k_lens_present": kwargs.get("k_lens") is not None,
+                "causal": bool(kwargs.get("causal", False)),
+                "window_size": kwargs.get("window_size", (-1, -1)),
+            }
+            start = torch.cuda.Event(enable_timing=True)
+            start.record(torch.cuda.current_stream())
+            previous = self.active
+            self.active = call
+            out = self.original_dispatch(q, k, v, *args, **kwargs)
+            self.active = previous
+            end = torch.cuda.Event(enable_timing=True)
+            end.record(torch.cuda.current_stream())
+            call["dispatch_start"] = start
+            call["dispatch_end"] = end
+            call["output_shape"] = list(out.shape) if isinstance(out, torch.Tensor) else None
+            self.calls.append(call)
+            return out
+
+        def sdpa(q, k, v, *args, **kwargs):
+            start = torch.cuda.Event(enable_timing=True)
+            start.record(torch.cuda.current_stream())
+            out = self.original_sdpa(q, k, v, *args, **kwargs)
+            end = torch.cuda.Event(enable_timing=True)
+            end.record(torch.cuda.current_stream())
+            if self.active is not None:
+                self.active["sdpa_start"] = start
+                self.active["sdpa_end"] = end
+                self.active["sdpa_q_shape"] = list(q.shape)
+                self.active["sdpa_k_shape"] = list(k.shape)
+                self.active["sdpa_v_shape"] = list(v.shape)
+                self.active["sdpa_q_strides"] = list(q.stride())
+                self.active["sdpa_k_strides"] = list(k.stride())
+                self.active["sdpa_v_strides"] = list(v.stride())
+                self.active["sdpa_is_causal"] = bool(kwargs.get("is_causal", False))
+                self.active["sdpa_mask_present"] = kwargs.get("attn_mask") is not None
+            return out
+
+        model_fast.attention = dispatch
+        F.scaled_dot_product_attention = sdpa
+
+    def close(self) -> None:
+        self.model_fast.attention = self.original_dispatch
+        F.scaled_dot_product_attention = self.original_sdpa
+
+    def report(self) -> dict[str, object]:
+        self.close()
+        rows = []
+        for call in self.calls:
+            dispatch_ms = float(call["dispatch_start"].elapsed_time(call["dispatch_end"]))
+            sdpa_ms = float(call["sdpa_start"].elapsed_time(call["sdpa_end"]))
+            row = {key: value for key, value in call.items() if not isinstance(value, torch.cuda.Event)}
+            row["dispatch_ms"] = dispatch_ms
+            row["sdpa_ms"] = sdpa_ms
+            row["dispatch_overhead_ms"] = max(0.0, dispatch_ms - sdpa_ms)
+            rows.append(row)
+        grouped: dict[str, dict[str, object]] = {}
+        for row in rows:
+            group = grouped.setdefault(row["kind"], {
+                "kind": row["kind"],
+                "calls": 0,
+                "dispatch_ms": 0.0,
+                "sdpa_ms": 0.0,
+                "dispatch_overhead_ms": 0.0,
+                "q_shapes": {},
+                "k_shapes": {},
+                "sdpa_q_shapes": {},
+                "sdpa_k_shapes": {},
+                "q_strides": {},
+                "k_strides": {},
+                "sdpa_k_strides": {},
+                "dtypes": {},
+                "mask_modes": {},
+            })
+            group["calls"] += 1
+            for field in ("dispatch_ms", "sdpa_ms", "dispatch_overhead_ms"):
+                group[field] += float(row[field])
+            for field, value in (
+                ("q_shapes", tuple(row["q_shape"])),
+                ("k_shapes", tuple(row["k_shape"])),
+                ("sdpa_q_shapes", tuple(row["sdpa_q_shape"])),
+                ("sdpa_k_shapes", tuple(row["sdpa_k_shape"])),
+                ("q_strides", tuple(row["q_strides"])),
+                ("k_strides", tuple(row["k_strides"])),
+                ("sdpa_k_strides", tuple(row["sdpa_k_strides"])),
+                ("dtypes", (row["q_dtype"], row["k_dtype"], row["v_dtype"])),
+                ("mask_modes", (row["sdpa_is_causal"], row["sdpa_mask_present"])),
+            ):
+                counts = group[field]
+                key = str(value)
+                counts[key] = counts.get(key, 0) + 1
+        return {
+            "backend_flags": self.backend_flags,
+            "calls_recorded": len(rows),
+            "calls": rows,
+            "groups": list(grouped.values()),
+        }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--upstream-dir", required=True)
@@ -342,6 +475,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--defer-clean-kv",
         action="store_true",
         help="display the decoded frame before the exact clean-latent KV commit (transactional scheduling experiment)",
+    )
+    parser.add_argument(
+        "--profile-attention-from-chunk",
+        type=int,
+        default=-1,
+        help="record DiT attention/SDPA layouts starting at this chunk for three chunks",
     )
     return parser
 
@@ -748,6 +887,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         temporal_split_module=args.vae_temporal_split_module,
     )
     dit_profiler = None
+    attention_probe = None
     @contextmanager
     def noop_no_sync():
         yield
@@ -766,6 +906,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     break
                 if args.profile_dit_from_chunk >= 0 and chunk_id == args.profile_dit_from_chunk:
                     dit_profiler = DecoderProfiler(pipe.model)
+                if args.profile_attention_from_chunk >= 0 and chunk_id == args.profile_attention_from_chunk:
+                    attention_probe = DitAttentionProbe()
                 main_start = torch.cuda.Event(enable_timing=True)
                 main_start.record(main_stream)
                 generated = generate_chunk(
@@ -773,6 +915,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     current_plucker, device, main_stream.synchronize,
                     defer_clean_kv=False,
                 )
+                if attention_probe is not None and chunk_id >= args.profile_attention_from_chunk + 2:
+                    attention_probe.close()
                 # x0 is produced on the main stream.  The explicit dependency
                 # plus record_stream keeps the allocator from recycling it
                 # while the VAE stream consumes it.
@@ -806,11 +950,15 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     break
                 if args.profile_dit_from_chunk >= 0 and chunk_id == args.profile_dit_from_chunk:
                     dit_profiler = DecoderProfiler(pipe.model)
+                if args.profile_attention_from_chunk >= 0 and chunk_id == args.profile_attention_from_chunk:
+                    attention_probe = DitAttentionProbe()
                 generated = generate_chunk(
                     pipe, state, chunk_id, current_latent, current_condition,
                     current_plucker, device, lambda: sync(device),
                     defer_clean_kv=args.defer_clean_kv,
                 )
+                if attention_probe is not None and chunk_id >= args.profile_attention_from_chunk + 2:
+                    attention_probe.close()
                 decode_t0 = time.perf_counter()
                 decoded_gpu = decoder.decode_latent(generated["x0"], device)
                 decode_ms = (time.perf_counter() - decode_t0) * 1000.0
@@ -829,6 +977,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
 
     profile = decoder.profile_report()
     dit_profile = dit_profiler.report() if dit_profiler is not None else None
+    attention_profile = attention_probe.report() if attention_probe is not None else None
     output = torch.cat(outputs, dim=0)
     decoder.clear()
     session_ms = (time.perf_counter() - session_t0) * 1000.0
@@ -841,6 +990,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         "dit_profile": dit_profile,
         "dit_operator_summary": summarize_module_profile(dit_profile),
         "profile_dit_from_chunk": args.profile_dit_from_chunk,
+        "attention_profile": attention_profile,
+        "profile_attention_from_chunk": args.profile_attention_from_chunk,
         "frames": int(output.shape[0]),
         "output": {
             "shape": list(output.shape),
