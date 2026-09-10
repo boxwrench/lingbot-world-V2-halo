@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/madebyollin/taehv",
+  "commit": "011dfc2112197741c540e0bdd5b7b67bcc930771",
+  "weights": "taew2_1.pth",
+  "weights_sha256": "d26151e76cdc2c9424bef988de874b33d9a53f30ef3060cd556c429c469c797e",
+  "local_checkout": ".upstream/taehv",
+  "architecture": {
+    "patch_size": 1,
+    "latent_channels": 16,
+    "temporal_downscale": 4,
+    "temporal_upscale": 4,
+    "frames_to_trim": 3
+  }
+}

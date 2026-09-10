@@ -17,6 +17,14 @@ valid video in 89.940 s cold and 81.216 s warm (0.2335 / 0.2586 FPS), with
 repeat is finite but not bit-identical; that caveat is preserved in the dated
 report and benchmark JSON.
 
+An opt-in `taew2_1` TAEHV presentation decoder is also validated at the
+lower-latency `384x672` / chunk-1 / 3-step configuration. It reduced filled-
+window first-visible latency from about 1.84 s to 1.23 s and next-action
+readiness from about 2.23 s to 1.65 s in an 81-frame persistent run. The
+canonical FP16 VAE remains the default/reference decoder because TAEHV is
+softer in fine detail. See [`docs/taehv-20260910.md`](docs/taehv-20260910.md)
+for the pinned source, latent contract, raw paths, and quality caveats.
+
 ## Target configuration
 
 - CPU/APU: AMD Ryzen AI MAX+ 395, 16 cores / 32 threads

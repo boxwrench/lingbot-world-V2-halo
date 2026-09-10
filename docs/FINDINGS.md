@@ -836,3 +836,52 @@ clean-KV commit, improves filled-window first-visible from about `2.23 s` to
 Keep the four-point schedule as the quality/reference mode until a deliberate
 human or task-level evaluation decides whether the observed texture variation
 is acceptable for the intended application.
+
+## F26 — TAEHV latent-contract correction (2026-09-10)
+
+The pinned `madebyollin/taehv` checkout is commit
+`011dfc2112197741c540e0bdd5b7b67bcc930771`, with `taew2_1.pth` SHA-256
+`d26151e76cdc2c9424bef988de874b33d9a53f30ef3060cd556c429c469c797e`.
+The loaded architecture has 16 latent channels, temporal down/upscale 4, and
+startup trim of 3 frames.
+
+The first offline candidate incorrectly applied the canonical LingBot Wan VAE
+mean/std transform before TAE. That produced visibly oversaturated output and
+was rejected as a latent-contract error, not as evidence against TAEHV. The
+pinned Wan 2.1 Diffusers wrapper uses identity latent mean/std, so the corrected
+path feeds the accepted LingBot model-space `x0` directly after only
+`NCTHW`/`NTCHW` conversion. At `384x672`, the saved stream is
+`[1,16,21,48,84]` for canonical input and `[1,21,16,48,84]` for TAE input.
+
+## F27 — TAEHV is a viable fast presentation decoder (2026-09-10)
+
+The corrected offline comparison decoded the same contiguous 21-latent stream
+through canonical FP16 Wan VAE and TAEHV. Both outputs were finite and had
+exactly 81 frames: one frame from the first latent after startup trim and four
+from each later latent. Warm canonical filled-latent decode was approximately
+`639 ms`; TAE emitted its first frame in `7.7–8.1 ms` and drained a filled
+latent in `14.6–16.7 ms`. Mean absolute frame difference was `0.0319` in
+`[0,1]`. Human inspection found the same broad lake/tree world and motion, with
+TAE softer fine detail and changed texture/edges.
+
+The opt-in live mode then completed an independent 81-frame, 21-chunk
+persistent session on gfx1151. All outputs were finite. At full `18+6`
+occupancy, TAE first RGB was `1229–1232 ms` after action acceptance and all
+TAE output was complete in `36.9–37.6 ms` GPU time. The exact deferred clean-KV
+commit remained `385–387 ms`, the final local KV length was capped at `18144`
+tokens while global position reached `21168`, and next-action readiness was
+`1644–1648 ms`.
+
+Against the accepted canonical 3-step path (`~1841 ms` filled-window
+first-visible and `~2232 ms` next-action-ready), TAE saves about `0.6 s` on
+both product boundaries. The live long-run peak PyTorch allocation was
+`30.049 GB`, peak reserved allocation `42.358 GB`, and peak RSS `25.870 GB`.
+These are whole-pipeline UMA accounting values, not TAE-only memory.
+
+TAE is therefore retained as an explicit opt-in presentation mode, while the
+canonical FP16 decoder remains the default/reference path for quality. The
+offline report and raw metrics are in
+`docs/taehv-20260910.md` and
+`results/raw/taehv-offline-384x672-3step-81f/metrics.json`; the live raw result
+is in
+`results/raw/interactive-taehv-384x672-3step-deferred-81f-video/metrics.json`.
