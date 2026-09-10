@@ -1,0 +1,73 @@
+{
+  "date": "2026-09-10",
+  "hardware": {
+    "gpu": "Radeon 8060S",
+    "gfx": "gfx1151"
+  },
+  "software": {
+    "pytorch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0",
+    "compiler": "inductor",
+    "mode": "default",
+    "fullgraph": false
+  },
+  "tunableop": {
+    "enabled": true,
+    "tuning_enabled": false,
+    "record_untuned": false,
+    "loaded_results": 16,
+    "validators": {
+      "PT_VERSION": "2.13.0",
+      "HIP_VERSION": "715",
+      "HIPBLASLT_VERSION": "100401-baa93758",
+      "GCN_ARCH_NAME": "gfx1151",
+      "ROCBLAS_VERSION": "5.6.0.baa93758"
+    }
+  },
+  "target": {
+    "compiled_blocks": 1,
+    "total_blocks": 30,
+    "geometry": "384x672",
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "denoise_schedule": [999, 899, 702]
+  },
+  "dynamo": {
+    "frames_total": 32,
+    "frames_ok": 32,
+    "unique_graphs": 27,
+    "graph_break_events": {
+      "data_dependent_scalar": 7,
+      "tensor_item": 16
+    },
+    "recompile_log_events": 124,
+    "calls_captured": 376,
+    "inductor_async_compile_cache_misses": 82,
+    "inductor_extern_calls": 103,
+    "captured_addmm_signatures": {
+      "aten.addmm_1008_1536_1536": 23,
+      "aten.addmm_512_1536_1536": 2,
+      "aten.addmm_1008_8960_1536": 2,
+      "aten.addmm_1008_1536_8960": 2
+    }
+  },
+  "timing": {
+    "wrapper_construction_seconds": 0.47248589497758076,
+    "first_bootstrap_transformer_ms": 8581.99,
+    "first_bootstrap_visible_ms": 8703.65,
+    "first_subsequent_transformer_ms": 1627.19,
+    "note": "first action includes lazy compilation; no warmed candidate A/B was authorized after correctness failure"
+  },
+  "correctness": {
+    "bootstrap_finite": true,
+    "first_subsequent_latent_finite": false,
+    "first_subsequent_output_finite": false,
+    "runner_status": "success-but-invalid-output",
+    "persistent_traversal": "rejected"
+  },
+  "raw_paths": {
+    "session_log": "results/raw/compile-20260910/probe-block-1b/session.log",
+    "compile_metrics": "results/raw/compile-20260910/probe-block-1b/compile_metrics.json",
+    "live_metrics": "results/raw/compile-20260910/probe-block-1b/live_metrics.json"
+  }
+}

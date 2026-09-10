@@ -1082,3 +1082,35 @@ unchanged. Full CSVs and a compact summary are in
 `docs/artifacts/tunable-op-20260910/`, with detailed methodology in
 `docs/tunable-op-20260910.md` and large raw process outputs under the ignored
 `results/raw/tunable-op-20260910/` directory.
+
+## F35 — direct regional compilation of the stateful causal block is rejected (2026-09-10)
+
+The first bounded compiler probe held the accepted TunableOp configuration
+constant and wrapped only one real `CausalWanAttentionBlock` with PyTorch
+Inductor (`backend="inductor"`, `mode="default"`, `fullgraph=False`). The
+validator-matched file loaded all 16 persisted TunableOp results with online
+tuning and untuned recording disabled. No model, sampler, renderer, window, or
+clean-KV behavior was changed.
+
+The stateful block did not form one reusable graph. The run produced 27 unique
+graphs from 32 Dynamo frames, 23 graph-break events, and 124 logged
+recompilation events. Breaks and guards repeatedly centered on
+`local_end_index.item()`, `global_end_index.item()`, rollover comparisons, and
+in-place cache-index updates in `model_fast.py`. The captured regions also
+contained `aten.addmm` signatures, so the persisted TunableOp hipBLASLt
+solutions could not be verified as preserved inside Inductor-generated code.
+
+Correctness failed before a performance A/B was legitimate: bootstrap output
+was finite, but the first subsequent action produced non-finite latent and RGB
+output, with an invalid-value cast warning. The first bootstrap transformer
+interval was `8,581.99 ms` because lazy compilation occurred there, versus
+`779.17 ms` in the prior TunableOp-only profile. A long or 30-block benchmark
+was therefore stopped. The accepted TunableOp-only path remains unchanged.
+
+Classification: **REJECT** direct compilation of the full causal block on this
+build. The detailed report is [`compile-20260910.md`](compile-20260910.md),
+with the compact committed metrics at
+`docs/artifacts/compile-20260910/`; raw logs remain under the ignored
+`results/raw/compile-20260910/probe-block-1b/` directory. If compilation is
+revisited, the only justified next target is a newly isolated state-free
+pointwise/FFN helper, leaving SDPA and all KV/cache mutation eager.
