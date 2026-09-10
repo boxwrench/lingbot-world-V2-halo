@@ -974,3 +974,32 @@ forgotten. Classification: **ACCEPT INTERACTIVE**. Keep 18 frames as the
 quality/reference default and expose 12 frames only as an opt-in low-latency
 mode. The detailed report and local ignored artifacts are in
 `docs/window-18-vs-12-20260910.md`.
+
+## F31 — 14-frame window adds visible persistence at bounded cost (2026-09-10)
+
+The bounded 12-vs-14 A/B changed only physical local attention capacity. Both
+runs used 384×672, chunk_size 1, the 3-step `999 → 899 → 702` sampler, sink
+size 6, BF16 DiT, FP16 TAEHV presentation, deferred exact clean-KV, and serial
+execution. Runtime accounting verified:
+
+```text
+12 frames: 6,048 sink + 5,040 recent + 1,008 current = 12,096 K tokens
+14 frames: 6,048 sink + 7,056 recent + 1,008 current = 14,112 K tokens
+```
+
+Both 40-action sessions were finite through repeated rollovers and reached
+global position `41,328`. Rolled 14-frame latency was `1,106.7 ms`
+first-visible and `1,517.1 ms` next-action-ready, versus `1,033.2 ms` and
+`1,418.4 ms` for 12 frames. The added cost was `73.5 ms` for first RGB and
+`98.7 ms` for readiness; detailed SDPA probes confirmed the expected increase
+in historical self-attention.
+
+Matched 161-frame captures showed both paths preserving the main lake/tree/
+mountain world through the scripted turns and reversals. After the shorter
+window forgot more recent history, 14 frames more consistently retained the
+right-hand shoreline/structure and tree-to-background relationship, while 12
+showed more late texture/edge substitution. No collapse, frozen output, or
+catastrophic drift was observed. Classification: **BOTH MODES JUSTIFIED**.
+Keep 12 as the minimum-latency interactive option, expose 14 as a higher-
+quality interactive option, and retain 18 as quality/reference. The dedicated
+report is `docs/window-12-vs-14-20260910.md`.
