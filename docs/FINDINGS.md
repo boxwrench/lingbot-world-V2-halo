@@ -465,3 +465,26 @@ itself justify temporal decomposition: the next experiment must compare the
 dominant native causal shape against a numerically equivalent Conv2d split on
 the real persistent path. The full raw operator table is local at
 `results/raw/interactive-test-fp16-9f-math-sdpa-profile-v2/metrics.json`.
+
+## F17 — native gfx1151 Conv3d beats the temporal split (2026-09-09)
+
+The dominant full-resolution 96-channel causal Conv3d was replaced only for
+`upsamples.12.residual.2` by the exact temporal Conv2d sum, including the
+existing causal feature-cache history, temporal padding, spatial padding,
+stride, dilation, groups, and bias. The real 480x832 FP16 persistent session
+used math SDPA, three latent chunks, and the same seed/prompt/action inputs.
+
+| Decoder path | Session | First visible | Median action | VAE chunks | Peak allocation | Output |
+|---|---:|---:|---:|---|---:|---|
+| Native Conv3d | 8.381 s | 3.003 s | 2.945 s | 0.464 / 1.144 / 0.944 s | 36.787 GB | finite |
+| One-module temporal split | 8.627 s | 3.021 s | 2.949 s | 0.719 / 1.190 / 0.943 s | 36.787 GB | finite |
+
+The split is therefore rejected on Strix: native gfx1151 Conv3d is already
+slightly faster on the real causal path, and the whole-session result does
+not improve. The implementation remains available as the explicit
+`--vae-temporal-split-module` control so the negative result is reproducible;
+it is not part of the default path.
+
+Raw controls are local at
+`results/raw/interactive-test-fp16-9f-math-sdpa-profile-v2/metrics.json` and
+`results/raw/interactive-test-fp16-9f-math-sdpa-temporal-split-u12r2/metrics.json`.

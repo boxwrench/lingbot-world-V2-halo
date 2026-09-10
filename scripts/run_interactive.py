@@ -26,6 +26,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.distributed as dist
+import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from PIL import Image
 from einops import rearrange
@@ -65,6 +66,64 @@ def cache_positions(self_kv_cache: list[dict[str, torch.Tensor]]) -> dict[str, i
     }
 
 
+def causal_conv2d_temporal_split(module, x: torch.Tensor, cache_x: torch.Tensor | None = None) -> torch.Tensor:
+    """Evaluate one causal Conv3d by summing spatial Conv2d slices.
+
+    This preserves CausalConv3d's existing cache and padding contract: cache_x
+    is prepended exactly as in the upstream module, and only the current
+    temporal outputs are returned.  It is an opt-in experiment, not a general
+    replacement for Conv3d.
+    """
+    padding = list(module._padding)
+    if cache_x is not None and padding[4] > 0:
+        cache_x = cache_x.to(x.device)
+        x = torch.cat([cache_x, x], dim=2)
+        padding[4] -= cache_x.shape[2]
+    x = F.pad(x, padding)
+    kernel_t, kernel_h, kernel_w = module.kernel_size
+    stride_t, stride_h, stride_w = module.stride
+    dilation_t, dilation_h, dilation_w = module.dilation
+    output_t = (x.shape[2] - dilation_t * (kernel_t - 1) - 1) // stride_t + 1
+    outputs = []
+    for output_index in range(output_t):
+        terms = []
+        for kernel_index in range(kernel_t):
+            frame = x[:, :, output_index * stride_t + kernel_index * dilation_t]
+            terms.append(F.conv2d(
+                frame,
+                module.weight[:, :, kernel_index],
+                bias=None,
+                stride=(stride_h, stride_w),
+                padding=0,
+                dilation=(dilation_h, dilation_w),
+                groups=module.groups,
+            ))
+        output = terms[0]
+        for term in terms[1:]:
+            output = output + term
+        if module.bias is not None:
+            output = output + module.bias.view(1, -1, 1, 1)
+        outputs.append(output.unsqueeze(2))
+    return torch.cat(outputs, dim=2)
+
+
+def install_temporal_split(decoder, module_name: str) -> None:
+    """Patch exactly one named decoder CausalConv3d for an A/B run."""
+    from wan.modules.vae2_1 import CausalConv3d
+
+    modules = dict(decoder.named_modules())
+    if module_name not in modules:
+        raise ValueError(f"decoder module not found: {module_name}")
+    module = modules[module_name]
+    if not isinstance(module, CausalConv3d):
+        raise TypeError(f"decoder module is not CausalConv3d: {module_name}")
+
+    def split_forward(x, cache_x=None):
+        return causal_conv2d_temporal_split(module, x, cache_x)
+
+    module.forward = split_forward
+
+
 class IncrementalCausalDecoder:
     """Decode one latent frame while retaining Wan's causal feature cache."""
 
@@ -74,6 +133,7 @@ class IncrementalCausalDecoder:
         attention_backend: str = "math",
         dtype_name: str = "fp32",
         profile: bool = False,
+        temporal_split_module: str | None = None,
     ) -> None:
         self.vae = vae
         self.model = vae.model
@@ -89,6 +149,8 @@ class IncrementalCausalDecoder:
         self.vae.std = self.vae.std.to(dtype=self.dtype)
         self.vae.scale = [self.vae.mean, 1.0 / self.vae.std]
         self.model.clear_cache()
+        if temporal_split_module:
+            install_temporal_split(self.model.decoder, temporal_split_module)
         self.last_stats: dict[str, object] = {}
         self.profiler = DecoderProfiler(self.model.decoder) if profile else None
 
@@ -264,6 +326,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile-vae",
         action="store_true",
         help="record CUDA-event inclusive/exclusive timing for decoder modules",
+    )
+    parser.add_argument(
+        "--vae-temporal-split-module",
+        default=None,
+        help="opt-in exact Conv3d->Conv2d split for one decoder module path",
     )
     return parser
 
@@ -526,6 +593,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
         args.vae_attention_backend,
         args.vae_dtype,
         profile=args.profile_vae,
+        temporal_split_module=args.vae_temporal_split_module,
     )
     @contextmanager
     def noop_no_sync():
