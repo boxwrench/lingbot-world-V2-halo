@@ -49,3 +49,17 @@ PyTorch’s `total_memory`, DRM `mem_info_vram_total`, KFD APU pool, PyTorch
 allocated/reserved bytes, process RSS, and system used memory are different
 observables. Report them separately. The experiment will not label the 112
 GiB APU pool as dedicated VRAM without evidence.
+
+## Current low-latency phase
+
+The validated TAEHV result is recorded in
+[`next-phase-plan-20260910.md`](next-phase-plan-20260910.md) and
+[`taehv-20260910.md`](taehv-20260910.md). TAEHV is an explicit opt-in
+presentation decoder; canonical FP16 Wan VAE remains the default/reference
+path. At full `18+6` occupancy and `384x672`, TAEHV reduced first-visible from
+about `1.841 s` to `1.229–1.232 s` and next-action permission from about
+`2.232 s` to `1.644–1.648 s` in a finite 81-frame persistent session.
+
+The next bounded task is to profile the remaining three-step DiT path in that
+TAE candidate. No new decoder, sampler, attention library, or kernel branch is
+authorized until that profile identifies a measured opportunity.
