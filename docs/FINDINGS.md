@@ -1114,3 +1114,47 @@ with the compact committed metrics at
 `results/raw/compile-20260910/probe-block-1b/` directory. If compilation is
 revisited, the only justified next target is a newly isolated state-free
 pointwise/FFN helper, leaving SDPA and all KV/cache mutation eager.
+
+## F36 — pure state-free tensor islands are a small opt-in win (2026-09-10)
+
+The follow-up compiler probe left all stateful and GEMM-bearing work eager and
+compiled only seven pure tensor helper families with Inductor: modulation,
+affine transforms, scaled residuals, tensor addition, SiLU, tanh-approximate
+GELU, and camera tensor update arithmetic. Self- and cross-attention, every
+Linear, KV reads/writes, cache dictionaries, rollover/index logic, and SDPA
+remain outside the compiled regions. The same helper bank was installed on all
+30 repeated blocks; no accepted default was changed.
+
+On the validator-matched gfx1151 TunableOp stack, the candidate produced eight
+stable graphs, 23 captured helper calls, no logged graph breaks, and no logged
+recompiles across a 40-action persistent run. Compiler diagnostics contained no
+`aten.addmm`, `aten.mm`, or `aten.bmm` entries. TunableOp loaded all 16 persisted
+results with the expected PT/HIP/hipBLASLt/gfx1151/rocBLAS validators. A separate
+real-shape helper check was finite: simple helpers were bitwise equal, affine
+and residual max error was `9.54e-7`, and camera-update max error was `0.0625`
+at BF16-scale values (the expected fused-rounding difference).
+
+Against the exact TunableOp-only 12-frame control, the lightly instrumented
+candidate's rolled median improved from `950.627` to `922.412 ms` for the
+three denoise passes, from `970.854` to `943.247 ms` first-visible, from
+`310.164` to `300.973 ms` for clean KV, and from `1329.256` to `1291.867 ms`
+next-action-ready. P95 improved similarly. The detailed profile attributes
+the change to state-free block-local work: self-SDPA and eager Linear/GEMM
+time were effectively unchanged, while the block exclusive remainder fell
+about `25 ms` across the three denoise passes and `8 ms` in clean KV; GELU
+module work disappeared into the compiled helper. These profile timings are
+attribution evidence, not the product numbers.
+
+All 40 actions reached global position `41,328` with the local KV cap at
+`12,096` tokens and `6,048` sink tokens retained; latents and RGB stayed finite.
+A small 14-frame transfer run reused the same eight graphs, reached a
+`14,112`-token local cap with `6,048` sink tokens, and stayed finite through
+rollover without a second tuning campaign.
+
+Classification: **RETAIN AS OPT-IN**. The gain clears the approximately 20 ms
+whole-path threshold, but compilation remains opt-in because the first
+bootstrap invocation carries roughly `1.9 s` of lazy compile/setup overhead
+even when the process sees populated FX/Inductor cache entries. The accepted
+TunableOp-only lane remains the default. Raw logs and metrics are under the
+ignored `results/raw/compile-20260910/` tree; the dedicated report is
+[`pure-helper-compile-20260910.md`](pure-helper-compile-20260910.md).
