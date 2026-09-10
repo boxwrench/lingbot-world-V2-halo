@@ -50,6 +50,24 @@ copy after each action for the frames that are retained.
 The supplied example pose path provides up to 67 user actions; larger values
 are automatically limited by the available path.
 
+For deterministic profiling, pass a comma-separated action sequence. This
+uses the same live generation path but does not wait for manual keypresses:
+
+```bash
+ACTIONS='w,w,j,w,l,l,s,s,j,w,d,d,w,l,a,a,w,j,s,l,w,w,d,j,a,s,l,w,d,d,j,w,a,a,l,s,w,j,l,w'
+LINGBOT_LIVE_OUTPUT_DIR=results/raw/live-context-profile \
+LINGBOT_LIVE_MAX_ACTIONS=40 \
+LINGBOT_LIVE_TIMEOUT_SECONDS=900 \
+bash scripts/run_live.sh --scripted-actions "$ACTIONS"
+```
+
+To attach detailed DiT/SDPA and clean-KV probes only at selected chunk IDs,
+add `--profile-contexts 1,9,17,18`. Profiling output is stored in
+`live_metrics.json`; those profiled wall times are attribution data, not
+product latency numbers. See
+[`profile-live-context-20260910.md`](profile-live-context-20260910.md) for
+the recorded experiment.
+
 ## Controls
 
 ```text

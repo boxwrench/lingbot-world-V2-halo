@@ -29,6 +29,8 @@ from run_experiment import (
     write_video,
 )
 from run_interactive import (
+    DecoderProfiler,
+    DitAttentionProbe,
     StreamingTAEHVDecoder,
     cache_positions,
     commit_clean_kv,
@@ -80,6 +82,16 @@ def live_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--window-title",
         default="LingBot World live (Q/ESC quits)",
+    )
+    parser.add_argument(
+        "--scripted-actions",
+        default=None,
+        help="comma-separated deterministic keys (for example w,w,j,l); bypasses manual key waiting",
+    )
+    parser.add_argument(
+        "--profile-contexts",
+        default="",
+        help="comma-separated chunk IDs for detailed DiT/SDPA and clean-KV profiling",
     )
     return parser
 
@@ -223,21 +235,96 @@ def show_frame(viewer: LiveViewer, frame: torch.Tensor, status: str) -> str | No
     )
 
 
-def choose_action(viewer: LiveViewer) -> tuple[str, torch.Tensor] | None:
-    key = viewer.wait_for_key()
-    if key in (None, "q", "escape"):
-        return None
+def action_from_key(key: str) -> tuple[str, torch.Tensor] | None:
     aliases = {
         "up": "i",
         "down": "k",
         "left": "j",
         "right": "l",
     }
-    key = aliases.get(key, key)
+    key = aliases.get(key.lower(), key.lower())
     if len(key) != 1 or ord(key) not in KEY_ACTIONS:
         return "ignored", torch.eye(4)
     name, x, yaw, z = KEY_ACTIONS[ord(key)]
     return name, relative_pose(name, x, yaw, z)
+
+
+def choose_action(viewer: LiveViewer) -> tuple[str, torch.Tensor] | None:
+    key = viewer.wait_for_key()
+    if key in (None, "q", "escape"):
+        return None
+    return action_from_key(key)
+
+
+def parse_scripted_actions(spec: str | None) -> list[str] | None:
+    if spec is None:
+        return None
+    actions = [item.strip().lower() for item in spec.split(",") if item.strip()]
+    if not actions:
+        raise SystemExit("--scripted-actions must contain at least one key")
+    valid = set("wsadjlik ") | {"q", "escape", "esc"}
+    for key in actions:
+        if key not in valid:
+            raise SystemExit(f"unsupported scripted action {key!r}; use movement/look keys or q")
+    return actions
+
+
+def parse_profile_contexts(spec: str) -> set[int]:
+    if not spec.strip():
+        return set()
+    try:
+        contexts = {int(item.strip()) for item in spec.split(",") if item.strip()}
+    except ValueError as exc:
+        raise SystemExit("--profile-contexts must be comma-separated non-negative chunk IDs") from exc
+    if any(item < 0 for item in contexts):
+        raise SystemExit("--profile-contexts must contain non-negative chunk IDs")
+    return contexts
+
+
+def occupancy_record(
+    chunk_id: int,
+    cache_before: dict[str, int],
+    cache_after: dict[str, int],
+    frame_seqlen: int,
+    sink_size: int,
+) -> dict[str, object]:
+    capacity = int(cache_after["cache_capacity_tokens"])
+    before = int(cache_before["local_end_index"])
+    after = int(cache_after["local_end_index"])
+    if before <= frame_seqlen:
+        regime = "early"
+    elif before < capacity and after >= capacity:
+        regime = "full"
+    elif before >= capacity:
+        regime = "rolled"
+    else:
+        regime = "mid"
+    current = int(frame_seqlen)
+    sink_capacity = int(sink_size) * current
+    # The upstream cache is one contiguous tensor. Before the first eviction,
+    # sink frames are only a logical retention policy; after rollover the
+    # first sink_capacity tokens are physically retained at the front.
+    rolled = int(cache_after["global_end_index"]) > capacity
+    retained_sink = min(sink_capacity, max(0, after - current)) if rolled else 0
+    recent = max(0, after - current - retained_sink)
+    return {
+        "regime": regime,
+        "chunk_id": int(chunk_id),
+        "frame_seqlen_tokens": current,
+        "cache_capacity_tokens": capacity,
+        "global_k_tokens_before": int(cache_before["global_end_index"]),
+        "global_k_tokens_after": int(cache_after["global_end_index"]),
+        "local_k_tokens_before": before,
+        "local_k_tokens_after": after,
+        "attention_k_tokens_after": after,
+        "current_frame_tokens": current,
+        "rolled": rolled,
+        "sink_tokens_configured": sink_capacity,
+        "sink_tokens_retained": retained_sink,
+        "recent_history_tokens_accounting": recent,
+        "sink_frames_configured": int(sink_size),
+        "local_frames_after": after // current if current else None,
+    }
 
 
 def main() -> int:
@@ -248,6 +335,8 @@ def main() -> int:
         raise SystemExit("TAEHV live viewer is serial-only")
     if args.max_actions < 0:
         raise SystemExit("--max-actions must be non-negative")
+    scripted_actions = parse_scripted_actions(args.scripted_actions)
+    profile_contexts = parse_profile_contexts(args.profile_contexts)
 
     # The session preparation uses the existing action path for the initial
     # image-conditioning layout and allocates enough deterministic noise/state
@@ -304,7 +393,16 @@ def main() -> int:
         def run_one(chunk_id: int, plucker: torch.Tensor, label: str) -> tuple[torch.Tensor, dict[str, object]]:
             # Match the accepted runner: the DiT has BF16 parameters and must
             # receive the same CUDA/HIP autocast context as run_session().
+            cache_before_action = cache_positions(state["self_kv_cache"])
+            profile_payload: dict[str, object] = {}
+            dit_profiler = None
+            attention_probe = None
             with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad():
+                if chunk_id in profile_contexts:
+                    # Attach only for this action. The detailed hooks/events
+                    # intentionally do not define product latency numbers.
+                    dit_profiler = DecoderProfiler(pipe.model)
+                    attention_probe = DitAttentionProbe(len(pipe.model.blocks))
                 generated = generate_chunk(
                     pipe,
                     state,
@@ -316,6 +414,10 @@ def main() -> int:
                     lambda: sync(device),
                     defer_clean_kv=True,
                 )
+                if dit_profiler is not None:
+                    profile_payload["denoise_module_profile"] = dit_profiler.report()
+                if attention_probe is not None:
+                    profile_payload["denoise_attention_profile"] = attention_probe.report()
                 first_pending, first_gpu_ms, _ = decoder.begin_latent(generated["x0"], device)
                 first_frame = first_pending[0, 0]
                 first_host_t0 = time.perf_counter()
@@ -329,7 +431,16 @@ def main() -> int:
                 )
                 if key in ("q", "escape"):
                     raise KeyboardInterrupt
+                clean_profiler = DecoderProfiler(pipe.model) if chunk_id in profile_contexts else None
+                clean_attention_probe = (
+                    DitAttentionProbe(len(pipe.model.blocks))
+                    if chunk_id in profile_contexts else None
+                )
                 commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
+                if clean_profiler is not None:
+                    profile_payload["clean_module_profile"] = clean_profiler.report()
+                if clean_attention_probe is not None:
+                    profile_payload["clean_attention_profile"] = clean_attention_probe.report()
                 decoded, remaining_gpu_ms = decoder.drain_latent(first_pending, device)
                 # Keep the newest decoded frame in the viewer while waiting for
                 # the next key.  The first frame was already displayed at the
@@ -343,6 +454,9 @@ def main() -> int:
                     "chunk_id": chunk_id,
                     "action": label,
                     "transformer_ms": generated["transformer_ms"],
+                    "action_prepare_ms": generated["action_prepare_ms"],
+                    "latent_postprocess_ms": generated["latent_postprocess_ms"],
+                    "forward_records": generated["forward_records"],
                     "denoise_forward_count": len(state["timesteps"]),
                     "taehv_first_rgb_gpu_ms": first_gpu_ms,
                     "taehv_remaining_rgb_gpu_ms": remaining_gpu_ms,
@@ -358,6 +472,16 @@ def main() -> int:
                     "rss_bytes": current_rss_bytes(),
                     "host_memory": host_memory(),
                 }
+                cache_after_action = cache_positions(state["self_kv_cache"])
+                row["occupancy"] = occupancy_record(
+                    chunk_id,
+                    cache_before_action,
+                    cache_after_action,
+                    int(state["frame_seqlen"]),
+                    int(args.sink_size),
+                )
+                if profile_payload:
+                    row["profile"] = profile_payload
                 if args.save_video:
                     # TAEHV emits RGB in [0, 1], while the shared MP4 helper
                     # consumes the repository's canonical [-1, 1] convention.
@@ -380,7 +504,17 @@ def main() -> int:
                 print("Reached --max-seconds safety limit; stopping cleanly.", flush=True)
                 stopped = True
                 break
-            selected = choose_action(viewer)
+            if scripted_actions is None:
+                selected = choose_action(viewer)
+            else:
+                if action_index >= len(scripted_actions):
+                    stopped = True
+                    break
+                scripted_key = scripted_actions[action_index]
+                if scripted_key in ("q", "esc", "escape"):
+                    stopped = True
+                    break
+                selected = action_from_key(scripted_key)
             if selected is None:
                 stopped = True
                 break

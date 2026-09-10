@@ -904,5 +904,42 @@ persistent model rather than merely opening a video player.
 
 The bounded launch path is documented in `docs/live-viewer.md`. It uses a
 20-action default limit, a configurable wall-clock timeout, Q/ESC in the
-window, and Ctrl-C from the terminal. It writes metrics only and does not
-serialize a video.
+window, and Ctrl-C from the terminal. At this milestone it wrote metrics only
+by default; the later opt-in generated-frame capture is documented separately
+and does not change the default path.
+
+## F29 — context occupancy profile identifies self-attention growth (2026-09-10)
+
+The real live viewer path was extended with opt-in deterministic scripted
+actions and per-chunk module/SDPA probes; accepted defaults were unchanged.
+An unprofiled bootstrap-plus-40-action control and a detailed prefix at chunks
+`1, 9, 17, 18` covered Early, Mid, Full, and Rolled occupancy. All 41 control
+rows were finite. At 384×672, each latent frame contributes `1008` tokens and
+the physical local cache is `18144` tokens, not 24 frames: `sink_size=6` is a
+retention policy inside the 18-frame capacity.
+
+| Regime | K tokens | 3× denoise | clean KV | first visible | next action |
+|---|---:|---:|---:|---:|---:|
+| Early | 2,016 | 713.6 ms | 229.5 ms | 735.1 ms | 1,016.2 ms |
+| Mid | 10,080 | 938.2 ms | 310.7 ms | 958.8 ms | 1,315.4 ms |
+| Full | 18,144 | 1,192.3 ms | 394.2 ms | 1,212.9 ms | 1,655.0 ms |
+| Rolled median | 18,144 | 1,224.9 ms | 396.1 ms | 1,245.7 ms | 1,688.0 ms |
+
+Full minus Early denoise growth was `478.7 ms`. The intrusive SDPA probe measured
+self-attention growth of `482.8 ms` across the 90 self-attention calls, while
+cross-attention stayed at about `18.4 ms` total and self QKV/MLP projections
+were effectively flat. Thus self-attention arithmetic accounts for essentially
+all of the context-dependent denoise increase. The first rolled action adds a
+smaller cache-shift cost while keeping K bounded at `18144`.
+
+The current fused path remains PyTorch SDPA, previously traced to
+`aten::_scaled_dot_product_flash_attention` / HIP `attn_fwd.kd`; the current
+probe confirmed rectangular Q/K/V shapes, contiguous pre-SDPA tensors,
+transpose views into SDPA, no explicit mask, and `is_causal=False`. The exact
+sink/history/current accounting after rollover is 6,048 + 11,088 + 1,008
+tokens. The detailed report and raw ignored metrics are in
+[`profile-live-context-20260910.md`](profile-live-context-20260910.md).
+
+This closes the profile-only phase. The next justified single experiment is a
+controlled `local_attn_size=12`, `sink_size=6` persistent A/B; no such change
+is included here.

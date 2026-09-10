@@ -360,7 +360,7 @@ class DecoderProfiler:
 class DitAttentionProbe:
     """Record real DiT attention dispatch, SDPA, and tensor layouts."""
 
-    def __init__(self) -> None:
+    def __init__(self, layers_per_forward: int | None = None) -> None:
         from wan.modules import model_fast
 
         self.model_fast = model_fast
@@ -368,6 +368,8 @@ class DitAttentionProbe:
         self.original_sdpa = F.scaled_dot_product_attention
         self.calls: list[dict[str, object]] = []
         self.active: dict[str, object] | None = None
+        self.layers_per_forward = layers_per_forward
+        self.kind_call_counts = {"self": 0, "cross": 0}
         self.backend_flags = {
             "flash_enabled": bool(torch.backends.cuda.flash_sdp_enabled()),
             "mem_efficient_enabled": bool(torch.backends.cuda.mem_efficient_sdp_enabled()),
@@ -377,8 +379,16 @@ class DitAttentionProbe:
         }
 
         def dispatch(q, k, v, *args, **kwargs):
+            kind = "self" if int(k.shape[1]) > 1024 else "cross"
+            forward_index = (
+                self.kind_call_counts[kind] // self.layers_per_forward
+                if self.layers_per_forward
+                else None
+            )
+            self.kind_call_counts[kind] += 1
             call = {
-                "kind": "self" if int(k.shape[1]) > 1024 else "cross",
+                "kind": kind,
+                "forward_index": forward_index,
                 "q_shape": list(q.shape),
                 "k_shape": list(k.shape),
                 "v_shape": list(v.shape),
@@ -484,6 +494,7 @@ class DitAttentionProbe:
                 counts[key] = counts.get(key, 0) + 1
         return {
             "backend_flags": self.backend_flags,
+            "layers_per_forward": self.layers_per_forward,
             "calls_recorded": len(rows),
             "calls": rows,
             "groups": list(grouped.values()),
