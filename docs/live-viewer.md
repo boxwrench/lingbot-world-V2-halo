@@ -1,9 +1,9 @@
 # Keyboard live viewer
 
-The repository now includes a bounded OpenCV viewer for the accepted
+The repository now includes a bounded Tk/Pillow viewer for the accepted
 `384x672`, chunk-size-1, 3-step LingBot path with opt-in TAEHV presentation.
 It reuses the existing persistent DiT/KV and causal decoder state. It does
-not serialize a video by default.
+not capture a video by default.
 
 ## Launch
 
@@ -28,6 +28,24 @@ LINGBOT_LIVE_MAX_ACTIONS=40 \
 LINGBOT_LIVE_TIMEOUT_SECONDS=900 \
 bash scripts/run_live.sh
 ```
+
+To save the generated RGB stream as an MP4 after the session exits, add
+`--save-video`:
+
+```bash
+LINGBOT_LIVE_MAX_ACTIONS=40 \
+LINGBOT_LIVE_TIMEOUT_SECONDS=900 \
+bash scripts/run_live.sh --save-video
+```
+
+The capture is written to
+`results/raw/live-taehv-384x672/live.mp4` (or the directory selected with
+`LINGBOT_LIVE_OUTPUT_DIR`) and the path is also recorded in
+`live_metrics.json`. It is a generated-frame capture at 16 FPS, not a screen
+recording with the viewer window or keyboard timing. Frames are copied after
+the first frame is presented and encoded only when the session ends, so MP4
+encoding does not block first-visible latency. Capture mode does add a host
+copy after each action for the frames that are retained.
 
 The supplied example pose path provides up to 67 user actions; larger values
 are automatically limited by the available path.
@@ -57,10 +75,9 @@ the timeout wrapper is the second line of defense. A hard GPU/driver lockup
 cannot be repaired by Python, so the viewer is bounded by default and does
 not run an unbounded action loop.
 
-The run writes only metrics to
-`results/raw/live-taehv-384x672/live_metrics.json` by default. It does not
-write an MP4 unless a separate experiment is run with the existing batch
-runner.
+The run writes metrics to
+`results/raw/live-taehv-384x672/live_metrics.json` by default. With
+`--save-video`, it also writes `live.mp4` in that same output directory.
 
 The viewer path has been smoke-tested through bootstrap plus one automated
 `W` action on gfx1151. That action produced finite output, advanced persistent

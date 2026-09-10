@@ -21,7 +21,13 @@ from einops import rearrange
 from PIL import Image, ImageTk
 import tkinter as tk
 
-from run_experiment import cuda_memory, current_rss_bytes, host_memory
+from run_experiment import (
+    cuda_memory,
+    current_rss_bytes,
+    host_memory,
+    normalize_video,
+    write_video,
+)
 from run_interactive import (
     StreamingTAEHVDecoder,
     cache_positions,
@@ -266,6 +272,7 @@ def main() -> int:
     start = time.perf_counter()
     pipe: WanI2VCausal | None = None
     decoder: StreamingTAEHVDecoder | None = None
+    recorded_video_chunks: list[torch.Tensor] = []
     stopped = False
     try:
         viewer = LiveViewer(args.window_title)
@@ -351,6 +358,14 @@ def main() -> int:
                     "rss_bytes": current_rss_bytes(),
                     "host_memory": host_memory(),
                 }
+                if args.save_video:
+                    # TAEHV emits RGB in [0, 1], while the shared MP4 helper
+                    # consumes the repository's canonical [-1, 1] convention.
+                    # Copy only after first presentation and after recording
+                    # the latency row, so capture cannot delay first RGB.
+                    recorded_video_chunks.append(
+                        decoded.detach().float().clamp(0.0, 1.0).mul(2.0).sub(1.0).cpu()
+                    )
             report["actions"].append(row)
             return decoded[:, -1], row
 
@@ -392,6 +407,15 @@ def main() -> int:
                 viewer.root.destroy()
             except tk.TclError:
                 pass
+        if args.save_video and recorded_video_chunks:
+            try:
+                captured = normalize_video(torch.cat(recorded_video_chunks, dim=1))
+                video_path = root / "live.mp4"
+                write_video(captured, video_path)
+                report["video_path"] = str(video_path)
+                report["video_frames"] = int(captured.shape[0])
+            except Exception as exc:
+                report["video_error"] = f"{type(exc).__name__}: {exc}"
         report["elapsed_seconds"] = time.perf_counter() - start
         (root / "live_metrics.json").write_text(json.dumps(report, indent=2, default=str) + "\n")
     print(json.dumps({
