@@ -1,0 +1,86 @@
+{
+  "date": "2026-09-10",
+  "configuration": {
+    "geometry": "384x672",
+    "tokens_per_frame": 1008,
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "chunk_size": 1,
+    "denoise_schedule": [999, 899, 702],
+    "transformer_dtype": "bfloat16",
+    "renderer": "taehv taew2_1 fp16",
+    "vae": "canonical fp16 math SDPA"
+  },
+  "environment": {
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0",
+    "gfx": "gfx1151",
+    "device": "AMD Radeon 8060S Graphics",
+    "device_memory_bytes": 120259084288,
+    "tunableop_validators": {
+      "PT_VERSION": "2.13.0",
+      "HIP_VERSION": "715",
+      "HIPBLASLT_VERSION": "100401-baa93758",
+      "GCN_ARCH_NAME": "gfx1151",
+      "ROCBLAS_VERSION": "5.6.0.baa93758"
+    }
+  },
+  "coverage": {
+    "unique_signatures": 16,
+    "collection_file": "tunableop_untuned0.csv",
+    "tuned_entries": 16,
+    "hipblaslt_selected": 13,
+    "default_selected": 3,
+    "offline_tuning_seconds": 125.314292
+  },
+  "rolled_long_40_action_medians_ms": {
+    "control": {
+      "denoise_3x": 1013.039,
+      "first_visible": 1033.762,
+      "clean_kv": 336.675,
+      "next_action_ready": 1418.512
+    },
+    "tuned": {
+      "denoise_3x": 950.627,
+      "first_visible": 970.854,
+      "clean_kv": 310.164,
+      "next_action_ready": 1329.256
+    },
+    "delta_tuned_minus_control": {
+      "denoise_3x": -62.412,
+      "first_visible": -62.908,
+      "clean_kv": -26.511,
+      "next_action_ready": -89.256
+    }
+  },
+  "rolled_long_40_action_p95_ms": {
+    "control": {"first_visible": 1041.984, "next_action_ready": 1427.741},
+    "tuned": {"first_visible": 978.439, "next_action_ready": 1338.038}
+  },
+  "correctness": {
+    "control_actions": 41,
+    "tuned_actions": 41,
+    "control_all_finite": true,
+    "tuned_all_finite": true,
+    "global_k_tokens_final": 41328,
+    "local_k_tokens_final": 12096,
+    "local_capacity_tokens": 12096,
+    "sink_tokens_retained": 6048
+  },
+  "profiled_chunk_12_linear_module_exclusive_ms": {
+    "denoise_control": 402.511,
+    "denoise_tuned": 322.846,
+    "clean_control": 132.756,
+    "clean_tuned": 107.974,
+    "time_projection_denoise_control": 78.925,
+    "time_projection_denoise_tuned": 10.953,
+    "mlp_denoise_control": 153.571,
+    "mlp_denoise_tuned": 142.922
+  },
+  "profiled_chunk_12_attention_ms": {
+    "denoise_self_sdpa_control": 357.335,
+    "denoise_self_sdpa_tuned": 358.311,
+    "clean_self_sdpa_control": 120.039,
+    "clean_self_sdpa_tuned": 118.733
+  }
+}

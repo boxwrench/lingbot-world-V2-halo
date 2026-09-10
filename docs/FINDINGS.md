@@ -1054,3 +1054,31 @@ covered by the deterministic controller tests. The change adds no model work
 and leaves the accepted rolled 12-frame product baseline (`~1033.2 ms`
 first-new RGB, `~1418.4 ms` next-action-ready) unchanged. Details and raw
 metrics are in `docs/pending-input-20260910.md`.
+
+## F34 — TunableOp improves recurring gfx1151 GEMM dispatch (2026-09-10)
+
+The installed PyTorch ROCm build exposes TunableOp and validator-bound offline
+tuning. A real 384×672, 12-frame, three-step LingBot live run captured 16
+unique GEMM/BGEMM signatures, including the BF16 MLP/conditioning projections
+and the float `time_projection.1` operation. All 16 signatures were tuned in
+a separate 125.314-second process; 13 selected hipBLASLt implementations and
+three retained `Default`.
+
+In matched fresh-process 40-action runs with online tuning disabled, rolled
+median first-visible latency improved from `1033.762 ms` to `970.854 ms`
+(`−62.908 ms`). Rolled median next-action-ready improved from `1418.512 ms`
+to `1329.256 ms` (`−89.256 ms`), with similar P95 deltas. Both lanes were
+finite through global KV position `41,328`, with the 12,096-token local cap
+and 6,048 sink tokens retained. A 14-frame transfer loaded the same file
+without retuning and remained finite.
+
+The detailed CUDA-event profile shows the observed gain is GEMM-side: denoise
+linear-module exclusive time fell `402.511 → 322.846 ms`, clean-KV linear
+time fell `132.756 → 107.974 ms`, and `time_projection.1` fell `78.925 →
+10.953 ms` across the three denoise passes. Fused self-attention remained
+approximately unchanged (`357.335 → 358.311 ms`). This is retained as an
+opt-in, validator-specific gfx1151 artifact; accepted defaults remain
+unchanged. Full CSVs and a compact summary are in
+`docs/artifacts/tunable-op-20260910/`, with detailed methodology in
+`docs/tunable-op-20260910.md` and large raw process outputs under the ignored
+`results/raw/tunable-op-20260910/` directory.
