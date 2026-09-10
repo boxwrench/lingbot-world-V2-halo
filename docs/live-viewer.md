@@ -50,6 +50,11 @@ The run writes only metrics to
 write an MP4 unless a separate experiment is run with the existing batch
 runner.
 
+The viewer path has been smoke-tested through bootstrap plus one automated
+`W` action on gfx1151. That action produced finite output, advanced persistent
+KV from 1008 to 2016 tokens, and measured 665 ms to first RGB and 941 ms to
+next-action readiness. These are a validation sample, not a P50/P95 result.
+
 ## Semantics
 
 The first bootstrap chunk initializes the persistent world and is not counted

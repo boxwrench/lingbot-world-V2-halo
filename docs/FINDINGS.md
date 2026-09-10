@@ -885,3 +885,24 @@ offline report and raw metrics are in
 `results/raw/taehv-offline-384x672-3step-81f/metrics.json`; the live raw result
 is in
 `results/raw/interactive-taehv-384x672-3step-deferred-81f-video/metrics.json`.
+
+## F28 — bounded keyboard viewer reaches a real persistent action (2026-09-10)
+
+The live viewer initially exposed three ordinary integration issues: the
+preparation script assumed `rg` was installed, the wrapper did not pass the
+pinned upstream checkout on `PYTHONPATH`, and the viewer omitted the accepted
+BF16 DiT autocast context. These were fixed independently in commits
+`f1adf80`, `7319e17`, and `f5db488`.
+
+The final wrapper was validated with a real Tk window and an automated `W`
+keypress. Bootstrap plus one user action completed successfully with finite
+TAE output. The action measured `665.3 ms` to first RGB and `941.3 ms` to the
+next-action-ready boundary; the exact clean-KV pass took `219.3 ms`. KV
+progressed from `1008` to `2016` tokens with capacity `18144`, and the action
+output remained finite. This confirms that the handoff command exercises the
+persistent model rather than merely opening a video player.
+
+The bounded launch path is documented in `docs/live-viewer.md`. It uses a
+20-action default limit, a configurable wall-clock timeout, Q/ESC in the
+window, and Ctrl-C from the terminal. It writes metrics only and does not
+serialize a video.
