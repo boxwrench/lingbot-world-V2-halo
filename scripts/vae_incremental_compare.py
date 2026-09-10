@@ -82,6 +82,19 @@ def attention_context(backend: str):
     return sdpa_kernel(SDPBackend.MATH) if backend == "math" else nullcontext()
 
 
+def configure_dtype(vae, name: str) -> torch.dtype:
+    dtype = {
+        "fp32": torch.float32,
+        "fp16": torch.float16,
+        "bf16": torch.bfloat16,
+    }[name]
+    vae.model.to(dtype=dtype)
+    vae.mean = vae.mean.to(dtype=dtype)
+    vae.std = vae.std.to(dtype=dtype)
+    vae.scale = [vae.mean, 1.0 / vae.std]
+    return dtype
+
+
 def incremental_decode(
     vae,
     z: torch.Tensor,
@@ -97,12 +110,13 @@ def incremental_decode(
     t0 = time.perf_counter()
     with attention_context(attention_backend), torch.autocast(device_type="cuda", enabled=False), torch.no_grad():
         z_dim = model.z_dim
+        compute_dtype = next(model.parameters()).dtype
         for index in range(z.shape[1]):
             # z is [C,T,H,W] in the public Wan VAE API.  The internal model
             # requires [B,C,T,H,W]; omitting this unsqueeze silently makes the
             # Conv3d interpret channels/time/spatial axes incorrectly.
             frame = z[:, index:index + 1, :, :].unsqueeze(0)
-            frame = frame.float() / vae.scale[1].view(1, z_dim, 1, 1, 1)
+            frame = frame.to(compute_dtype) / vae.scale[1].view(1, z_dim, 1, 1, 1)
             frame = frame + vae.scale[0].view(1, z_dim, 1, 1, 1)
             x = model.conv2(frame)
             model._conv_idx = [0]
@@ -131,6 +145,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--scale", type=float, default=1.0)
     parser.add_argument("--sdpa-backend", choices=("math", "default"), default="math")
+    parser.add_argument("--vae-dtype", choices=("fp32", "fp16", "bf16"), default="fp32")
     parser.add_argument("--out-json", required=True, type=Path)
     args = parser.parse_args()
 
@@ -138,7 +153,8 @@ def main() -> int:
 
     torch.cuda.set_device(0)
     vae = Wan2_1_VAE(vae_pth=str(args.model_dir / "Wan2.1_VAE.pth"), device="cuda")
-    z = torch.randn(16, args.latent_frames, 58, 104, device="cuda", dtype=torch.float32) * args.scale
+    compute_dtype = configure_dtype(vae, args.vae_dtype)
+    z = (torch.randn(16, args.latent_frames, 58, 104, device="cuda", dtype=torch.float32) * args.scale).to(compute_dtype)
 
     sync()
     t0 = time.perf_counter()
@@ -162,7 +178,7 @@ def main() -> int:
     # feature-cache path itself.
     vae.model.clear_cache()
     with attention_context(args.sdpa_backend), torch.autocast(device_type="cuda", enabled=False), torch.no_grad():
-        normalized = z.float() / vae.scale[1].view(1, 16, 1, 1, 1)
+        normalized = z.to(compute_dtype) / vae.scale[1].view(1, 16, 1, 1, 1)
         normalized = normalized + vae.scale[0].view(1, 16, 1, 1, 1)
         full_conv2 = vae.model.conv2(normalized).float().cpu()
     sync()
@@ -189,6 +205,7 @@ def main() -> int:
         "latent_shape": list(z.shape),
         "latent_scale": args.scale,
         "sdpa_backend": args.sdpa_backend,
+        "vae_dtype": str(compute_dtype),
         "full_seconds": full_seconds,
         "direct_reference_seconds": direct_seconds,
         "incremental_seconds": incremental_seconds,

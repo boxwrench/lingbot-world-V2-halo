@@ -68,10 +68,20 @@ def cache_positions(self_kv_cache: list[dict[str, torch.Tensor]]) -> dict[str, i
 class IncrementalCausalDecoder:
     """Decode one latent frame while retaining Wan's causal feature cache."""
 
-    def __init__(self, vae, attention_backend: str = "math") -> None:
+    def __init__(self, vae, attention_backend: str = "math", dtype_name: str = "fp32") -> None:
         self.vae = vae
         self.model = vae.model
         self.attention_backend = attention_backend
+        self.dtype = {
+            "fp32": torch.float32,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }[dtype_name]
+        self.dtype_name = dtype_name
+        self.model.to(dtype=self.dtype)
+        self.vae.mean = self.vae.mean.to(dtype=self.dtype)
+        self.vae.std = self.vae.std.to(dtype=self.dtype)
+        self.vae.scale = [self.vae.mean, 1.0 / self.vae.std]
         self.model.clear_cache()
         self.last_stats: dict[str, object] = {}
 
@@ -92,8 +102,9 @@ class IncrementalCausalDecoder:
         )
         with attention_context, torch.autocast(device_type="cuda", enabled=False):
             z_dim = self.model.z_dim
-            z = latent.float() / self.vae.scale[1].view(1, z_dim, 1, 1, 1)
+            z = latent.float() / self.vae.scale[1].float().view(1, z_dim, 1, 1, 1)
             z = z + self.vae.scale[0].view(1, z_dim, 1, 1, 1)
+            z = z.to(self.dtype)
             self.last_stats["normalized_latent_finite"] = bool(torch.isfinite(z).all())
             self.last_stats["normalized_latent_absmax"] = float(z.abs().max())
             x = self.model.conv2(z)
@@ -106,6 +117,7 @@ class IncrementalCausalDecoder:
                 feat_idx=self.model._conv_idx,
             )
         self.last_stats["attention_backend"] = self.attention_backend
+        self.last_stats["vae_dtype"] = str(self.dtype)
         sync(device)
         return output.float().clamp_(-1, 1).squeeze(0)
 
@@ -133,6 +145,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("math", "default"),
         default="math",
         help="VAE spatial attention backend; math is the validated streaming-correctness fallback",
+    )
+    parser.add_argument(
+        "--vae-dtype",
+        choices=("fp32", "fp16", "bf16"),
+        default="fp16",
+        help="persistent VAE decoder compute/weight dtype",
     )
     return parser
 
@@ -257,7 +275,7 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
 def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Namespace, device: torch.device) -> dict[str, object]:
     outputs: list[torch.Tensor] = []
     actions: list[dict[str, object]] = []
-    decoder = IncrementalCausalDecoder(pipe.vae, args.vae_attention_backend)
+    decoder = IncrementalCausalDecoder(pipe.vae, args.vae_attention_backend, args.vae_dtype)
     @contextmanager
     def noop_no_sync():
         yield

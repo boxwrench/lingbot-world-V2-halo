@@ -375,3 +375,35 @@ The correctness milestone is complete. The math SDPA fallback is currently a
 latency rejection for interactive use, not an optimization result; precision
 and overlap experiments remain deferred until a faster numerically valid VAE
 attention path is compared against this reference.
+
+## F14 — FP16 is the validated persistent Strix VAE default (2026-09-09)
+
+The persistent decoder was tested in FP32, FP16, and BF16 with the same
+prompt, image, seed, resolution, 18+6 causal state, and math-SDPA correctness
+fallback. The 9-frame controls were finite in all three modes. FP16 and BF16
+were then run through the full 81-frame / 21-latent-chunk traversal; both
+remained finite through local-window rollover and preserved the same KV
+progression as FP32.
+
+| VAE path | First visible | Median action | Mean VAE/chunk | Peak allocation | Output |
+|---|---:|---:|---:|---:|---|
+| FP32 + math SDPA | 11.581 s | 10.629 s | 7.577 s | 43.300 GB | finite |
+| FP16 + math SDPA | **2.935 s** | **3.772 s** | **0.926 s** | **37.226 GB** | finite |
+| BF16 + math SDPA | 2.947 s | 3.816 s | 0.975 s | 37.226 GB | finite |
+
+The FP16 81-frame session took 78.454 s end-to-end; the BF16 session took
+79.498 s. Both had approximately 25.867 GB peak RSS and ended at global/local
+KV positions `31668/27144`. Representative first and late frames were
+visually stable across FP32, FP16, and BF16, with no NaN/Inf, frozen output,
+or obvious causal seam observed.
+
+FP16 is therefore the default for the experimental persistent Strix decoder.
+The `--vae-dtype bf16` and `--vae-dtype fp32` controls remain available. This
+does not change the accepted native batch baseline, whose VAE remains FP32;
+it changes only the persistent interactive runner after the FP32 reference
+was validated.
+
+Raw evidence is local under
+`results/raw/interactive-chunk1-stream-fp16-480x832-81f-math-sdpa/metrics.json`
+and
+`results/raw/interactive-chunk1-stream-bf16-480x832-81f-math-sdpa/metrics.json`.
