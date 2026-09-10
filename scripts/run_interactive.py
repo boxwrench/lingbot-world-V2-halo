@@ -203,6 +203,71 @@ class IncrementalCausalDecoder:
         return self.profiler.report() if self.profiler is not None else None
 
 
+class StreamingTAEHVDecoder:
+    """Pinned TAEW2.1 presentation decoder with one-latent streaming output."""
+
+    def __init__(self, taehv_dir: str, device: torch.device, weights_path: str | None = None) -> None:
+        taehv_path = Path(taehv_dir).resolve()
+        if str(taehv_path) not in sys.path:
+            sys.path.insert(0, str(taehv_path))
+        from taehv import StreamingTAEHV, TAEHV
+
+        weights = Path(weights_path) if weights_path else taehv_path / "taew2_1.pth"
+        self.tae = TAEHV(str(weights)).to(device=device, dtype=torch.float16).eval()
+        self.streaming = StreamingTAEHV(self.tae)
+        self.weights_path = str(weights)
+        self.last_stats: dict[str, object] = {
+            "display_decoder": "taehv",
+            "arch_name": self.tae.arch_name,
+            "latent_channels": self.tae.latent_channels,
+            "t_upscale": self.tae.t_upscale,
+            "frames_to_trim": self.tae.frames_to_trim,
+        }
+
+    @torch.inference_mode()
+    def begin_latent(self, latent: torch.Tensor, device: torch.device) -> tuple[torch.Tensor, float, float]:
+        # The pinned TAEW2.1 Diffusers wrapper uses identity latent mean/std.
+        # LingBot x0 is already in that model-space; only NCTHW -> NTCHW is
+        # required by StreamingTAEHV.
+        tae_latent = latent.to(device=device, dtype=torch.float16).permute(0, 2, 1, 3, 4).contiguous()
+        t0 = time.perf_counter()
+        pending = self.streaming.decode(tae_latent)
+        sync(device)
+        first_rgb_ms = (time.perf_counter() - t0) * 1000.0
+        if pending is None:
+            raise RuntimeError("TAEHV did not produce an RGB frame for an accepted latent")
+        return pending, first_rgb_ms, t0
+
+    @torch.inference_mode()
+    def drain_latent(
+        self,
+        first_pending: torch.Tensor,
+        device: torch.device,
+    ) -> tuple[torch.Tensor, float]:
+        t0 = time.perf_counter()
+        frames = [first_pending[:, 0]]
+        while True:
+            pending = self.streaming.decode()
+            sync(device)
+            if pending is None:
+                break
+            frames.append(pending[:, 0])
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        # Return the same [C,T,H,W] convention used by the canonical decoder,
+        # but keep TAE's native [0,1] range until the presentation boundary.
+        decoded = torch.cat(frames, dim=0).permute(1, 0, 2, 3).contiguous()
+        self.last_stats["output_finite"] = bool(torch.isfinite(decoded).all())
+        self.last_stats["output_min"] = float(decoded.min())
+        self.last_stats["output_max"] = float(decoded.max())
+        return decoded, elapsed_ms
+
+    def clear(self) -> None:
+        self.streaming.reset()
+
+    def profile_report(self) -> dict[str, object] | None:
+        return None
+
+
 class DecoderProfiler:
     """CUDA-event profile of the real persistent decoder call tree."""
 
@@ -466,6 +531,22 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("fp32", "fp16", "bf16"),
         default="fp16",
         help="persistent VAE decoder compute/weight dtype",
+    )
+    parser.add_argument(
+        "--display-decoder",
+        choices=("canonical", "taehv"),
+        default="canonical",
+        help="presentation decoder; taehv is an opt-in pinned StreamingTAEHV path",
+    )
+    parser.add_argument(
+        "--taehv-dir",
+        default=".upstream/taehv",
+        help="pinned TAEHV checkout used by --display-decoder taehv",
+    )
+    parser.add_argument(
+        "--taehv-weights",
+        default=None,
+        help="optional TAEW2.1 weight path; defaults to taehv-dir/taew2_1.pth",
     )
     parser.add_argument(
         "--overlap",
@@ -916,17 +997,150 @@ def finish_action(
     })
 
 
+def finish_taehv_action(
+    pipe: WanI2VCausal,
+    state: dict[str, object],
+    args: argparse.Namespace,
+    device: torch.device,
+    decoder: StreamingTAEHVDecoder,
+    generated: dict[str, object],
+    first_pending: torch.Tensor,
+    tae_first_rgb_ms: float,
+    actions: list[dict[str, object]],
+    outputs: list[torch.Tensor],
+    first_visible_ms: float | None,
+    full_action_ms: float | None,
+    post_visible_hook=None,
+) -> None:
+    """Present TAE's first frame before draining the remaining frame group."""
+    first_frame_gpu = first_pending[:, 0]
+    first_post_t0 = time.perf_counter()
+    first_hwc_gpu = first_frame_gpu[0].permute(1, 2, 0).contiguous()
+    first_rgb_postprocess_ms = (time.perf_counter() - first_post_t0) * 1000.0
+    first_copy_t0 = time.perf_counter()
+    first_host = first_hwc_gpu.float().clamp(0, 1).cpu()
+    first_copy_ms = (time.perf_counter() - first_copy_t0) * 1000.0
+    host_first_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+
+    # The exact clean-KV transaction is allowed to begin only after the first
+    # RGB is host-ready. It remains a prerequisite for the next DiT action.
+    if post_visible_hook is not None:
+        post_visible_hook()
+
+    decoded_gpu, tae_remaining_rgb_ms = decoder.drain_latent(first_pending, device)
+    decoded_hwc_gpu = decoded_gpu.permute(1, 2, 3, 0).contiguous()
+    tail_copy_t0 = time.perf_counter()
+    if decoded_hwc_gpu.shape[0] > 1:
+        tail_host = decoded_hwc_gpu[1:].float().clamp(0, 1).cpu()
+        all_frames = torch.cat([first_host.unsqueeze(0), tail_host], dim=0)
+    else:
+        all_frames = first_host.unsqueeze(0)
+    all_copy_ms = (time.perf_counter() - tail_copy_t0) * 1000.0
+    host_all_frames_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+    tae_all_rgb_ms = tae_first_rgb_ms + tae_remaining_rgb_ms
+    output_model = all_frames.mul(2.0).sub(1.0)
+    outputs.append(output_model)
+
+    if generated["chunk_id"] > 0:
+        first_visible_ms = host_first_visible_ms
+        full_action_ms = host_all_frames_ms
+    state_ready_ms = generated.get("state_ready_ms")
+    if state_ready_ms is None:
+        state_ready_ms = host_all_frames_ms
+    generated["state_ready_ms"] = max(float(state_ready_ms), 0.0)
+
+    ordered_waterfall: dict[str, object] = {
+        "action_camera_conditioning_prepare": generated["action_prepare_ms"],
+    }
+    for record in generated["forward_records"]:
+        if record["kind"] == "denoise":
+            ordered_waterfall[f"dit_forward_{int(record['index']) + 1}"] = record["elapsed_ms"]
+    if not generated.get("clean_kv_deferred", False):
+        for record in generated["forward_records"]:
+            if record["kind"] == "cache_update":
+                ordered_waterfall["clean_kv_forward"] = record["elapsed_ms"]
+    ordered_waterfall.update({
+        "taehv_first_rgb_gpu": tae_first_rgb_ms,
+        "taehv_first_rgb_host_copy": first_copy_ms,
+    })
+    if generated.get("clean_kv_deferred", False):
+        for record in generated["forward_records"]:
+            if record["kind"] == "cache_update":
+                ordered_waterfall["clean_kv_forward"] = record["elapsed_ms"]
+    ordered_waterfall.update({
+        "taehv_remaining_rgb_gpu": tae_remaining_rgb_ms,
+        "taehv_all_rgb_gpu": tae_all_rgb_ms,
+        "latent_postprocessing": generated["latent_postprocess_ms"],
+        "vae_decode": tae_all_rgb_ms,
+        "rgb_postprocessing": first_rgb_postprocess_ms,
+        "device_to_host_first_frame": first_copy_ms,
+        "device_to_host_remaining_frames": all_copy_ms,
+        "device_to_host_all_frames": first_copy_ms + all_copy_ms,
+        "presentation": 0.0,
+        "serialization": 0.0,
+        "sum_to_first_visible": first_visible_ms,
+        "sum_to_all_frames_host": host_all_frames_ms,
+        "state_ready": generated["state_ready_ms"],
+        "next_action_ready": host_all_frames_ms,
+    })
+    cache = generated.get("cache", cache_positions(state["self_kv_cache"]))
+    actions.append({
+        "chunk_id": generated["chunk_id"],
+        "current_start": generated["kwargs"]["current_start"],
+        "frames_decoded": int(all_frames.shape[0]),
+        "new_visible_frame_index": 0,
+        "transformer_ms": generated["transformer_ms"],
+        "forward_ms": generated["forward_records"],
+        "denoise_forward_count": sum(record["kind"] == "denoise" for record in generated["forward_records"]),
+        "vae_decode_ms": tae_all_rgb_ms,
+        "taehv_first_rgb_gpu_ms": tae_first_rgb_ms,
+        "taehv_remaining_rgb_gpu_ms": tae_remaining_rgb_ms,
+        "taehv_all_rgb_gpu_ms": tae_all_rgb_ms,
+        "keypress_to_first_visible_ms": first_visible_ms,
+        "full_action_ms": full_action_ms,
+        "cache": cache,
+        "cross_attention_initialized": generated.get(
+            "cross_attention_initialized",
+            int(state["cross_kv_cache"][0]["is_init"].item()),
+        ),
+        "memory_after_action": cuda_memory(device),
+        "rss_bytes": current_rss_bytes(),
+        "host_memory": host_memory(),
+        "output_finite": bool(torch.isfinite(output_model).all()),
+        "latent_finite": bool(torch.isfinite(generated["x0"]).all()),
+        "decoded_finite": bool(torch.isfinite(decoded_gpu).all()),
+        "decoded_min": float(output_model.min()),
+        "decoded_max": float(output_model.max()),
+        "decoder_stats": decoder.last_stats.copy(),
+        "overlap": False,
+        "clean_kv_deferred": bool(generated.get("clean_kv_deferred", False)),
+        "clean_kv_ms": generated.get("clean_kv_ms"),
+        "state_ready_ms": generated.get("state_ready_ms"),
+        "next_action_ready_ms": host_all_frames_ms,
+        "waterfall_ms": ordered_waterfall,
+    })
+
+
 def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Namespace, device: torch.device) -> dict[str, object]:
     outputs: list[torch.Tensor] = []
     accepted_latents: list[torch.Tensor] = []
     actions: list[dict[str, object]] = []
-    decoder = IncrementalCausalDecoder(
-        pipe.vae,
-        args.vae_attention_backend,
-        args.vae_dtype,
-        profile=args.profile_vae,
-        temporal_split_module=args.vae_temporal_split_module,
-    )
+    if args.display_decoder == "taehv":
+        if args.overlap:
+            raise ValueError("TAEHV display mode is serial-only in this experiment")
+        decoder = StreamingTAEHVDecoder(
+            args.taehv_dir,
+            device,
+            args.taehv_weights,
+        )
+    else:
+        decoder = IncrementalCausalDecoder(
+            pipe.vae,
+            args.vae_attention_backend,
+            args.vae_dtype,
+            profile=args.profile_vae,
+            temporal_split_module=args.vae_temporal_split_module,
+        )
     dit_profiler = None
     attention_probe = None
     @contextmanager
@@ -1002,21 +1216,30 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     accepted_latents.append(generated["x0"].detach().cpu())
                 if attention_probe is not None and chunk_id >= args.profile_attention_from_chunk + 2:
                     attention_probe.close()
-                decode_t0 = time.perf_counter()
-                decoded_gpu = decoder.decode_latent(generated["x0"], device)
-                decode_ms = (time.perf_counter() - decode_t0) * 1000.0
-                action_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
-                finish_action(
-                    pipe, state, args, device, decoder, generated, decoded_gpu,
-                    decode_ms, actions, outputs,
-                    action_ms if chunk_id > 0 else None,
-                    action_ms if chunk_id > 0 else None,
-                    post_visible_hook=(
-                        lambda generated=generated: commit_clean_kv(
-                            pipe, state, generated, device, lambda: sync(device)
-                        )
-                    ) if args.defer_clean_kv else None,
-                )
+                post_visible_hook = (
+                    lambda generated=generated: commit_clean_kv(
+                        pipe, state, generated, device, lambda: sync(device)
+                    )
+                ) if args.defer_clean_kv else None
+                if args.display_decoder == "taehv":
+                    first_pending, first_rgb_ms, _ = decoder.begin_latent(generated["x0"], device)
+                    finish_taehv_action(
+                        pipe, state, args, device, decoder, generated,
+                        first_pending, first_rgb_ms, actions, outputs,
+                        None, None, post_visible_hook=post_visible_hook,
+                    )
+                else:
+                    decode_t0 = time.perf_counter()
+                    decoded_gpu = decoder.decode_latent(generated["x0"], device)
+                    decode_ms = (time.perf_counter() - decode_t0) * 1000.0
+                    action_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+                    finish_action(
+                        pipe, state, args, device, decoder, generated, decoded_gpu,
+                        decode_ms, actions, outputs,
+                        action_ms if chunk_id > 0 else None,
+                        action_ms if chunk_id > 0 else None,
+                        post_visible_hook=post_visible_hook,
+                    )
 
     profile = decoder.profile_report()
     dit_profile = dit_profiler.report() if dit_profiler is not None else None
@@ -1051,6 +1274,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
     result: dict[str, object] = {
         "status": "success",
         "overlap": bool(args.overlap),
+        "display_decoder": args.display_decoder,
         "defer_clean_kv": bool(args.defer_clean_kv),
         "denoise_schedule": state["denoise_schedule"],
         "timestep_indices": state["timestep_indices"],
