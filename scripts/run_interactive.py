@@ -229,6 +229,8 @@ class StreamingTAEHVDecoder:
         # The pinned TAEW2.1 Diffusers wrapper uses identity latent mean/std.
         # LingBot x0 is already in that model-space; only NCTHW -> NTCHW is
         # required by StreamingTAEHV.
+        if latent.ndim == 4:
+            latent = latent.unsqueeze(0)
         tae_latent = latent.to(device=device, dtype=torch.float16).permute(0, 2, 1, 3, 4).contiguous()
         t0 = time.perf_counter()
         pending = self.streaming.decode(tae_latent)
