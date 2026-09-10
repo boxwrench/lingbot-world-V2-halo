@@ -1,0 +1,122 @@
+{
+  "status": "cleanup_lane_success_no_cleanup_lane_stalled_after_denoising",
+  "date": "2026-09-09",
+  "device": "gfx1151 / AMD Radeon 8060S Graphics",
+  "torch": "2.13.0+rocm7.15.0a20260728",
+  "hip": "7.15.0",
+  "dtype": "BF16 compute with Q4_K_M/Q4_K_S GGUF storage",
+  "requested_resolution": "480x832",
+  "actual_output_shape": [21, 464, 832, 3],
+  "frames": 21,
+  "chunk_size": 3,
+  "local_attn_size": 18,
+  "sink_size": 6,
+  "pin_gb": 2,
+  "seed": 42,
+  "same_prompt_image_actions_as_q4_baseline": true,
+  "community_revision": "f310acc1109e7af447d5c6efb94f29fe746408a1",
+  "comfyui_gguf_revision": "6ea2651e7df66d7585f6ffee804b20e92fb38b8a",
+  "hf_revision": "79be5d5f30d63327ac6020ced7f653cdbc301f49",
+  "assets": {
+    "dit": {
+      "filename": "LingBot-World-14B-causal-fast_merged-Q4_K_M.gguf",
+      "bytes": 12054188608,
+      "sha256": "71e0ae7d4d245288713c1aaf8132018d977605831f00c4ab2fc56939aac394d1"
+    },
+    "clip": {
+      "filename": "umt5-xxl-encoder-Q4_K_S.gguf",
+      "bytes": 3497596768,
+      "sha256": "4a3176f32fd70c0a335b4419fcbf8c86cc875e23498c0fc06f5b4aa0930889e0"
+    },
+    "vae": {
+      "filename": "Wan2.1_VAE.pth",
+      "bytes": 507609880,
+      "sha256": "38071ab59bd94681c686fa51d75a1968f64e470262043be31f7a094e442fd981"
+    }
+  },
+  "kv_accounting": {
+    "formula": "2 * 40 layers * (local + sink) * tokens_per_frame * 5120 channels * 2 bytes",
+    "latent_grid": [58, 104],
+    "tokens_per_frame": 1508,
+    "estimated_self_kv_bytes": 29648486400,
+    "estimated_self_kv_gb_decimal": 29.6484864,
+    "observed_runtime_self_kv_bytes_before_vae": 22236365440,
+    "observed_runtime_self_kv_gb_decimal": 22.23636544,
+    "observed_runtime_note": "The pre-flight formula includes local+sink; the runtime tensor accounting at this point reports the local rolling cache."
+  },
+  "lanes": {
+    "unmodified": {
+      "status": "stalled_after_denoising",
+      "denoising": "2/2 completed in approximately 125 s",
+      "output": null,
+      "console_log": "../../../results/raw/14b/q4-480x832-18plus6/console.log"
+    },
+    "phase_baseline_no_cleanup": {
+      "status": "terminated_after_before_vae_boundary",
+      "denoising": "2/2 completed in approximately 124 s",
+      "before_vae": {
+        "allocated_bytes": 23494885888,
+        "reserved_bytes": 25560088576,
+        "peak_allocated_bytes": 26577903616,
+        "peak_reserved_bytes": 26965180416,
+        "process_rss_bytes": 27806625792,
+        "system_mem_available_bytes": 38212243456,
+        "self_kv_bytes": 22236365440,
+        "cross_kv_bytes": 419430560,
+        "gguf_mapping_rss_bytes": 12054192128,
+        "quantized_data_bytes": 11567431680,
+        "latent_bytes": 2316288
+      },
+      "phase_events": "../../../results/raw/14b/q4-480x832-18plus6-phase-baseline/phase-events.json",
+      "console_log": "../../../results/raw/14b/q4-480x832-18plus6-phase-baseline/console.log"
+    },
+    "cleanup_before_vae": {
+      "status": "success",
+      "elapsed_seconds": 210.36206918000244,
+      "effective_fps": 0.09982788285862856,
+      "timings_ms": {
+        "clip_load": 14745.272957981797,
+        "clip_encode": 7467.007986007957,
+        "dit_vae_load": 1306.348861020524,
+        "vae_decode": 51739.58577698795
+      },
+      "output": {
+        "finite": true,
+        "shape": [21, 464, 832, 3],
+        "video": "../../../results/raw/14b/q4-480x832-18plus6-phase-cleanup/generated-1.mp4",
+        "representative_frame": "../../../results/raw/14b/q4-480x832-18plus6-phase-cleanup/representative-frame-11.png",
+        "video_sha256": "2176e6791d0f3870fd22d54cb3433e1054fefc3030a0cbc5feb2184f0c00544f"
+      },
+      "after_t5": {
+        "allocated_bytes": 4816585216,
+        "reserved_bytes": 5907677184,
+        "process_rss_bytes": 7270600704,
+        "system_mem_available_bytes": 67150663680
+      },
+      "after_cleanup": {
+        "allocated_bytes": 794771456,
+        "reserved_bytes": 914358272,
+        "process_rss_bytes": 15298031616,
+        "system_mem_available_bytes": 63482789888,
+        "self_kv_bytes": 0,
+        "cross_kv_bytes": 0,
+        "gguf_mapping_rss_bytes": 0
+      },
+      "vae_peak": {
+        "peak_allocated_bytes": 23529843712,
+        "peak_reserved_bytes": 37287362560,
+        "system_mem_available_at_completion_bytes": 26745958400
+      },
+      "output_complete": {
+        "allocated_bytes": 79691776,
+        "reserved_bytes": 79691776,
+        "process_rss_bytes": 15873187840,
+        "max_process_rss_bytes": 27805265920,
+        "system_mem_available_bytes": 62719045632
+      },
+      "phase_events": "../../../results/raw/14b/q4-480x832-18plus6-phase-cleanup/phase-events.json",
+      "metrics": "../../../results/raw/14b/q4-480x832-18plus6-phase-cleanup/metrics.json"
+    }
+  },
+  "interpretation": "The exact Q4 18+6 denoising computation completes. Releasing transformer/KV/conditioning/GGUF runtime state at the final-latent boundary makes the unchanged VAE decode complete; the result supports a generation/VAE working-set overlap diagnosis."
+}

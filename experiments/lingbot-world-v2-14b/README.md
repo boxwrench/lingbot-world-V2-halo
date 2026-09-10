@@ -50,6 +50,14 @@ is finite, repeatable for the same seed, and the raw JSON plus MP4s are under
 [`benchmarks/q4-480x832-6plus2.json`](benchmarks/q4-480x832-6plus2.json) and
 [`FINDINGS.md`](FINDINGS.md) for the exact lane and limitations.
 
+The bounded `18+6` window also completes denoising, but retaining generation
+state into VAE decode causes severe memory pressure. A cleanup-only boundary
+lane, with the latent and all generation inputs unchanged, releases the
+transformer/KV/runtime state before the unchanged VAE and succeeds in 210.362
+s, including a 51.740 s VAE decode. See
+[`benchmarks/q4-480x832-18plus6-phase-memory.json`](benchmarks/q4-480x832-18plus6-phase-memory.json)
+and the chronological interpretation in [`FINDINGS.md`](FINDINGS.md).
+
 ## What the reference implementation does
 
 The node reads GGUF tensors through `gguf.GGUFReader`. The quantized linear

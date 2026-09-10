@@ -245,6 +245,8 @@ def main() -> int:
         "runs": [],
     }
 
+    phase_events: list[dict[str, object]] = []
+
     # UMT5 is loaded by the actual ComfyUI-GGUF CLIP loader, not by upstream's
     # full-precision T5 path.
     t0 = time.perf_counter()
@@ -254,6 +256,29 @@ def main() -> int:
     positive, = nodes.CLIPTextEncode().encode(clip, PROMPT)
     negative, = nodes.CLIPTextEncode().encode(clip, i2v_A14B.sample_neg_prompt)
     report["timings_ms"]["clip_encode"] = (time.perf_counter() - t0) * 1000
+    if args.phase_memory:
+        # This is deliberately a separate sample from "model ready": it
+        # captures the memory state after UMT5 load and prompt encoding, but
+        # before the DiT/VAE objects are constructed.
+        torch.cuda.synchronize(device)
+        host = host_memory()
+        phase_events.append({
+            "phase": "after_t5",
+            "cuda_memory": cuda_memory(torch, device),
+            "process_rss_bytes": current_rss_bytes(),
+            "max_process_rss_bytes": rss_bytes(),
+            "system_memory": {
+                key: host.get(key, 0)
+                for key in ("MemTotal", "MemAvailable", "MemFree", "SwapFree",
+                            "Mapped", "AnonPages", "Shmem")
+            },
+            "positive_conditioning_bytes": tensor_bytes(torch, positive),
+            "negative_conditioning_bytes": tensor_bytes(torch, negative),
+            "text_store_bytes": tensor_bytes(torch, getattr(clip, "_store", {})),
+        })
+        (out_dir / "phase-events.json").write_text(
+            json.dumps(phase_events, indent=2, ensure_ascii=False) + "\n"
+        )
 
     t0 = time.perf_counter()
     lb_pipe, = LBWorldLoader().load(
@@ -273,7 +298,6 @@ def main() -> int:
     report["cuda_memory_after_load"] = cuda_memory(torch, device)
     if args.cleanup_before_vae and not args.phase_memory:
         raise ValueError("--cleanup-before-vae requires --phase-memory")
-    phase_events: list[dict[str, object]] = []
     pipe = lb_pipe["pipe"]
     if args.phase_memory:
         def phase_hook(phase, latent, self_kv_cache, cross_kv_cache, context, conditioning):
