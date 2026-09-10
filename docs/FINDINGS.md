@@ -943,3 +943,34 @@ tokens. The detailed report and raw ignored metrics are in
 This closes the profile-only phase. The next justified single experiment is a
 controlled `local_attn_size=12`, `sink_size=6` persistent A/B; no such change
 is included here.
+
+## F30 — shorter attended history is an interactive candidate (2026-09-10)
+
+The bounded 18-vs-12 persistent A/B kept the accepted 384×672 geometry,
+chunk_size 1, 3-step `999 → 899 → 702` sampler, sink size 6, BF16 DiT,
+FP16 TAEHV presentation, deferred exact clean-KV pass, and serial execution
+unchanged. The only variable was physical local attention capacity:
+
+```text
+18-frame control: 18,144 tokens = 6,048 sink + 11,088 recent + 1,008 current
+12-frame candidate: 12,096 tokens = 6,048 sink + 5,040 recent + 1,008 current
+```
+
+Both matched 40-action sessions completed finitely through repeated rollovers.
+Global position reached `41,328` tokens while local K stayed at the configured
+capacity. The 12-frame candidate's rolled median first-visible latency was
+`1,024.8 ms` versus `1,254.8 ms` for the 18-frame control, a saving of
+`229.9 ms`. Rolled next-action-ready was `1,406.8 ms` versus `1,706.6 ms`, a
+saving of `299.7 ms`. Full-capacity first-visible was `1,015.3 ms` versus
+`1,212.4 ms`; clean KV improved by about `65 ms`.
+
+The detailed candidate probe confirmed the same contiguous BF16 fused SDPA
+path with Q `[1,1008,12,128]` and K/V `[1,12096,12,128]`; no mask or backend
+fallback was introduced. The candidate therefore recovers latency for the
+expected reason: less historical self-attention arithmetic. Matched captures
+remained coherent and finite through the tested forward/turn/reversal path,
+but late scenes visibly diverged as expected when older recent history was
+forgotten. Classification: **ACCEPT INTERACTIVE**. Keep 18 frames as the
+quality/reference default and expose 12 frames only as an opt-in low-latency
+mode. The detailed report and local ignored artifacts are in
+`docs/window-18-vs-12-20260910.md`.
