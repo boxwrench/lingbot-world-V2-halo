@@ -430,3 +430,38 @@ Raw controls are local at
 `results/raw/interactive-test-fp16-9f-math-sdpa-serial-postoverlap/metrics.json`
 and
 `results/raw/interactive-test-fp16-9f-math-sdpa-overlap/metrics.json`.
+
+## F16 — steady-state FP16 decoder profile (2026-09-09)
+
+The real serial FP16 persistent decoder was profiled for three 480x832
+chunks with math SDPA. CUDA events were recorded for the decoder module tree;
+the report includes inclusive and exclusive time, first-call time, repeat
+mean, shapes, dtypes, and cumulative exclusive share. The profile run was
+finite, took 8.381 s for the session, and had 36.787 GB peak PyTorch
+allocation.
+
+The first 13 grouped rows below account for **92.58%** of exclusive decoder
+time (2.483 s total); percentages are within the profiled decoder tree, not
+the complete DiT/session wall time:
+
+| Operator group | Calls | Aggregate | Share |
+|---|---:|---:|---:|
+| CausalConv3d, 96ch, 464x832 -> 96ch | 18 | 793.50 ms | 31.95% |
+| CausalConv3d, 192ch, 232x416 -> 192ch | 18 | 559.82 ms | 22.54% |
+| CausalConv3d, 384ch, 116x208 -> 384ch | 15 | 212.54 ms | 8.56% |
+| RMS_norm, 96ch, 464x832 | 21 | 190.50 ms | 7.67% |
+| Output CausalConv3d, 96ch -> 3ch, 464x832 | 3 | 131.13 ms | 5.28% |
+| RMS_norm, 192ch, 232x416 | 18 | 83.57 ms | 3.37% |
+| CausalConv3d, 384ch, 58x104 -> 384ch | 30 | 73.47 ms | 2.96% |
+| VAE AttentionBlock, 384ch, 58x104 | 3 | 53.11 ms | 2.14% |
+| ResidualBlock, 96ch, 464x832 | 9 | 48.58 ms | 1.96% |
+| Upsample, 192ch, 232x416 -> 464x832 | 3 | 45.66 ms | 1.84% |
+| SiLU, 96ch, 464x832 | 21 | 40.88 ms | 1.65% |
+| Conv2d, 192ch, 464x832 -> 96ch | 3 | 36.70 ms | 1.48% |
+| CausalConv3d, 192ch, 116x208 -> 384ch | 6 | 29.02 ms | 1.17% |
+
+The profile makes Conv3d the first optimization target, but it does not by
+itself justify temporal decomposition: the next experiment must compare the
+dominant native causal shape against a numerically equivalent Conv2d split on
+the real persistent path. The full raw operator table is local at
+`results/raw/interactive-test-fp16-9f-math-sdpa-profile-v2/metrics.json`.

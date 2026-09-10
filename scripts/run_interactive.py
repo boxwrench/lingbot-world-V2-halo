@@ -68,7 +68,13 @@ def cache_positions(self_kv_cache: list[dict[str, torch.Tensor]]) -> dict[str, i
 class IncrementalCausalDecoder:
     """Decode one latent frame while retaining Wan's causal feature cache."""
 
-    def __init__(self, vae, attention_backend: str = "math", dtype_name: str = "fp32") -> None:
+    def __init__(
+        self,
+        vae,
+        attention_backend: str = "math",
+        dtype_name: str = "fp32",
+        profile: bool = False,
+    ) -> None:
         self.vae = vae
         self.model = vae.model
         self.attention_backend = attention_backend
@@ -84,6 +90,7 @@ class IncrementalCausalDecoder:
         self.vae.scale = [self.vae.mean, 1.0 / self.vae.std]
         self.model.clear_cache()
         self.last_stats: dict[str, object] = {}
+        self.profiler = DecoderProfiler(self.model.decoder) if profile else None
 
     @torch.no_grad()
     def decode_latent(
@@ -130,6 +137,96 @@ class IncrementalCausalDecoder:
     def clear(self) -> None:
         self.model.clear_cache()
 
+    def profile_report(self) -> dict[str, object] | None:
+        return self.profiler.report() if self.profiler is not None else None
+
+
+class DecoderProfiler:
+    """CUDA-event profile of the real persistent decoder call tree."""
+
+    def __init__(self, decoder) -> None:
+        self.calls: list[dict[str, object]] = []
+        self.active: list[dict[str, object]] = []
+        self.handles = []
+        for name, module in decoder.named_modules():
+            if not name:
+                continue
+            self.handles.append(module.register_forward_pre_hook(self._pre(name, module)))
+            self.handles.append(module.register_forward_hook(self._post))
+
+    def _pre(self, name: str, module):
+        def hook(_module, inputs):
+            start = torch.cuda.Event(enable_timing=True)
+            start.record(torch.cuda.current_stream())
+            call = {
+                "name": name,
+                "class": type(module).__name__,
+                "start": start,
+                "input_shape": list(inputs[0].shape) if inputs and isinstance(inputs[0], torch.Tensor) else None,
+                "input_dtype": str(inputs[0].dtype) if inputs and isinstance(inputs[0], torch.Tensor) else None,
+                "parent": self.active[-1] if self.active else None,
+                "children": [],
+            }
+            if self.active:
+                self.active[-1]["children"].append(call)
+            self.active.append(call)
+        return hook
+
+    def _post(self, _module, _inputs, output):
+        call = self.active.pop()
+        end = torch.cuda.Event(enable_timing=True)
+        end.record(torch.cuda.current_stream())
+        call["end"] = end
+        call["output_shape"] = list(output.shape) if isinstance(output, torch.Tensor) else None
+        call["output_dtype"] = str(output.dtype) if isinstance(output, torch.Tensor) else None
+        self.calls.append(call)
+
+    def report(self) -> dict[str, object]:
+        for handle in self.handles:
+            handle.remove()
+        for call in self.calls:
+            call["inclusive_ms"] = float(call["start"].elapsed_time(call["end"]))
+            child_ms = sum(float(child.get("inclusive_ms", 0.0)) for child in call["children"])
+            call["exclusive_ms"] = max(0.0, float(call["inclusive_ms"]) - child_ms)
+
+        groups: dict[str, dict[str, object]] = {}
+        for call in self.calls:
+            group = groups.setdefault(call["name"], {
+                "module": call["name"],
+                "class": call["class"],
+                "calls": 0,
+                "inclusive_ms": 0.0,
+                "exclusive_ms": 0.0,
+                "input_shape": call["input_shape"],
+                "output_shape": call["output_shape"],
+                "dtype": call["input_dtype"],
+                "output_dtype": call["output_dtype"],
+                "exclusive_times_ms": [],
+            })
+            group["calls"] += 1
+            group["inclusive_ms"] += float(call["inclusive_ms"])
+            group["exclusive_ms"] += float(call["exclusive_ms"])
+            group["exclusive_times_ms"].append(float(call["exclusive_ms"]))
+        rows = sorted(groups.values(), key=lambda row: -float(row["exclusive_ms"]))
+        total = sum(float(row["exclusive_ms"]) for row in rows)
+        cumulative = 0.0
+        for row in rows:
+            times = row.pop("exclusive_times_ms")
+            row["first_exclusive_ms"] = times[0] if times else None
+            row["repeat_mean_exclusive_ms"] = (
+                sum(times[1:]) / len(times[1:]) if len(times) > 1 else None
+            )
+            row["min_exclusive_ms"] = min(times) if times else None
+            row["max_exclusive_ms"] = max(times) if times else None
+            row["share_of_exclusive_ms"] = float(row["exclusive_ms"]) / total if total else 0.0
+            cumulative += float(row["exclusive_ms"])
+            row["cumulative_exclusive_share"] = cumulative / total if total else 0.0
+        return {
+            "calls_recorded": len(self.calls),
+            "exclusive_total_ms": total,
+            "operators": rows,
+        }
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -162,6 +259,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--overlap",
         action="store_true",
         help="experimental queued VAE/DiT stream overlap; serial is the default",
+    )
+    parser.add_argument(
+        "--profile-vae",
+        action="store_true",
+        help="record CUDA-event inclusive/exclusive timing for decoder modules",
     )
     return parser
 
@@ -419,7 +521,12 @@ def finish_action(
 def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Namespace, device: torch.device) -> dict[str, object]:
     outputs: list[torch.Tensor] = []
     actions: list[dict[str, object]] = []
-    decoder = IncrementalCausalDecoder(pipe.vae, args.vae_attention_backend, args.vae_dtype)
+    decoder = IncrementalCausalDecoder(
+        pipe.vae,
+        args.vae_attention_backend,
+        args.vae_dtype,
+        profile=args.profile_vae,
+    )
     @contextmanager
     def noop_no_sync():
         yield
@@ -488,6 +595,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     action_ms if chunk_id > 0 else None,
                 )
 
+    profile = decoder.profile_report()
     output = torch.cat(outputs, dim=0)
     decoder.clear()
     session_ms = (time.perf_counter() - session_t0) * 1000.0
@@ -495,6 +603,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
     result: dict[str, object] = {
         "status": "success",
         "overlap": bool(args.overlap),
+        "vae_profile": profile,
         "frames": int(output.shape[0]),
         "output": {
             "shape": list(output.shape),
