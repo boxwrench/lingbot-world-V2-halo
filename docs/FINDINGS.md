@@ -647,3 +647,44 @@ deferred. A future alternative would need to beat this real rectangular
 flash path while preserving the explicit rolling cache semantics. Raw
 application layout/timing evidence is local at
 `results/raw/attention-probe-full-81f/metrics.json`.
+
+## F22 — one lower-area persistent session scales below 480x832 (2026-09-09)
+
+The single bounded lower-resolution test used a custom Wan-compatible area of
+`264192` pixels, which resolved to actual geometry **384x672**. It used a
+fresh persistent cache, chunk size 1, local/sink window 18+6, BF16 DiT,
+FP16 VAE, math VAE SDPA, native Conv3d, and the deferred clean-KV schedule.
+The output was finite for all 81 frames and ended with local KV capped at
+`18144` tokens while global position advanced to `21168`.
+
+| Filled-window metric, chunks 18–20 | 464x832 reference | 384x672 |
+|---|---:|---:|
+| Tokens/frame | 1508 | 1008 |
+| Local KV capacity | 27144 | 18144 |
+| DiT total | 2896.6 ms | **1598.1 ms** |
+| Denoise 1 / 2 / 3 / 4 | 756–767 / 705–710 / 705–716 / 704–717 ms | **424.0 / 390.0 / 389.8 / 390.2 ms** |
+| Clean KV forward | 713.1 ms | **392.0 ms** |
+| VAE decode | 954.2 ms | **632.3 ms** |
+| First-visible | 3851.3 ms | **2230.8 ms** |
+| State-ready | 4564.4 ms | **2622.8 ms** |
+| Next-action-ready | 4565.0 ms | **2623.1 ms** |
+
+The first run's first post-bootstrap VAE decode took 6.918 s while MIOpen
+initialized the new geometry; subsequent decodes were about 0.632 s. A
+second identical run after that cache warm-up reached 1.726 s early
+first-visible and 2.252 s median action, confirming that the large first
+decode is startup behavior rather than steady-state geometry cost.
+
+Peak PyTorch allocation was 30.049 GB, peak reservation 42.358 GB, and peak
+RSS 25.870 GB. Sampled frames at the beginning, direction changes, and late
+rollover remained visually coherent: lake/tree geometry and camera motion
+continued without an obvious seam or frozen output. This is a serious
+candidate for interactive use because filled-window first-visible improves by
+about **42%** and next-action-ready by about **42%** relative to the
+480x832 deferred lane. It is not a blanket resolution recommendation until
+the low-resolution attention component is recorded and the quality tradeoff
+is reviewed with the same traversal.
+
+Raw metrics and the representative video are local at
+`results/raw/interactive-custom-area-384x672-deferred-81f/metrics.json` and
+`results/raw/interactive-custom-area-384x672-deferred-81f-video/interactive.mp4`.
