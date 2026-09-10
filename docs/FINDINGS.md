@@ -614,3 +614,36 @@ interactive testing. Raw A/B evidence is local at
 `results/raw/clean-kv-order-serial-81f/metrics.json` and
 `results/raw/clean-kv-order-deferred-81f/metrics.json`; the runner change is
 in commit `67ba075` plus the critical-path labeling follow-up.
+
+## F21 — filled-window DiT attention is real ROCm flash SDPA (2026-09-09)
+
+The exact application attention path was probed for three filled-window
+chunks (18–20), covering 450 self-attention and 450 cross-attention calls.
+Self-attention dispatch receives contiguous BF16 tensors with
+`Q=[1,1508,12,128]` and `K=V=[1,27144,12,128]`; the SDPA layout is
+`[1,12,1508,128]` and `[1,12,27144,128]`. There is no attention mask, no
+`is_causal` flag, and no length-mask argument: the rolling causal semantics
+are represented by the explicit cache slice and its sink/window placement.
+
+| Attention path | Calls | Dispatcher | SDPA | Dispatcher overhead |
+|---|---:|---:|---:|---:|
+| Self, 18+6 window | 450 | 5403.962 ms | 5382.036 ms | 21.926 ms |
+| Cross, 512-token prompt cache | 450 | 126.214 ms | 123.543 ms | 2.671 ms |
+
+The self-attention dispatcher overhead is only about 0.4% of its measured
+time; this is not primarily a transpose/contiguous or Python-dispatch
+problem. A same-shape BF16 SDPA trace with the installed ROCm/PyTorch stack
+identified `aten::_scaled_dot_product_flash_attention` and the HIP kernel
+`attn_fwd.kd` (about 12.2 ms for one `[1,12,1508,128]` ×
+`[1,12,27144,128]` operation). The application probe's exact shapes and
+dispatcher path match that operation. PyTorch reports all SDPA families
+enabled, but CK SDPA is unavailable on this gfx1151 build; no backend switch
+was made.
+
+This closes the first backend question: the dominant 57.7% DiT category is
+healthy fused ROCm flash SDPA arithmetic, not a hidden dense score tensor or
+an obvious layout fallback. A broad attention-library swap is therefore
+deferred. A future alternative would need to beat this real rectangular
+flash path while preserving the explicit rolling cache semantics. Raw
+application layout/timing evidence is local at
+`results/raw/attention-probe-full-81f/metrics.json`.

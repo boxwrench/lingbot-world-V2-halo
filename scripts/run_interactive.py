@@ -429,6 +429,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-dir", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--size", choices=sorted(MAX_AREA_CONFIGS), default="480*832")
+    parser.add_argument(
+        "--max-area-pixels",
+        type=int,
+        default=None,
+        help="optional custom Wan-compatible area; overrides --size for one controlled geometry test",
+    )
     parser.add_argument("--frames", type=int, default=81)
     parser.add_argument("--local-attn-size", type=int, default=18)
     parser.add_argument("--sink-size", type=int, default=6)
@@ -499,7 +505,7 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
     F = frame_num
     h0, w0 = img.shape[1:]
     aspect_ratio = h0 / w0
-    max_area = MAX_AREA_CONFIGS[args.size]
+    max_area = args.max_area_pixels or MAX_AREA_CONFIGS[args.size]
     lat_h = round(np.sqrt(max_area * aspect_ratio) // pipe.vae_stride[1] // pipe.patch_size[1] * pipe.patch_size[1])
     lat_w = round(np.sqrt(max_area / aspect_ratio) // pipe.vae_stride[2] // pipe.patch_size[2] * pipe.patch_size[2])
     h = lat_h * pipe.vae_stride[1]
@@ -593,6 +599,7 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
         "lat_w": lat_w,
         "height": h,
         "width": w,
+        "max_area_pixels": int(max_area),
         "frame_seqlen": frame_seqlen,
         "kv_size": kv_size,
         "frames": F,
@@ -1068,7 +1075,7 @@ def main() -> int:
         report["session_prepare_ms"] = (time.perf_counter() - state_t0) * 1000.0
         report["session_config"] = {
             key: value for key, value in state.items()
-            if key in ("lat_f", "lat_h", "lat_w", "height", "width", "frame_seqlen", "kv_size", "frames", "t5_encode_ms", "t5_cache_hit", "vae_encode_ms")
+            if key in ("lat_f", "lat_h", "lat_w", "height", "width", "max_area_pixels", "frame_seqlen", "kv_size", "frames", "t5_encode_ms", "t5_cache_hit", "vae_encode_ms")
         }
         current = run_session(pipe, state, args, device)
         report.update(current["result"])
