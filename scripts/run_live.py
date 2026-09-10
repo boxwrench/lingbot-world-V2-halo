@@ -292,59 +292,62 @@ def main() -> int:
         print("Bootstrap is running. The first generated frame will appear in the window.", flush=True)
 
         def run_one(chunk_id: int, plucker: torch.Tensor, label: str) -> tuple[torch.Tensor, dict[str, object]]:
-            generated = generate_chunk(
-                pipe,
-                state,
-                chunk_id,
-                state["noise_chunks"][chunk_id],
-                state["condition_chunks"][chunk_id],
-                plucker,
-                device,
-                lambda: sync(device),
-                defer_clean_kv=True,
-            )
-            first_pending, first_gpu_ms, _ = decoder.begin_latent(generated["x0"], device)
-            first_frame = first_pending[0, 0]
-            first_host_t0 = time.perf_counter()
-            first_frame_host = first_frame.float().clamp(0, 1).cpu()
-            first_host_ms = (time.perf_counter() - first_host_t0) * 1000.0
-            first_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
-            key = show_frame(
-                viewer,
-                first_frame_host,
-                f"{label} | first RGB {first_visible_ms:.0f} ms | Ctrl-C/Q/ESC emergency exit",
-            )
-            if key in ("q", "escape"):
-                raise KeyboardInterrupt
-            commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
-            decoded, remaining_gpu_ms = decoder.drain_latent(first_pending, device)
-            # Keep the newest decoded frame in the viewer while waiting for the
-            # next key.  The first frame was already displayed at the latency
-            # boundary; no video is serialized by this viewer.
-            show_frame(
-                viewer,
-                decoded[:, -1],
-                f"{label} | next action ready {((time.perf_counter() - generated['chunk_t0']) * 1000.0):.0f} ms | Q/ESC quit",
-            )
-            row = {
-                "chunk_id": chunk_id,
-                "action": label,
-                "transformer_ms": generated["transformer_ms"],
-                "denoise_forward_count": len(state["timesteps"]),
-                "taehv_first_rgb_gpu_ms": first_gpu_ms,
-                "taehv_remaining_rgb_gpu_ms": remaining_gpu_ms,
-                "taehv_all_rgb_gpu_ms": first_gpu_ms + remaining_gpu_ms,
-                "first_visible_ms": first_visible_ms,
-                "first_host_copy_ms": first_host_ms,
-                "clean_kv_ms": generated["clean_kv_ms"],
-                "next_action_ready_ms": (time.perf_counter() - generated["chunk_t0"]) * 1000.0,
-                "cache": cache_positions(state["self_kv_cache"]),
-                "output_finite": bool(torch.isfinite(decoded).all()),
-                "latent_finite": bool(torch.isfinite(generated["x0"]).all()),
-                "memory": cuda_memory(device),
-                "rss_bytes": current_rss_bytes(),
-                "host_memory": host_memory(),
-            }
+            # Match the accepted runner: the DiT has BF16 parameters and must
+            # receive the same CUDA/HIP autocast context as run_session().
+            with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad():
+                generated = generate_chunk(
+                    pipe,
+                    state,
+                    chunk_id,
+                    state["noise_chunks"][chunk_id],
+                    state["condition_chunks"][chunk_id],
+                    plucker,
+                    device,
+                    lambda: sync(device),
+                    defer_clean_kv=True,
+                )
+                first_pending, first_gpu_ms, _ = decoder.begin_latent(generated["x0"], device)
+                first_frame = first_pending[0, 0]
+                first_host_t0 = time.perf_counter()
+                first_frame_host = first_frame.float().clamp(0, 1).cpu()
+                first_host_ms = (time.perf_counter() - first_host_t0) * 1000.0
+                first_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+                key = show_frame(
+                    viewer,
+                    first_frame_host,
+                    f"{label} | first RGB {first_visible_ms:.0f} ms | Ctrl-C/Q/ESC emergency exit",
+                )
+                if key in ("q", "escape"):
+                    raise KeyboardInterrupt
+                commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
+                decoded, remaining_gpu_ms = decoder.drain_latent(first_pending, device)
+                # Keep the newest decoded frame in the viewer while waiting for
+                # the next key.  The first frame was already displayed at the
+                # latency boundary; no video is serialized by this viewer.
+                show_frame(
+                    viewer,
+                    decoded[:, -1],
+                    f"{label} | next action ready {((time.perf_counter() - generated['chunk_t0']) * 1000.0):.0f} ms | Q/ESC quit",
+                )
+                row = {
+                    "chunk_id": chunk_id,
+                    "action": label,
+                    "transformer_ms": generated["transformer_ms"],
+                    "denoise_forward_count": len(state["timesteps"]),
+                    "taehv_first_rgb_gpu_ms": first_gpu_ms,
+                    "taehv_remaining_rgb_gpu_ms": remaining_gpu_ms,
+                    "taehv_all_rgb_gpu_ms": first_gpu_ms + remaining_gpu_ms,
+                    "first_visible_ms": first_visible_ms,
+                    "first_host_copy_ms": first_host_ms,
+                    "clean_kv_ms": generated["clean_kv_ms"],
+                    "next_action_ready_ms": (time.perf_counter() - generated["chunk_t0"]) * 1000.0,
+                    "cache": cache_positions(state["self_kv_cache"]),
+                    "output_finite": bool(torch.isfinite(decoded).all()),
+                    "latent_finite": bool(torch.isfinite(generated["x0"]).all()),
+                    "memory": cuda_memory(device),
+                    "rss_bytes": current_rss_bytes(),
+                    "host_memory": host_memory(),
+                }
             report["actions"].append(row)
             return decoded[:, -1], row
 
