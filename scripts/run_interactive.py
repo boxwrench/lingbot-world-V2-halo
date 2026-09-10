@@ -338,6 +338,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=-1,
         help="profile the DiT module tree starting at this chunk (steady-state use: 18)",
     )
+    parser.add_argument(
+        "--defer-clean-kv",
+        action="store_true",
+        help="display the decoded frame before the exact clean-latent KV commit (transactional scheduling experiment)",
+    )
     return parser
 
 
@@ -467,6 +472,7 @@ def generate_chunk(
     current_plucker: torch.Tensor,
     device: torch.device,
     sync_fn,
+    defer_clean_kv: bool = False,
 ) -> dict[str, object]:
     """Run the five causal-fast DiT forwards for one latent chunk."""
     chunk_t0 = time.perf_counter()
@@ -531,24 +537,54 @@ def generate_chunk(
         sync_fn()
         latent_postprocess_ms += (time.perf_counter() - post_t0) * 1000.0
 
+    generated = {
+        "chunk_id": chunk_id,
+        "chunk_t0": chunk_t0,
+        "kwargs": kwargs,
+        "x0": x0,
+        "cache": cache_positions(state["self_kv_cache"]),
+        "cross_attention_initialized": int(state["cross_kv_cache"][0]["is_init"].item()),
+        "transformer_ms": (time.perf_counter() - transformer_t0) * 1000.0,
+        "action_prepare_ms": action_prepare_ms,
+        "latent_postprocess_ms": latent_postprocess_ms,
+        "forward_records": forward_records,
+        "clean_kv_deferred": defer_clean_kv,
+        "clean_kv_ms": None,
+        "state_ready_ms": None,
+    }
+    if not defer_clean_kv:
+        commit_clean_kv(pipe, state, generated, device, sync_fn)
+    generated["transformer_ms"] = (time.perf_counter() - transformer_t0) * 1000.0
+    return generated
+
+
+def commit_clean_kv(
+    pipe: WanI2VCausal,
+    state: dict[str, object],
+    generated: dict[str, object],
+    device: torch.device,
+    sync_fn,
+) -> dict[str, object]:
+    """Commit the exact clean-latent KV state and make it transactionally ready."""
     cache_t0 = time.perf_counter()
     zero_timestep = state["timesteps"][-1] * 0.0
     cache_before = cache_positions(state["self_kv_cache"])
     memory_before = cuda_memory(device)
     pipe.model(
-        x=[x0],
+        x=[generated["x0"]],
         t=torch.stack([zero_timestep]).to(device),
         cross_attn_first_call=False,
-        **kwargs,
+        **generated["kwargs"],
     )
     sync_fn()
     memory_after = cuda_memory(device)
     cache_after = cache_positions(state["self_kv_cache"])
-    forward_records.append({
+    elapsed_ms = (time.perf_counter() - cache_t0) * 1000.0
+    generated["forward_records"].append({
         "kind": "cache_update",
         "index": len(state["timesteps"]),
         "timestep": 0.0,
-        "elapsed_ms": (time.perf_counter() - cache_t0) * 1000.0,
+        "elapsed_ms": elapsed_ms,
         "purpose": "clean-latent self-attention KV-cache write; output discarded",
         "query_tokens": int(state["frame_seqlen"]),
         "kv_length_before": cache_before["local_end_index"],
@@ -561,18 +597,12 @@ def generate_chunk(
         "reserved_before_bytes": memory_before.get("reserved_bytes"),
         "reserved_after_bytes": memory_after.get("reserved_bytes"),
     })
-    return {
-        "chunk_id": chunk_id,
-        "chunk_t0": chunk_t0,
-        "kwargs": kwargs,
-        "x0": x0,
-        "cache": cache_positions(state["self_kv_cache"]),
-        "cross_attention_initialized": int(state["cross_kv_cache"][0]["is_init"].item()),
-        "transformer_ms": (time.perf_counter() - transformer_t0) * 1000.0,
-        "action_prepare_ms": action_prepare_ms,
-        "latent_postprocess_ms": latent_postprocess_ms,
-        "forward_records": forward_records,
-    }
+    generated["cache"] = cache_after
+    generated["cross_attention_initialized"] = int(state["cross_kv_cache"][0]["is_init"].item())
+    generated["clean_kv_ms"] = elapsed_ms
+    generated["state_ready_ms"] = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+    generated["clean_kv_committed"] = True
+    return generated
 
 
 def summarize_module_profile(profile: dict[str, object] | None) -> dict[str, object] | None:
@@ -623,6 +653,7 @@ def finish_action(
     full_action_ms: float | None,
     overlap: bool = False,
     decoder_stats: dict[str, object] | None = None,
+    post_visible_hook=None,
 ) -> None:
     post_t0 = time.perf_counter()
     decoded_hwc_gpu = decoded_gpu.permute(1, 2, 3, 0).contiguous()
@@ -634,6 +665,8 @@ def finish_action(
     _visible_frame = decoded_hwc_gpu[visible_index].float().cpu()
     visible_copy_ms = (time.perf_counter() - visible_copy_t0) * 1000.0
     host_first_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+    if post_visible_hook is not None:
+        post_visible_hook()
     all_copy_t0 = time.perf_counter()
     all_frames = decoded_hwc_gpu.float().cpu()
     all_copy_ms = (time.perf_counter() - all_copy_t0) * 1000.0
@@ -670,13 +703,17 @@ def finish_action(
         "decoded_max": float(decoded_gpu.max()) if torch.isfinite(decoded_gpu).all() else None,
         "decoder_stats": stats,
         "overlap": overlap,
+        "clean_kv_deferred": bool(generated.get("clean_kv_deferred", False)),
+        "clean_kv_ms": generated.get("clean_kv_ms"),
+        "state_ready_ms": generated.get("state_ready_ms"),
+        "next_action_ready_ms": host_all_frames_ms,
         "waterfall_ms": {
             "action_camera_conditioning_prepare": generated["action_prepare_ms"],
             "dit_forward_1": generated["forward_records"][0]["elapsed_ms"],
             "dit_forward_2": generated["forward_records"][1]["elapsed_ms"],
             "dit_forward_3": generated["forward_records"][2]["elapsed_ms"],
             "dit_forward_4": generated["forward_records"][3]["elapsed_ms"],
-            "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
+        "dit_forward_5_kv_write": generated["forward_records"][4]["elapsed_ms"],
             "latent_postprocessing": generated["latent_postprocess_ms"],
             "vae_decode": decode_ms,
             "rgb_postprocessing": rgb_postprocess_ms,
@@ -686,6 +723,8 @@ def finish_action(
             "serialization": 0.0,
             "sum_to_first_visible": first_visible_ms,
             "sum_to_all_frames_host": host_all_frames_ms,
+            "state_ready": generated.get("state_ready_ms"),
+            "next_action_ready": host_all_frames_ms,
         },
     })
 
@@ -724,6 +763,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                 generated = generate_chunk(
                     pipe, state, chunk_id, current_latent, current_condition,
                     current_plucker, device, main_stream.synchronize,
+                    defer_clean_kv=False,
                 )
                 # x0 is produced on the main stream.  The explicit dependency
                 # plus record_stream keeps the allocator from recycling it
@@ -761,6 +801,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                 generated = generate_chunk(
                     pipe, state, chunk_id, current_latent, current_condition,
                     current_plucker, device, lambda: sync(device),
+                    defer_clean_kv=args.defer_clean_kv,
                 )
                 decode_t0 = time.perf_counter()
                 decoded_gpu = decoder.decode_latent(generated["x0"], device)
@@ -771,6 +812,11 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     decode_ms, actions, outputs,
                     action_ms if chunk_id > 0 else None,
                     action_ms if chunk_id > 0 else None,
+                    post_visible_hook=(
+                        lambda generated=generated: commit_clean_kv(
+                            pipe, state, generated, device, lambda: sync(device)
+                        )
+                    ) if args.defer_clean_kv else None,
                 )
 
     profile = decoder.profile_report()
@@ -782,6 +828,7 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
     result: dict[str, object] = {
         "status": "success",
         "overlap": bool(args.overlap),
+        "defer_clean_kv": bool(args.defer_clean_kv),
         "vae_profile": profile,
         "dit_profile": dit_profile,
         "dit_operator_summary": summarize_module_profile(dit_profile),
@@ -806,6 +853,9 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
             "median": float(np.median([row["full_action_ms"] for row in action_rows])) if action_rows else None,
             "last_five_mean": float(np.mean([row["full_action_ms"] for row in action_rows[-5:]])) if action_rows else None,
             "first_visible_first_action": action_rows[0]["keypress_to_first_visible_ms"] if action_rows else None,
+            "state_ready_first": action_rows[0]["state_ready_ms"] if action_rows else None,
+            "state_ready_median": float(np.median([row["state_ready_ms"] for row in action_rows])) if action_rows else None,
+            "next_action_ready_median": float(np.median([row["next_action_ready_ms"] for row in action_rows])) if action_rows else None,
         },
         "memory_after_session": cuda_memory(device),
         "max_rss_bytes": rss_bytes(),
