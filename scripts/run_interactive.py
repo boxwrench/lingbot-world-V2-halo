@@ -449,6 +449,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--image", required=True)
     parser.add_argument("--action-path", required=True)
     parser.add_argument("--save-video", action="store_true")
+    parser.add_argument(
+        "--save-latents",
+        action="store_true",
+        help="save the accepted x0 latent stream for decoder-only comparisons",
+    )
     parser.add_argument("--max-chunks", type=int, default=0, help="debug limit; zero processes the full session")
     parser.add_argument(
         "--vae-attention-backend",
@@ -913,6 +918,7 @@ def finish_action(
 
 def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Namespace, device: torch.device) -> dict[str, object]:
     outputs: list[torch.Tensor] = []
+    accepted_latents: list[torch.Tensor] = []
     actions: list[dict[str, object]] = []
     decoder = IncrementalCausalDecoder(
         pipe.vae,
@@ -992,6 +998,8 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
                     current_plucker, device, lambda: sync(device),
                     defer_clean_kv=args.defer_clean_kv,
                 )
+                if args.save_latents:
+                    accepted_latents.append(generated["x0"].detach().cpu())
                 if attention_probe is not None and chunk_id >= args.profile_attention_from_chunk + 2:
                     attention_probe.close()
                 decode_t0 = time.perf_counter()
@@ -1014,6 +1022,29 @@ def run_session(pipe: WanI2VCausal, state: dict[str, object], args: argparse.Nam
     dit_profile = dit_profiler.report() if dit_profiler is not None else None
     attention_profile = attention_probe.report() if attention_probe is not None else None
     output = torch.cat(outputs, dim=0)
+    if args.save_latents:
+        latent_stream = torch.cat(accepted_latents, dim=1)
+        torch.save(
+            {
+                "latents": latent_stream,
+                "dtype": str(latent_stream.dtype),
+                "shape": list(latent_stream.shape),
+                "geometry": [int(state["height"]), int(state["width"])],
+                "latent_shape_cthw": [
+                    int(latent_stream.shape[0]),
+                    int(latent_stream.shape[1]),
+                    int(latent_stream.shape[2]),
+                    int(latent_stream.shape[3]),
+                ],
+                "denoise_schedule": state["denoise_schedule"],
+                "timestep_indices": state["timestep_indices"],
+                "timestep_values": state["timestep_values"],
+                "seed": int(args.seed),
+                "local_attn_size": int(args.local_attn_size),
+                "sink_size": int(args.sink_size),
+            },
+            Path(args.output_dir) / "accepted_latents.pt",
+        )
     decoder.clear()
     session_ms = (time.perf_counter() - session_t0) * 1000.0
     action_rows = [row for row in actions if row["full_action_ms"] is not None]
