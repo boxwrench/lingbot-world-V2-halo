@@ -688,3 +688,31 @@ is reviewed with the same traversal.
 Raw metrics and the representative video are local at
 `results/raw/interactive-custom-area-384x672-deferred-81f/metrics.json` and
 `results/raw/interactive-custom-area-384x672-deferred-81f-video/interactive.mp4`.
+
+## F23 — lower-area attention scales with the same fused backend (2026-09-09)
+
+The custom `384x672` geometry was separately profiled for chunks 18–20 with
+the current-order path so all five forwards, including clean-KV, were in the
+attention capture. It recorded the same 450 self and 450 cross calls and the
+same `aten::_scaled_dot_product_flash_attention` / `attn_fwd.kd` backend as
+the reference geometry:
+
+| Self-attention quantity | 464x832 | 384x672 |
+|---|---:|---:|
+| Q shape before transpose | `[1,1508,12,128]` | `[1,1008,12,128]` |
+| K/V shape before transpose | `[1,27144,12,128]` | `[1,18144,12,128]` |
+| Calls | 450 | 450 |
+| SDPA aggregate | 5382.036 ms | **2686.682 ms** |
+| Dispatcher overhead | 21.926 ms | 20.926 ms |
+
+The no-defer component control measured approximately 2.02 s total DiT for
+the three steady chunks, including clean-KV; the deferred end-to-end lane
+measured 1.598 s denoise-only plus a 0.392 s clean commit after first
+display. This supports the conclusion that the lower-area improvement comes
+from shorter Q/K histories and lower attention arithmetic, with additional
+scaling in projections/MLP and VAE—not from changing the backend.
+
+Raw evidence is local at
+`results/raw/attention-probe-384x672-81f/metrics.json`. No second resolution
+was started; the bounded resolution experiment stops here pending a product
+quality decision.
