@@ -1,0 +1,35 @@
+diff --git a/ComfyUI_Rebels_LingBotWorld/wan/image2video.py b/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
+--- a/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
++++ b/ComfyUI_Rebels_LingBotWorld/wan/image2video.py
+@@ -700,8 +700,39 @@ class WanI2V:
+             if offload_model:
+                 self.model.cpu()
+                 torch.cuda.empty_cache()
+ 
++            phase_hook = getattr(self, "_experiment_phase_hook", None)
++            cleanup_hook = getattr(self, "_experiment_before_vae_cleanup", None)
++            if phase_hook is not None:
++                phase_hook("before_vae", pred_latent_chunks, self_kv_cache,
++                           cross_kv_cache, context, y)
++            if cleanup_hook is not None:
++                # At this point pred_latent_chunks is the complete final latent.
++                # The transformer, its causal KV caches, and conditioning are
++                # semantically dead; VAE decode only needs the final latent.
++                cleanup_hook()
++                self._t5_cache.clear()
++                if hasattr(self.text_encoder, "_store"):
++                    self.text_encoder._store.clear()
++                del self_kv_cache, cross_kv_cache, context, y, msk
++                del noise, latent, latents_chunk, condition_chunk
++                del c2ws_plucker_emb, c2ws_plucker_emb_chunk
++                del current_latent, current_condition, current_c2ws_plucker_emb
++                del dit_cond_dict, kwargs, x0, timestep
++                gc.collect()
++                torch.cuda.empty_cache()
++                torch.cuda.synchronize()
++                if phase_hook is not None:
++                    phase_hook("after_cleanup", pred_latent_chunks, None, None,
++                               None, None)
++
+             if self.rank == 0:
+                 videos = self.vae.decode([pred_latent_chunks])

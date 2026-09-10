@@ -12,6 +12,7 @@ import argparse
 import importlib
 import importlib.util
 import json
+import math
 import os
 import platform
 import resource
@@ -81,6 +82,40 @@ def file_mapping(path: Path) -> dict[str, int]:
         return {"error": f"{type(exc).__name__}: {exc}"}
 
 
+def tensor_bytes(torch, value) -> int:
+    """Best-effort recursive byte total for phase-state accounting."""
+    if torch.is_tensor(value):
+        return int(value.numel() * value.element_size())
+    if isinstance(value, dict):
+        return sum(tensor_bytes(torch, item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return sum(tensor_bytes(torch, item) for item in value)
+    return 0
+
+
+def model_runtime_state(torch, model) -> dict[str, object]:
+    if model is None:
+        return {"attached": False}
+    registered_bytes = sum(
+        int(parameter.numel() * parameter.element_size())
+        for parameter in model.parameters()
+    )
+    qdata_bytes = 0
+    qdata_tensors = 0
+    for module in model.modules():
+        qdata = getattr(module, "qdata", None)
+        if torch.is_tensor(qdata):
+            qdata_bytes += int(qdata.numel() * qdata.element_size())
+            qdata_tensors += 1
+    return {
+        "attached": True,
+        "registered_parameter_bytes": registered_bytes,
+        "quantized_data_bytes": qdata_bytes,
+        "quantized_data_tensors": qdata_tensors,
+        "device_set": sorted({str(parameter.device) for parameter in model.parameters()}),
+    }
+
+
 def load_module(name: str, path: Path, package: bool = False):
     kwargs = {"submodule_search_locations": [str(path)]} if package else {}
     source = path / "__init__.py" if package else path
@@ -132,6 +167,10 @@ def build_parser():
     parser.add_argument("--pin-gb", type=int, default=2)
     parser.add_argument("--repeat", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--phase-memory", action="store_true",
+                        help="record the final-latent/VAE memory boundary")
+    parser.add_argument("--cleanup-before-vae", action="store_true",
+                        help="release transformer state before VAE (boundary runtime only)")
     return parser
 
 
@@ -198,7 +237,7 @@ def main() -> int:
             "properties": str(torch.cuda.get_device_properties(device)),
             "bf16_supported": bool(torch.cuda.is_bf16_supported()),
             "total_memory_bytes": int(torch.cuda.get_device_properties(device).total_memory),
-            "gguf_dequant_module": str(Path(gguf_nodes.__file__).resolve()),
+            "gguf_dequant_module": str((gguf_dir / "dequant.py").resolve()),
         },
         "initial_cuda_memory": cuda_memory(torch, device),
         "file_mapping_before": file_mapping(dit_path),
@@ -232,6 +271,47 @@ def main() -> int:
         "text_encoder_path": str(clip_path),
     }
     report["cuda_memory_after_load"] = cuda_memory(torch, device)
+    if args.cleanup_before_vae and not args.phase_memory:
+        raise ValueError("--cleanup-before-vae requires --phase-memory")
+    phase_events: list[dict[str, object]] = []
+    pipe = lb_pipe["pipe"]
+    if args.phase_memory:
+        def phase_hook(phase, latent, self_kv_cache, cross_kv_cache, context, conditioning):
+            torch.cuda.synchronize(device)
+            host = host_memory()
+            phase_events.append({
+                "phase": phase,
+                "cuda_memory": cuda_memory(torch, device),
+                "process_rss_bytes": current_rss_bytes(),
+                "max_process_rss_bytes": rss_bytes(),
+                "system_memory": {
+                    key: host.get(key, 0)
+                    for key in ("MemTotal", "MemAvailable", "MemFree", "SwapFree",
+                                "Mapped", "AnonPages", "Shmem")
+                },
+                "latent": {
+                    "shape": list(latent.shape) if torch.is_tensor(latent) else None,
+                    "dtype": str(latent.dtype) if torch.is_tensor(latent) else None,
+                    "bytes": tensor_bytes(torch, latent),
+                },
+                "self_kv_cache_bytes": tensor_bytes(torch, self_kv_cache),
+                "cross_kv_cache_bytes": tensor_bytes(torch, cross_kv_cache),
+                "context_bytes": tensor_bytes(torch, context),
+                "conditioning_bytes": tensor_bytes(torch, conditioning),
+                "cached_conditioning_bytes": tensor_bytes(torch, getattr(pipe, "_t5_cache", {})),
+                "text_store_bytes": tensor_bytes(
+                    torch, getattr(getattr(pipe, "text_encoder", None), "_store", {})
+                ),
+                "transformer_state": model_runtime_state(torch, getattr(pipe, "model", None)),
+                "gguf_file_mapping": file_mapping(dit_path),
+            })
+
+        pipe._experiment_phase_hook = phase_hook
+        if args.cleanup_before_vae:
+            # The boundary runtime wraps this marker to clear the sampler's
+            # model references before invoking the hook in image2video.py.
+            pipe._experiment_before_vae_cleanup = lambda: None
+    report["phase_memory"] = phase_events
     sampler = LBWorldSampler()
     image_path = Path(folder_paths.get_input_directory()) / "lingbot_actions" / "strix-example" / "image.jpg"
     if not image_path.exists():
@@ -242,6 +322,25 @@ def main() -> int:
     from PIL import Image
     import numpy as np
     image = torch.from_numpy(np.asarray(Image.open(image_path).convert("RGB"), dtype=np.float32) / 255.0)[None]
+
+    # Match the community sampler's pre-flight accounting exactly. This is an
+    # estimate of the self-attention K/V tensors, not a claim about physical
+    # VRAM placement on the UMA device.
+    max_area = 480 * 832
+    aspect_ratio = image.shape[1] / image.shape[2]
+    lat_h = round(math.sqrt(max_area * aspect_ratio) // 8 // 2 * 2)
+    lat_w = round(math.sqrt(max_area / aspect_ratio) // 8 // 2 * 2)
+    tokens_per_frame = max(int(lat_h * lat_w // 4), 1)
+    kv_bytes = 2 * 40 * (args.local_attn_size + args.sink_size) * tokens_per_frame * 5120 * 2
+    report["kv_accounting"] = {
+        "formula": "2 * 40 layers * (local + sink) * tokens_per_frame * 5120 channels * 2 bytes",
+        "local_attn_size": args.local_attn_size,
+        "sink_size": args.sink_size,
+        "latent_grid": [lat_h, lat_w],
+        "tokens_per_frame": tokens_per_frame,
+        "estimated_self_kv_bytes": kv_bytes,
+        "estimated_self_kv_gb_decimal": kv_bytes / 1e9,
+    }
 
     previous = None
     for run_index in range(1, args.repeat + 1):

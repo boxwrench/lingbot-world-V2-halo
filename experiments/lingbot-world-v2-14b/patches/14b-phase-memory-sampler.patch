@@ -1,0 +1,36 @@
+diff --git a/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py b/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
+--- a/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
++++ b/ComfyUI_Rebels_LingBotWorld/lbworld_nodes.py
+@@ -496,6 +496,15 @@ class LBWorldSampler:
+                 v.device = dev
+             except Exception as e:
+                 print("[LBWorld] vae move to {} failed: {}".format(dev, e))
+ 
++        before_vae_cleanup = getattr(pipe, "_experiment_before_vae_cleanup", None)
++        if before_vae_cleanup is not None:
++            def _release_before_vae():
++                nonlocal model
++                pipe.model = None
++                lbworld["model"] = None
++                model = None
++                before_vae_cleanup()
++            pipe._experiment_before_vae_cleanup = _release_before_vae
++
+         try:
+             model.to(device)
+@@ -512,7 +521,8 @@ class LBWorldSampler:
+                     offload_model=True,
+                 )
+         finally:
+-            try:
+-                model.to("cpu")
+-            except Exception:
+-                pass
++            if model is not None:
++                try:
++                    model.to("cpu")
++                except Exception:
++                    pass
+             _move_vae(pipe.vae, torch.device("cpu"))
+             gc.collect()
+             if torch.cuda.is_available():
