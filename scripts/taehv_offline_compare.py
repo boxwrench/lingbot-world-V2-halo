@@ -4,8 +4,9 @@
 This script intentionally consumes an already accepted LingBot x0 latent
 stream. It does not run the DiT or modify any generation state. The canonical
 decoder receives the model-space latents exactly as the interactive runner
-does; TAEHV receives the corresponding unnormalized Wan VAE latents in
-NTCHW order.
+does; TAEHV receives the same model-space latents in NTCHW order. The pinned
+TAEW2.1 Diffusers wrapper intentionally advertises identity latent mean/std,
+so no extra Wan VAE scale/shift is applied to the TAE input.
 """
 
 from __future__ import annotations
@@ -151,9 +152,9 @@ def canonical_decode(
     }
 
 
+@torch.inference_mode()
 def tae_decode(
     latents: torch.Tensor,
-    vae: Wan2_1_VAE,
     weights_path: Path,
     device: torch.device,
     dtype: torch.dtype,
@@ -164,13 +165,10 @@ def tae_decode(
     sync(device)
     init_ms = (time.perf_counter() - init_t0) * 1000.0
 
-    # LingBot stores normalized Wan VAE latents as NCTHW. TAEHV's Wan 2.1
-    # checkpoint consumes the raw Wan VAE latent in NTCHW, with no additional
-    # TAE-specific scale or shift.
-    latents = latents.to(device)
-    raw = latents.float() / vae.scale[1].float().view(1, 16, 1, 1, 1)
-    raw = raw + vae.scale[0].float().view(1, 16, 1, 1, 1)
-    raw = raw.to(device=device, dtype=dtype).permute(0, 2, 1, 3, 4).contiguous()
+    # LingBot stores the Diffusers/model-space latent as NCTHW. The pinned
+    # TAEW2.1 Diffusers wrapper uses identity latents_mean/std, so TAEHV gets
+    # that same tensor directly, only transposed to its required NTCHW order.
+    raw = latents.to(device=device, dtype=dtype).permute(0, 2, 1, 3, 4).contiguous()
 
     frames: list[torch.Tensor] = []
     rows: list[dict[str, object]] = []
@@ -228,14 +226,8 @@ def main() -> int:
     # Run the two decoders in separate fresh model/state instances. The TAE
     # comparison is presentation-only and never mutates DiT/KV state.
     canonical, canonical_metrics = canonical_decode(latents, args.vae_path, device, dtype)
-    vae_for_contract = Wan2_1_VAE(
-        z_dim=16,
-        vae_pth=str(args.vae_path),
-        dtype=torch.float32,
-        device=str(device),
-    )
     sync(device)
-    tae, tae_metrics = tae_decode(latents, vae_for_contract, weights, device, dtype)
+    tae, tae_metrics = tae_decode(latents, weights, device, dtype)
     sync(device)
 
     if canonical.shape != tae.shape:
@@ -259,7 +251,7 @@ def main() -> int:
             "input_dtype": str(latents.dtype),
             "model_space": "LingBot accepted x0 / normalized Wan VAE latent",
             "canonical_transform": "z = x0 / vae.scale[1] + vae.scale[0]",
-            "taehv_transform": "same canonical z, then NCTHW -> NTCHW; no additional TAE scale/shift",
+            "taehv_transform": "same LingBot model-space x0, then NCTHW -> NTCHW; pinned TAEW2.1 wrapper uses identity latent mean/std",
             "taehv_input_shape": [1, int(latents.shape[2]), 16, int(latents.shape[3]), int(latents.shape[4])],
             "spatial_latent": [int(latents.shape[3]), int(latents.shape[4])],
         },
