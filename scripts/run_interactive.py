@@ -522,6 +522,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--local-attn-size", type=int, default=18)
     parser.add_argument("--sink-size", type=int, default=6)
+    parser.add_argument(
+        "--host-kv-cursor",
+        action="store_true",
+        help="use exact host-side self-KV cursors while retaining tensor mirrors (opt-in experiment)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--image", required=True)
@@ -690,6 +695,13 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
         dtype=pipe.pipe_dtype,
         device=device,
     )
+    if getattr(args, "host_kv_cursor", False):
+        for layer_cache in self_kv_cache:
+            # The causal pipeline determines these cursors from the integer
+            # chunk/frame offsets and cache capacity. The upstream tensor
+            # cursors remain present and are updated as compatibility mirrors.
+            layer_cache["global_end_index_py"] = 0
+            layer_cache["local_end_index_py"] = 0
     cross_kv_cache = pipe._initialize_crossattn_cache(
         num_layers=model_args.num_layers,
         shape=[1, 512, model_args.num_heads, head_dim],
@@ -719,6 +731,7 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
         "frame_seqlen": frame_seqlen,
         "kv_size": kv_size,
         "frames": F,
+        "host_kv_cursor": bool(getattr(args, "host_kv_cursor", False)),
         "t5_encode_ms": t5_ms,
         "t5_cache_hit": t5_cache_hit,
         "vae_encode_ms": vae_encode_ms,

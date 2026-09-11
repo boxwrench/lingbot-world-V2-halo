@@ -60,6 +60,10 @@ patch_is_present() {
             search_q 'forward_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py" &&
                 search_q 'cache_t0 = time\.perf_counter\(\)' "$UPSTREAM_DIR/wan/image2video.py"
             ;;
+        0004-opt-in-host-kv-cursor.patch)
+            search_q 'host_cursor = "global_end_index_py" in kv_cache' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
+                search_q 'kv_cache\["local_end_index_py"\] = int\(local_end_index\)' "$UPSTREAM_DIR/wan/modules/model_fast.py"
+            ;;
         *)
             return 1
             ;;
@@ -69,6 +73,7 @@ patch_is_present() {
 apply_once "$ROOT_DIR/patches/0001-strix-halo-sdpa-cross-attention.patch"
 apply_once "$ROOT_DIR/patches/0002-experiment-metrics.patch"
 apply_once "$ROOT_DIR/patches/0003-per-forward-metrics.patch"
+apply_once "$ROOT_DIR/patches/0004-opt-in-host-kv-cursor.patch"
 
 echo "upstream: $(git -C "$UPSTREAM_DIR" rev-parse HEAD)"
 echo "working tree patches:"

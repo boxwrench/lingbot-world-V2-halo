@@ -1158,3 +1158,40 @@ even when the process sees populated FX/Inductor cache entries. The accepted
 TunableOp-only lane remains the default. Raw logs and metrics are under the
 ignored `results/raw/compile-20260910/` tree; the dedicated report is
 [`pure-helper-compile-20260910.md`](pure-helper-compile-20260910.md).
+
+## F37 — host-side KV cursor removes scalar syncs but is not a release win (2026-09-10)
+
+The causal self-attention path reads `global_end_index` and
+`local_end_index` tensors with `.item()` for rollover and cache-slice control.
+Static tracing and live checks showed these are host-determined counters, not
+independent device-computed state: all 30 layers had equal cursor values at
+early startup, full capacity, first eviction, repeated rollover, and the exact
+clean t=0 pass. A rolled action contains 360 model-side cursor reads; harness
+and reporting reads are separate.
+
+An opt-in `--host-kv-cursor` path now carries per-layer Python integer cursors
+as the control-flow authority while retaining the existing tensor cursors as
+`fill_`-updated compatibility mirrors. It does not consolidate layers into a
+single shared cursor and does not change local history, sink retention, RoPE
+positioning, attention K length, or clean-KV semantics.
+
+The mechanism-only profiler showed the expected change: model-side scalar
+reads fell from 360 to zero (total `aten::item` calls in the selected trace
+fell `401 → 41`), and the associated `hipStreamSynchronize` calls fell
+`389 → 29`. This trace is intrusive and is not a product-latency result.
+
+Fresh matched 40-action runs were fully finite and exact. In 29 rolled rows,
+host cursors changed first-visible P50 `936.809 → 928.553 ms` (`−8.256 ms`,
+P95 `942.659 → 935.103 ms`) and next-ready P50 `1282.925 → 1272.936 ms`
+(`−9.989 ms`, P95 `1293.757 → 1280.307 ms`). The equivalence harness found
+bitwise-equal x0, denoise K/V, clean K/V, and cursor mirrors across 16 chunks;
+the live runs reached global `41328`, local `12096`, sink `6048`, with finite
+RGB. The result is below the release optimization threshold, so defaults are
+unchanged and no 14-frame extension was run.
+
+Classification: **REJECT AS RELEASE OPTIMIZATION; RETAIN OPT-IN FOR
+DIAGNOSTICS**. Details and raw artifact paths are in
+[`kv-cursor-20260910.md`](kv-cursor-20260910.md) and
+`docs/artifacts/kv-cursor-20260910/`; ignored profiler traces remain under
+`results/raw/kv-cursor-20260910/`. The next authorized experiment is
+shape-matched compile prewarm, which was not started here.

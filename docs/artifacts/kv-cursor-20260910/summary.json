@@ -1,0 +1,62 @@
+{
+  "date": "2026-09-10",
+  "repository_start": "99151d1c55b5cc4b5468e98f52bc7b0f8ef83b7e",
+  "upstream_sha": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+  "configuration": {
+    "geometry": "384x672",
+    "tokens_per_frame": 1008,
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "capacity_tokens": 12096,
+    "denoise_schedule": [999, 899, 702],
+    "transformer_dtype": "bfloat16",
+    "renderer": "TAEHV taew2_1 FP16",
+    "tunableop_results_loaded": 16,
+    "pure_helper_compile": true
+  },
+  "cursor_contract": {
+    "layers": 30,
+    "all_layers_equal_at_test_points": true,
+    "tensor_mirrors_retained": true,
+    "host_cursors_opt_in": true,
+    "model_item_reads_per_rolled_action_before": 360,
+    "model_item_reads_per_rolled_action_after": 0
+  },
+  "profiler": {
+    "control_item_calls": 401,
+    "host_item_calls": 41,
+    "control_local_scalar_dense_calls": 401,
+    "host_local_scalar_dense_calls": 41,
+    "control_hip_stream_sync_calls": 389,
+    "host_hip_stream_sync_calls": 29,
+    "note": "Intrusive mechanism trace; remaining calls are harness/reporting activity."
+  },
+  "rolled_29_row_ms": {
+    "denoise_p50_control": 912.937,
+    "denoise_p50_host": 903.228,
+    "first_visible_p50_control": 936.809,
+    "first_visible_p50_host": 928.553,
+    "first_visible_p95_control": 942.659,
+    "first_visible_p95_host": 935.103,
+    "clean_kv_p50_control": 298.802,
+    "clean_kv_p50_host": 294.677,
+    "next_ready_p50_control": 1282.925,
+    "next_ready_p50_host": 1272.936,
+    "next_ready_p95_control": 1293.757,
+    "next_ready_p95_host": 1280.307
+  },
+  "correctness": {
+    "equivalence_chunks": 16,
+    "all_x0_exact": true,
+    "all_denoise_caches_equal": true,
+    "all_clean_caches_equal": true,
+    "all_host_mirrors_equal": true,
+    "long_run_final_global_tokens": 41328,
+    "long_run_local_tokens": 12096,
+    "long_run_sink_tokens": 6048,
+    "long_run_finite": true
+  },
+  "decision": "reject_as_release_optimization",
+  "release_default_changed": false,
+  "next_authorized_experiment": "shape-matched compile prewarm"
+}

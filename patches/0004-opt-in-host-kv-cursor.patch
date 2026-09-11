@@ -1,0 +1,53 @@
+diff --git a/wan/modules/model_fast.py b/wan/modules/model_fast.py
+--- a/wan/modules/model_fast.py
++++ b/wan/modules/model_fast.py
+@@ -121,4 +121,5 @@ class CausalWanSelfAttention(nn.Module):
+         # If we are using local attention and the current KV cache size is larger than the local attention size, we need to truncate the KV cache
+         kv_cache_size = kv_cache["k"].shape[1]
+         num_new_tokens = roped_query.shape[1]
++        host_cursor = "global_end_index_py" in kv_cache
+         if self.local_attn_size == -1:
+@@ -131,3 +132,33 @@ class CausalWanSelfAttention(nn.Module):
+             kv_cache["k"][:, local_start_index:local_end_index] = roped_key
+             kv_cache["v"][:, local_start_index:local_end_index] = v
++        elif host_cursor:
++            # These cursors are host-determined by the causal pipeline. Keep
++            # the device tensors below as compatibility mirrors, but use the
++            # Python values for indexing and rollover control so this path
++            # does not force a device-to-host scalar read in every layer.
++            global_end_index = int(kv_cache["global_end_index_py"])
++            local_end_index = int(kv_cache["local_end_index_py"])
++            if (current_end > global_end_index) and (
++                    num_new_tokens + local_end_index > kv_cache_size):
++                num_evicted_tokens = num_new_tokens + local_end_index - kv_cache_size
++                num_rolled_tokens = local_end_index - num_evicted_tokens - sink_tokens
++                kv_cache["k"][:, sink_tokens:sink_tokens + num_rolled_tokens] = \
++                    kv_cache["k"][
++                        :, sink_tokens + num_evicted_tokens:
++                        sink_tokens + num_evicted_tokens + num_rolled_tokens
++                    ].clone()
++                kv_cache["v"][:, sink_tokens:sink_tokens + num_rolled_tokens] = \
++                    kv_cache["v"][
++                        :, sink_tokens + num_evicted_tokens:
++                        sink_tokens + num_evicted_tokens + num_rolled_tokens
++                    ].clone()
++                local_end_index = local_end_index + current_end - global_end_index - num_evicted_tokens
++                local_start_index = local_end_index - num_new_tokens
++                kv_cache["k"][:, local_start_index:local_end_index] = roped_key
++                kv_cache["v"][:, local_start_index:local_end_index] = v
++            else:
++                local_end_index = local_end_index + current_end - global_end_index
++                local_start_index = local_end_index - num_new_tokens
++                kv_cache["k"][:, local_start_index:local_end_index] = roped_key
++                kv_cache["v"][:, local_start_index:local_end_index] = v
+         elif (current_end > kv_cache["global_end_index"].item()) and (
+@@ -157,6 +188,9 @@ class CausalWanSelfAttention(nn.Module):
+         k_cache = kv_cache["k"][:, max(0, local_end_index - max_attention_size):local_end_index]
+         v_cache = kv_cache["v"][:, max(0, local_end_index - max_attention_size):local_end_index]
+         x = attention(roped_query, k_cache, v_cache)
++        if host_cursor:
++            kv_cache["global_end_index_py"] = int(current_end)
++            kv_cache["local_end_index_py"] = int(local_end_index)
+ 
+         kv_cache["global_end_index"].fill_(current_end)
+         kv_cache["local_end_index"].fill_(local_end_index)
