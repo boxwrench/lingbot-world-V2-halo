@@ -1269,3 +1269,39 @@ changed. Detailed measurements and artifact paths are in
 [`spatial-upscale-20260910.md`](spatial-upscale-20260910.md); raw images/videos
 and live metrics are under the ignored `results/raw/spatial-upscale-20260910/`
 tree.
+
+## F40 — official SPAN x2 is fast but does not clear the visual gate (2026-09-10)
+
+The official SPAN repository was pinned at
+`c77a5917759f09e66fbc7124220c5afc5ee221e5`. Its official `span.zip` checkpoint
+archive contains `spanx2_ch48.pth`, whose extracted checkpoint SHA-256 is
+`561fd5cf419a23d4de1231ce258180f61aee4aa8caa1aaaa783769c7301847bc`. The
+official architecture is six SPAB blocks with 48 feature channels and native
+x2 pixel-shuffle output; the strict `params_ema` state has 2,221,140
+parameters. A dependency-light runner loads only the official architecture
+file, bypassing incompatible legacy BasicSR imports and leaving the accepted
+ROCm environment unchanged.
+
+On the same 32 real TAE frames used for the RealESRGAN reference, SPAN FP16
+produced 768x1344 frames in `21.0 ms` warm network P50 and `48.1 ms` to
+frame-ready P50 (`23.9`/`56.3 ms` P95). Its peak isolated allocation was
+`0.516 GB`, with `4.5 MB` of model-weight allocation. FP32 was `49.7 ms`
+network and `67.8 ms` frame-ready P50. These are substantially below the
+isolated RealESRGAN FP16 reference of `119.5`/`145.9 ms`.
+
+The speed gate passed, but the visual gate did not. SPAN was broadly
+Lanczos-like with mild sharpening rather than a clear scene-detail benefit;
+the higher gradient statistic (`0.03229` versus Lanczos `0.02729`) is not
+evidence of correct detail recovery. SPAN's adjacent-frame statistic was
+`0.05481` mean / `0.09805` P95 versus Lanczos `0.05171` / `0.09547`, and no
+gross temporal failure was visible in the bounded sample. Because no clear
+visual benefit was established, no co-resident live run was justified and the
+candidate's live slowdown/next-ready impact remain unmeasured.
+
+Classification: **REJECT** for RC1. Do not add SPAN to the live viewer and stop
+the learned-upscaler search for this release. The detailed report is
+[`span-upscale-20260910.md`](span-upscale-20260910.md), compact provenance is
+under `docs/artifacts/span-upscale-20260910/`, and raw frames/video/metrics are
+under the ignored `results/raw/span-upscale-20260910/` tree. The next
+authorized experiment, not started here, is the fixed-budget `sink_size 6 → 2`
+test.
