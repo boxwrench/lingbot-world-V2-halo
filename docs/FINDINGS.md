@@ -1305,3 +1305,31 @@ under `docs/artifacts/span-upscale-20260910/`, and raw frames/video/metrics are
 under the ignored `results/raw/span-upscale-20260910/` tree. The next
 authorized experiment, not started here, is the fixed-budget `sink_size 6 → 2`
 test.
+
+## F41 — Fixed 12-frame budget: six sink frames beat two sink frames (2026-09-10)
+
+The accepted 384x672 / 1008-token frame / 12-frame local-cache path was run
+with exactly one change: `sink_size=6` versus `sink_size=2`. Both lanes kept
+the same 12,096-token physical and attended K budget. Runtime accounting
+confirmed the expected layouts after rollover: six sink retained 6,048 sink +
+5,040 recent + 1,008 current tokens; two sink retained 2,016 sink + 9,072
+recent + 1,008 current tokens. Both completed the same 40-action traversal at
+global KV position 41,328 with finite outputs and repeated rollover.
+
+The candidate did not produce a latency benefit. Rolled first-visible was
+`939.0 ms` P50 for six sink versus `957.7 ms` for two sink; next-ready was
+`1289.7 ms` versus `1305.8 ms`. Clean-KV timing was effectively equal. The
+result therefore does not represent an attention-size optimization.
+
+Quality was the deciding result. Early frames matched, but divergence grew
+after the first eviction. The two-sink capture showed late scene/layout
+substitution and weaker shoreline/mountain/tree anchoring, with supporting
+matched RGB MAD rising from `0.0119` in the first-rollover region to `0.1100`
+late. Its adjacent-frame MAD also increased to `0.0378` mean / `0.1004` P95,
+versus `0.0252` / `0.0370` for six sink. The aligned video and contact sheet
+are in the ignored `results/raw/sink-budget-20260910/comparison/` directory;
+compact evidence is in `docs/artifacts/sink-budget-20260910/`.
+
+Classification: **REJECT — SINK HISTORY IS MATERIAL**. Keep `sink_size=6` as
+the RC1 default and do not run a sink sweep. The detailed report is
+[`sink-budget-20260910.md`](sink-budget-20260910.md).
