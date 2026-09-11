@@ -1,0 +1,45 @@
+{
+  "repo_commit": "f70e4e00a9b784f171330a1c4f19a1f96de2dbb7",
+  "model": {
+    "name": "LingBot World v2 1.3B causal-fast",
+    "upstream_revision": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+    "model_directory": "models/lingbot-world-v2-1.3b-causal-fast"
+  },
+  "hardware": {
+    "platform": "AMD Ryzen AI MAX+ 395 / Strix Halo",
+    "gpu": "AMD Radeon 8060S Graphics",
+    "gfx_target": "gfx1151",
+    "gpu_visible_uma_bytes": 120259084288,
+    "system_ram_bytes": 130459455488,
+    "rocminfo_gpu_pool_kib": 117440512,
+    "rocmsmi_vram_aperture_bytes": 4294967296
+  },
+  "software": {
+    "os": "Linux Mint 22.3",
+    "kernel": "6.17.0-35-generic",
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0",
+    "rocblas_validator": "5.6.0.baa93758",
+    "hipblaslt_validator": "100401-baa93758",
+    "system_rocm_libraries": {
+      "rocm_libs": "7.2.2.70202-86~24.04",
+      "rocblas_package": "5.2.0.70202-86~24.04",
+      "hipblaslt_package": "1.2.2.70202-86~24.04"
+    },
+    "aiohttp": "3.14.3",
+    "numpy": "2.3.5",
+    "pillow": "12.2.0"
+  },
+  "runtime": {
+    "attention_kernel": "attn_fwd.kd via aten::_scaled_dot_product_flash_attention",
+    "tunableop_results": "docs/artifacts/tunable-op-20260910/tunableop_results.csv",
+    "tunableop_results_sha256": "edb52440db5a8eb965765b3111ad77852f722a0fff5547e3447cf54f4d7c497e",
+    "tunableop_loaded_results": 16,
+    "pure_helper_compiled_graphs": 8,
+    "pure_helper_graph_breaks": 0,
+    "pure_helper_recompilations": 0,
+    "taehv_revision": "011dfc2112197741c540e0bdd5b7b67bcc930771",
+    "taehv_weight": ".upstream/taehv/taew2_1.pth",
+    "taehv_weight_sha256": "d26151e76cdc2c9424bef988de874b33d9a53f30ef3060cd556c429c469c797e"
+  }
+}

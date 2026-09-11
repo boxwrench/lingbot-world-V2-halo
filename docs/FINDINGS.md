@@ -1369,3 +1369,32 @@ is unchanged; the browser is a localhost-only presentation/control layer.
 Compact evidence is in
 `docs/artifacts/browser-serving-20260910/summary.json`; full raw metrics are
 under the ignored `results/raw/browser-serving-20260910/` tree.
+
+## F43 — formal Strix Halo RC1 browser benchmark (2026-09-11)
+
+The frozen RC1 browser lane was benchmarked with the established 40-action
+script. The run completed 40 actions, including 29 rolled actions after the
+12-frame local KV reached capacity. Rolled server-side action→base RGB was
+`938.4 ms` P50 / `949.7 ms` P95; action→next-ready was `1255.3/1265.9 ms`
+P50/P95. Denoise was `909.6/922.5 ms` P50/P95 and clean KV was
+`298.3/299.9 ms`. These reproduce the qualification run's general range with
+no browser-induced engine regression.
+
+The browser-clock protocol measurements were keydown→frame received
+`944.1/954.5 ms`, decoded `946.2/956.5 ms`, and presented proxy
+`946.2/956.5 ms` P50/P95. JPEG encode was `6.9/9.4 ms`; packet size was
+`45.9/66.3 KiB`; server-reported tail drops were zero. The presented proxy is
+not a monitor or time-to-photon measurement. Browser telemetry does not yet
+export per-run PyTorch peak allocation or RSS, so those fields are explicitly
+null in the formal summary; the accepted same-stack reference remains
+`30.049 GiB` allocated, `42.358 GiB` reserved, and `25.870 GiB` RSS.
+
+The run remained finite and ended at global KV `41328`, local KV `12096`, and
+sink `6048`. The existing matched-state action-response evidence is retained:
+RGB0 was the first materially responsive frame for strong-turn and
+forward-versus-reverse probes. A real Chrome/CDP smoke separately validated
+action IDs, latest-valid pending replacement, and safe quit. Compact export
+artifacts are in [`rc1-benchmark-20260911/`](artifacts/rc1-benchmark-20260911/)
+and the detailed record is [`rc1-benchmark-20260911.md`](rc1-benchmark-20260911.md).
+
+Classification: **RC1 BENCHMARK PASS**.
