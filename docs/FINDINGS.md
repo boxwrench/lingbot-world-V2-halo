@@ -1195,3 +1195,41 @@ DIAGNOSTICS**. Details and raw artifact paths are in
 `docs/artifacts/kv-cursor-20260910/`; ignored profiler traces remain under
 `results/raw/kv-cursor-20260910/`. The next authorized experiment is
 shape-matched compile prewarm, which was not started here.
+
+## F38 — shape-matched pure-helper prewarm removes the first-bootstrap compile stall (2026-09-10)
+
+The accepted pure-helper lane was unchanged: seven state-free tensor-helper
+families, eight Inductor graphs, eager stateful attention/KV/cache operations,
+eager Linear/GEMM boundaries for the 16-result validator-matched TunableOp
+file, and TAEHV presentation. A new opt-in prewarm call now invokes the exact
+`PureTensorIslands` instance installed on the live 30-block model, using
+zero-filled tensors with the observed `[1008, 1536]`/`[1008, 8960]` BF16 and
+FP32 contracts and live modulation/view strides. It does not pass data through
+model blocks, touch persistent state, or consume RNG; CPU and GPU RNG states
+were unchanged.
+
+The cold lazy control created eight graphs during first use and paid a
+`7553.1 ms` runtime-ready-to-bootstrap-transformer interval. The cold explicit
+prewarm lane paid `4315.1 ms` before `Runtime ready`, then reduced the same
+bootstrap interval to `754.0 ms`. A fresh process using the populated compiler
+cache still required `1777.7 ms` explicit prewarm but had a `754.3 ms`
+bootstrap interval. Thus disk cache hits reduce prewarm work but do not replace
+runtime prewarm. Both 40-action lanes had eight graphs, 23 captured calls, no
+graph breaks, no recompilations, and no `aten.addmm/mm/bmm` in the compiled
+regions.
+
+The cold-prewarm 40-action run stayed finite through repeated rollovers and
+ended at global `41328`, local capacity `12096`, and sink retention `6048`.
+Its rolled medians were `943.2 ms` first-visible and `1292.4 ms` next-ready,
+versus `935.3 ms` and `1284.5 ms` for the fresh cold-lazy control; this small
+spread is not treated as a steady-state regression. A small 14-frame transfer
+reused the eight graphs, reached `14112` local tokens with `6048` sink tokens,
+and stayed finite.
+
+Classification: **RETAIN AS OPT-IN RELEASE PREPARATION**. The prewarm path
+moves meaningful first-use work before an explicit runtime-ready boundary and
+keeps the existing non-prewarmed lane as the default pending startup UX and
+cache packaging work. Detailed methodology and startup tables are in
+[`prewarm-20260910.md`](prewarm-20260910.md); compact evidence is in
+`docs/artifacts/prewarm-20260910/`, with raw process logs under the ignored
+`results/raw/prewarm-20260910/` tree.

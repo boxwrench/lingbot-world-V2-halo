@@ -1,0 +1,93 @@
+{
+  "experiment": "shape-matched runtime prewarm of accepted pure tensor islands",
+  "date": "2026-09-10",
+  "starting_head": "91467f7d77ac5373f1763155f1c22082fbaa844f",
+  "protected_worktree_edit": "scripts/run_window_sweep.sh",
+  "configuration": {
+    "geometry": "384x672",
+    "tokens_per_frame": 1008,
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "chunk_size": 1,
+    "denoise_schedule": [999, 899, 702],
+    "transformer_dtype": "bfloat16",
+    "vae_dtype": "float16",
+    "display_decoder": "taehv",
+    "tunableop_results_loaded": 16,
+    "tunableop_online_tuning": false,
+    "tunableop_record_untuned": false
+  },
+  "prewarm": {
+    "same_live_islands": true,
+    "logical_helper_families": 7,
+    "graphs_expected": 8,
+    "shape_contract": {
+      "tokens": 1008,
+      "hidden_dim": 1536,
+      "ffn_dim": 8960,
+      "modulation": [1, 6, 1536],
+      "conditioning": [1, 1008, 6, 1536],
+      "activation_fp32": [1, 1008, 1536],
+      "activation_bf16": [1, 1008, 1536],
+      "ffn_hidden_bf16": [1, 1008, 8960]
+    },
+    "rng_unchanged": {
+      "cpu": true,
+      "gpu": true
+    }
+  },
+  "startup_ms": {
+    "cold_lazy": {
+      "process_to_ready": 179245.732,
+      "explicit_prewarm": 0.0,
+      "ready_to_bootstrap_transformer_end": 7553.137,
+      "ready_to_bootstrap_first_rgb": 7686.936
+    },
+    "cold_pre_warm": {
+      "process_to_ready": 179969.209,
+      "explicit_prewarm": 4315.136,
+      "ready_to_bootstrap_transformer_end": 753.989,
+      "ready_to_bootstrap_first_rgb": 894.951
+    },
+    "populated_cache_pre_warm": {
+      "process_to_ready": 60911.070,
+      "explicit_prewarm": 1777.737,
+      "ready_to_bootstrap_transformer_end": 754.398,
+      "ready_to_bootstrap_first_rgb": 903.627
+    }
+  },
+  "compiler": {
+    "cold_lazy_unique_graphs": 8,
+    "cold_prewarm_unique_graphs": 8,
+    "cold_prewarm_calls_captured": 23,
+    "cold_prewarm_graph_breaks": 0,
+    "cold_prewarm_recompiles": 0,
+    "compiled_gemm_ops": [],
+    "populated_cache_fx_graph_hits": 8
+  },
+  "rolled_40_action_medians_ms": {
+    "cold_lazy": {
+      "denoise_3x": 914.900,
+      "first_visible": 935.288,
+      "clean_kv": 299.519,
+      "next_ready": 1284.491
+    },
+    "cold_prewarm": {
+      "denoise_3x": 922.550,
+      "first_visible": 943.228,
+      "clean_kv": 301.910,
+      "next_ready": 1292.423
+    }
+  },
+  "correctness": {
+    "cold_prewarm_actions_including_bootstrap": 41,
+    "final_global_k_tokens": 41328,
+    "local_k_capacity_tokens": 12096,
+    "sink_tokens": 6048,
+    "finite_output": true,
+    "14_frame_transfer_local_capacity_tokens": 14112,
+    "14_frame_transfer_sink_tokens": 6048,
+    "14_frame_transfer_finite": true
+  },
+  "decision": "retain opt-in release preparation; do not change default"
+}

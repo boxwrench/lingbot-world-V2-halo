@@ -8,6 +8,7 @@ these helpers so the accepted TunableOp and SDPA paths remain untouched.
 from __future__ import annotations
 
 import types
+import time
 from dataclasses import dataclass
 from typing import Callable
 
@@ -128,6 +129,98 @@ class PureTensorIslands:
                 "camera_update",
             ),
         )
+
+
+def prewarm_pure_tensor_islands(
+    islands: PureTensorIslands,
+    device: torch.device,
+    *,
+    tokens: int = 1008,
+    hidden_dim: int = 1536,
+    ffn_dim: int = 8960,
+) -> dict[str, object]:
+    """Instantiate the exact live helper graphs without touching model state.
+
+    The live 384x672 path calls these helpers with fixed current-frame shapes.
+    Inputs are zero-filled tensors with the observed dtypes/layouts, so this
+    routine consumes neither the application RNG nor any KV/decoder state. It
+    must receive the same ``PureTensorIslands`` instance later installed on the
+    real blocks; warming a temporary helper bank would not warm the live path.
+    """
+    if device.type != "cuda":
+        raise ValueError("pure-helper prewarm requires a CUDA/HIP device")
+
+    torch.cuda.synchronize(device)
+    cpu_rng_before = torch.random.get_rng_state()
+    gpu_rng_before = torch.cuda.get_rng_state(device)
+    t0 = time.perf_counter()
+
+    # These are deliberately zeros rather than randn tensors.  They have the
+    # same contiguous shape/dtype contract as the live block calls without
+    # consuming either the CPU or GPU generation RNG.
+    shape = (1, tokens, hidden_dim)
+    modulation = torch.nn.Parameter(
+        torch.zeros(1, 6, hidden_dim, device=device, dtype=torch.bfloat16),
+        requires_grad=False,
+    )
+    e = torch.zeros(1, tokens, 6, hidden_dim, device=device, dtype=torch.float32)
+    x_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    y_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    x_float = torch.zeros(*shape, device=device, dtype=torch.float32)
+    hidden_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    plucker_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    camera_scale_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    camera_shift_bf16 = torch.zeros(*shape, device=device, dtype=torch.bfloat16)
+    ffn_hidden_bf16 = torch.zeros(
+        1, tokens, ffn_dim, device=device, dtype=torch.bfloat16
+    )
+
+    with torch.amp.autocast("cuda", dtype=torch.bfloat16), torch.no_grad():
+        modulation_parts = islands.modulation(modulation, e)
+        # The live block passes these exact singleton-dimension views to the
+        # affine/residual helpers. Keeping their strides is necessary to avoid
+        # a second Dynamo graph merely for a contiguous synthetic tensor.
+        scale0 = modulation_parts[0].squeeze(2)
+        scale1 = modulation_parts[1].squeeze(2)
+        scale2 = modulation_parts[2].squeeze(2)
+        scale5 = modulation_parts[5].squeeze(2)
+        islands.affine(x_float, scale1, scale0)
+        islands.scaled_residual(x_bf16, y_bf16, scale2)
+        islands.scaled_residual(x_float, y_bf16, scale5)
+        islands.add(x_float, y_bf16)
+        islands.silu(hidden_bf16)
+        islands.gelu_tanh(ffn_hidden_bf16)
+        islands.camera_update(
+            x_float,
+            hidden_bf16,
+            plucker_bf16,
+            camera_scale_bf16,
+            camera_shift_bf16,
+        )
+    torch.cuda.synchronize(device)
+    elapsed = time.perf_counter() - t0
+
+    cpu_rng_unchanged = torch.equal(cpu_rng_before, torch.random.get_rng_state())
+    gpu_rng_unchanged = torch.equal(gpu_rng_before, torch.cuda.get_rng_state(device))
+    return {
+        "elapsed_seconds": elapsed,
+        "rng": {
+            "cpu_unchanged": cpu_rng_unchanged,
+            "gpu_unchanged": gpu_rng_unchanged,
+        },
+        "shape_contract": {
+            "tokens": tokens,
+            "hidden_dim": hidden_dim,
+            "ffn_dim": ffn_dim,
+            "modulation": {"shape": [1, 6, hidden_dim], "dtype": "torch.bfloat16"},
+            "conditioning": {"shape": [1, tokens, 6, hidden_dim], "dtype": "torch.float32"},
+            "activation": {"shape": list(shape), "dtype": "torch.float32"},
+            "activation_bf16": {"shape": list(shape), "dtype": "torch.bfloat16"},
+            "ffn_hidden": {"shape": [1, tokens, ffn_dim], "dtype": "torch.bfloat16"},
+        },
+        "helpers_invoked": list(islands.helper_names),
+        "graphs_expected": 8,
+    }
 
 
 def make_pure_block_forward(islands: PureTensorIslands):

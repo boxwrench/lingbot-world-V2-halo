@@ -43,6 +43,19 @@ from wan.image2video import WanI2VCausal
 from wan.utils.cam_utils import get_Ks_transformed, get_plucker_embeddings
 
 
+# The pure-helper startup wrapper injects this shared dictionary before
+# calling main(). Values are milliseconds from the wrapper process start.
+# Ordinary runs leave it unset and retain the existing report shape.
+STARTUP_TIMESTAMPS: dict[str, float] | None = None
+STARTUP_PROCESS_START: float | None = None
+
+
+def startup_mark(name: str) -> None:
+    if STARTUP_TIMESTAMPS is None or STARTUP_PROCESS_START is None:
+        return
+    STARTUP_TIMESTAMPS[name] = (time.perf_counter() - STARTUP_PROCESS_START) * 1000.0
+
+
 KEY_ACTIONS = {
     ord("w"): ("forward", 0.0, 0.0, 0.10),
     ord("s"): ("backward", 0.0, 0.0, -0.10),
@@ -470,6 +483,7 @@ def occupancy_record(
 
 
 def main() -> int:
+    startup_mark("live_main_start")
     args = live_parser().parse_args()
     if args.display_decoder != "taehv":
         raise SystemExit("run_live.py is intentionally limited to the TAEHV presentation path")
@@ -505,6 +519,8 @@ def main() -> int:
         },
         "actions": [],
     }
+    if STARTUP_TIMESTAMPS is not None:
+        report["startup"] = STARTUP_TIMESTAMPS
     viewer: LiveViewer | None = None
     start = time.perf_counter()
     pipe: WanI2VCausal | None = None
@@ -530,8 +546,12 @@ def main() -> int:
             metrics=None,
         )
         sync(device)
+        startup_mark("session_preparation_start")
         state = prepare_session(pipe, args, device)
         decoder = StreamingTAEHVDecoder(args.taehv_dir, device, args.taehv_weights)
+        startup_mark("session_preparation_end")
+        startup_mark("runtime_ready")
+        print("Runtime ready; automatic bootstrap is starting.", flush=True)
         report["session_config"] = {
             key: value for key, value in state.items()
             if key in ("lat_f", "lat_h", "lat_w", "height", "width", "frame_seqlen", "kv_size", "frames", "timestep_values", "denoise_schedule")
@@ -542,6 +562,10 @@ def main() -> int:
             # Match the accepted runner: the DiT has BF16 parameters and must
             # receive the same CUDA/HIP autocast context as run_session().
             viewer.begin_action(label)
+            if chunk_id == 0:
+                startup_mark("bootstrap_generation_start")
+            elif chunk_id == 1:
+                startup_mark("first_action_generation_start")
             cache_before_action = cache_positions(state["self_kv_cache"])
             profile_payload: dict[str, object] = {}
             dit_profiler = None
@@ -563,6 +587,10 @@ def main() -> int:
                     lambda: sync(device),
                     defer_clean_kv=True,
                 )
+                if chunk_id == 0:
+                    startup_mark("bootstrap_transformer_end")
+                elif chunk_id == 1:
+                    startup_mark("first_action_transformer_end")
                 if dit_profiler is not None:
                     profile_payload["denoise_module_profile"] = dit_profiler.report()
                 if attention_probe is not None:
@@ -578,6 +606,10 @@ def main() -> int:
                     first_frame_host,
                     f"{label} | first RGB {first_visible_ms:.0f} ms | Ctrl-C/Q/ESC emergency exit",
                 )
+                if chunk_id == 0:
+                    startup_mark("bootstrap_first_rgb_presented")
+                elif chunk_id == 1:
+                    startup_mark("first_action_first_rgb_presented")
                 if key in ("q", "escape"):
                     raise KeyboardInterrupt
                 first_rgb_presented_ms = viewer.input_state.now_ms()
@@ -659,6 +691,7 @@ def main() -> int:
         # Bootstrap uses the existing identity camera conditioning.  It is not
         # counted as a user action.
         run_one(0, state["plucker_chunks"][0], "bootstrap")
+        startup_mark("bootstrap_complete")
         print("Ready. Press W/A/S/D, J/L, I/K, SPACE; Q or ESC quits. Ctrl-C is the hard escape.", flush=True)
 
         available = min(args.max_actions, len(state["noise_chunks"]) - 1)
