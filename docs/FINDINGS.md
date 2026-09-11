@@ -1333,3 +1333,39 @@ compact evidence is in `docs/artifacts/sink-budget-20260910/`.
 Classification: **REJECT — SINK HISTORY IS MATERIAL**. Keep `sink_size=6` as
 the RC1 default and do not run a sink sweep. The detailed report is
 [`sink-budget-20260910.md`](sink-budget-20260910.md).
+
+## F42 — localhost browser serving (2026-09-10)
+
+The frozen optimized 384x672 / 12-frame / 6-sink lane now has an opt-in
+browser frontend at `scripts/run_browser.sh`. One model-owner context owns
+GPU/model/TAEHV/KV/camera state; an independent CPU-only presentation worker
+JPEG-encodes host RGB; aiohttp serves a plain HTML/CSS/JavaScript client over
+an in-memory WebSocket. RGB0 is sent as soon as it is host-ready, while tails
+are bounded and scheduled by the browser at a nominal 16 FPS. New action RGB0
+invalidates stale tails.
+
+The browser mailbox preserves the accepted one-slot latest-valid pending-input
+policy. Action IDs and server/browser telemetry are retained in per-action
+records. The exact clean t=0 KV transaction remains the barrier before a next
+model action can begin. The launcher stays localhost-only and keeps the Tk
+viewer available as a fallback. Static assets are served `no-store` so a fresh
+launch cannot silently retain an older frontend after an RC update.
+
+Protocol and implementation details are in
+[`browser-serving-20260910.md`](browser-serving-20260910.md). Model-free
+protocol/server smoke tests pass. The 40-action Strix run completed 29 rolled
+actions with server-side action→RGB `930.6/936.5 ms` P50/P95 and
+action→next-ready `1245.7/1252.2 ms` P50/P95, within normal variation of the
+accepted optimized lane. The browser protocol client measured keydown→frame
+received/decoded/presented at `936.6/938.3/938.3 ms` P50 and
+`941.5/943.0/943.0 ms` P95. JPEG encode was `5.7/6.9 ms` P50/P95 and no
+presentation tails were dropped. Final state was global KV `41328`, local
+`12096`, sink `6048`, finite throughout. A real Chrome/CDP smoke also loaded
+the page and proved actual key events plus latest-input replacement (`w`,
+`d`, then `s`, with `d` replaced by `s`); it ended through `q` safely.
+
+Classification: **RETAIN BROWSER AS RC1 DEFAULT UX**. The optimized model path
+is unchanged; the browser is a localhost-only presentation/control layer.
+Compact evidence is in
+`docs/artifacts/browser-serving-20260910/summary.json`; full raw metrics are
+under the ignored `results/raw/browser-serving-20260910/` tree.

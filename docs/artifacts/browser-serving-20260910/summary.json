@@ -1,0 +1,83 @@
+{
+  "experiment": "localhost browser serving",
+  "commit_under_test": "c7b8acf0a65814f0e8b0e9e818c011c244dd3ed6",
+  "configuration": {
+    "model": "LingBot World v2 1.3B causal-fast",
+    "hardware": "Ryzen AI MAX+ 395 / Radeon 8060S / gfx1151",
+    "geometry": "384x672",
+    "tokens_per_frame": 1008,
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "sampling": [999, 899, 702],
+    "renderer": "TAEHV taew2_1 FP16",
+    "tunableop_results_loaded": 16,
+    "pure_compile_graphs": 8,
+    "jpeg_quality": 90,
+    "bind": "127.0.0.1"
+  },
+  "transport": {
+    "websocket": true,
+    "filesystem_frame_transport": false,
+    "frame_envelope": "uint32 big-endian JSON-header length + JSON header + JPEG bytes",
+    "tail_cadence_ms": 62.5,
+    "max_model_pending_actions": 1,
+    "max_presentation_frames": 8
+  },
+  "startup_ms": {
+    "process_to_ready": 173492.886,
+    "explicit_prewarm": 1407.122,
+    "runtime_ready_to_bootstrap_rgb0": 833.453,
+    "bootstrap_rgb0_to_interactive_ready": 214.449
+  },
+  "engine_40_action_protocol_benchmark": {
+    "actions": 40,
+    "rolled_actions": 29,
+    "action_to_rgb_p50_ms": 930.575,
+    "action_to_rgb_p95_ms": 936.468,
+    "next_ready_p50_ms": 1245.732,
+    "next_ready_p95_ms": 1252.246,
+    "denoise_p50_ms": 902.681,
+    "clean_kv_p50_ms": 296.528,
+    "tail_frames_dropped": 0,
+    "final_global_kv": 41328,
+    "final_local_kv": 12096,
+    "final_sink_tokens": 6048,
+    "finite": true
+  },
+  "browser_client_metrics_p50_p95_ms": {
+    "keydown_to_frame_received": [936.554, 941.470],
+    "keydown_to_frame_decoded": [938.267, 942.990],
+    "keydown_to_frame_presented_proxy": [938.288, 943.019]
+  },
+  "presentation": {
+    "jpeg_encode_p50_p95_ms": [5.745, 6.853],
+    "jpeg_bytes_p50_p95": [45851, 66322],
+    "nominal_display_fps": 16,
+    "protocol_benchmark_tail_frames_received": "not counted by client",
+    "server_tail_frames_dropped": 0
+  },
+  "real_chrome_smoke": {
+    "browser": "Chrome 149.0.7827.200 via CDP",
+    "events": ["w", "d", "s", "q"],
+    "generated_actions": ["w", "s"],
+    "replacement": "d replaced by s",
+    "action_1_keydown_to_presented_ms": 604.5,
+    "action_2_keydown_to_presented_ms": 1108.3,
+    "ui_displayed_latest_action": "s",
+    "safe_quit": true,
+    "raw_metrics": "results/raw/browser-serving-20260910/chrome-smoke-fixed-3/browser_metrics.json"
+  },
+  "tests": {
+    "protocol_and_server_smoke": "passed",
+    "frontend_syntax": "passed",
+    "persistent_rollover": "passed",
+    "browser_input_replacement": "passed"
+  },
+  "decision": "RETAIN BROWSER AS RC1 DEFAULT UX",
+  "raw_artifacts": "results/raw/browser-serving-20260910/",
+  "notes": [
+    "The 40-action client sends the next action only after next_ready, so it does not stress the pending mailbox.",
+    "Browser presentation timestamps are a requestAnimationFrame paint-cycle proxy, not monitor-latency measurements.",
+    "No inference defaults or model semantics were changed."
+  ]
+}

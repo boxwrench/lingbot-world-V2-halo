@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LingBot World v2</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">LOCAL WORLD MODEL</div>
+          <h1>LingBot World <span>v2 · 1.3B</span></h1>
+        </div>
+        <div id="state" class="state state-starting">SERVER_STARTING</div>
+      </header>
+
+      <section class="stage-wrap">
+        <canvas id="world" width="672" height="384" aria-label="Generated world"></canvas>
+        <div id="stage-message" class="stage-message">Loading model…</div>
+      </section>
+
+      <section class="hud" aria-live="polite">
+        <div class="hud-title">LIVE TELEMETRY</div>
+        <div class="hud-grid">
+          <div><label>Action</label><strong id="action">—</strong></div>
+          <div><label>Action → RGB</label><strong id="action-rgb">—</strong></div>
+          <div><label>Browser key → paint</label><strong id="browser-e2e">—</strong></div>
+          <div><label>Next ready</label><strong id="next-ready">—</strong></div>
+          <div><label>Frame</label><strong id="frame">—</strong></div>
+          <div><label>Dropped tails</label><strong id="dropped">0</strong></div>
+        </div>
+        <div class="config">Radeon 8060S / gfx1151 · 384×672 · Fast · 12-frame / 6-sink · TAEHV</div>
+      </section>
+
+      <details class="telemetry-details">
+        <summary>Detailed telemetry</summary>
+        <pre id="details">Waiting for runtime…</pre>
+      </details>
+
+      <footer>
+        <span>WASD move</span><span>J/L turn</span><span>I/K look</span><span>SPACE no-op</span><span>Q / ESC quit</span>
+      </footer>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
