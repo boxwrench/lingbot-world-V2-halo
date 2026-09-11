@@ -1233,3 +1233,39 @@ cache packaging work. Detailed methodology and startup tables are in
 [`prewarm-20260910.md`](prewarm-20260910.md); compact evidence is in
 `docs/artifacts/prewarm-20260910/`, with raw process logs under the ignored
 `results/raw/prewarm-20260910/` tree.
+
+## F39 — RealESRGAN x2 improves offline detail but is too expensive in the live process (2026-09-10)
+
+The official Real-ESRGAN repository was pinned at `a4abfb2979a7bbff3f69f58f58ae324608821e27`,
+the BasicSR RRDBNet source at `8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a`, and
+the official `v0.2.1` `RealESRGAN_x2plus.pth` checkpoint was recorded with
+SHA-256 `49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb`.
+The dependency-light runner uses the official x2plus architecture without
+altering the accepted ROCm environment. Input is the actual TAE RGB output;
+only HWC/CHW and host/device conversion is performed.
+
+On 32 real TAE frames, isolated FP16 RealESRGAN produced 768x1344 output in
+`119.5 ms` warmed network time and `145.9 ms` to host-ready, versus `283.1`
+and `300.2 ms` in FP32. Its peak isolated allocation was `1.53 GB` and the
+learned output was visibly sharper than Lanczos around tree branches,
+mountains, and water. Adjacent-frame statistics were close to the TAE/Lanczos
+references (`0.05252` mean absolute difference, `0.09212` P95), with no gross
+temporal instability visible in the bounded sample; the model necessarily
+invents some plausible high-frequency texture.
+
+The opt-in live mode displayed TAE RGB first, then ran FP16 RealESRGAN on that
+frame before the exact clean-KV commit. In the co-resident LingBot process the
+refiner network was `312.6 ms` P50 and frame-ready was `313.6 ms` P50, not the
+isolated `119.5/145.9 ms`. At rolled state, base first RGB remained `927.8 ms`
+P50, refined RGB presentation was `1297.9 ms`, clean KV was `293.1 ms`, and
+next-ready was `1648.7 ms` P50. The run stayed finite through 20 actions and
+ended with global KV `21168`, local capacity `12096`, and sink `6048`.
+
+Classification: **REJECT FOR LIVE USE, KEEP OFFLINE OPTION**. The current
+serial refinement adds about `357 ms` to next-action readiness even though the
+base sub-second image is preserved. The new mode remains opt-in; no accepted
+LingBot default, sampler, VAE, TAE, TunableOp, compiler, or cache behavior was
+changed. Detailed measurements and artifact paths are in
+[`spatial-upscale-20260910.md`](spatial-upscale-20260910.md); raw images/videos
+and live metrics are under the ignored `results/raw/spatial-upscale-20260910/`
+tree.

@@ -1,0 +1,58 @@
+{
+  "experiment": "post-TAE RealESRGAN x2 qualification",
+  "date": "2026-09-10",
+  "starting_head": "425367ce15ac126a9972f3511e96739ff31735df",
+  "realesrgan": {
+    "repository": "https://github.com/xinntao/Real-ESRGAN",
+    "revision": "a4abfb2979a7bbff3f69f58f58ae324608821e27",
+    "weight_source": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+    "weight_filename": "RealESRGAN_x2plus.pth",
+    "weight_sha256": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+    "architecture": "RRDBNet(num_in_ch=3,num_out_ch=3,num_feat=64,num_block=23,num_grow_ch=32,scale=2)"
+  },
+  "basicsr": {
+    "repository": "https://github.com/XPixelGroup/BasicSR",
+    "revision": "8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a"
+  },
+  "input": {
+    "source": "results/raw/taehv-offline-384x672-3step-81f/taehv_frames_01.pt",
+    "shape": [32, 384, 672, 3],
+    "dtype": "torch.float32",
+    "layout": "THWC",
+    "color": "RGB",
+    "range": [0.0, 1.0],
+    "output_shape": [1, 3, 768, 1344]
+  },
+  "isolated_fp16": {
+    "model_load_ms": 658.611,
+    "first_network_ms": 1444.306,
+    "warm_network_p50_ms": 119.500,
+    "warm_network_p95_ms": 122.085,
+    "warm_frame_ready_p50_ms": 145.891,
+    "warm_frame_ready_p95_ms": 151.813,
+    "peak_allocated_bytes": 1530245632,
+    "peak_reserved_bytes": 1621098496,
+    "peak_rss_bytes": 2365677568
+  },
+  "live_fp16_20_rolled": {
+    "actions_including_bootstrap": 21,
+    "rolled_actions": 9,
+    "base_first_visible_p50_ms": 927.846,
+    "base_first_visible_p95_ms": 933.083,
+    "refined_visible_p50_ms": 1297.906,
+    "refined_visible_p95_ms": 1308.033,
+    "upscaler_network_p50_ms": 312.564,
+    "upscaler_frame_ready_p50_ms": 313.609,
+    "clean_kv_p50_ms": 293.130,
+    "next_ready_p50_ms": 1648.693,
+    "next_ready_p95_ms": 1657.515,
+    "peak_allocated_bytes": 30099653120,
+    "peak_reserved_bytes": 42440065024,
+    "peak_rss_bytes": 3615711232,
+    "final_global_k_tokens": 21168,
+    "local_capacity_tokens": 12096,
+    "sink_tokens": 6048,
+    "finite": true
+  },
+  "decision": "reject for live use; keep offline option"
+}

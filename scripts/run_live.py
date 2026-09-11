@@ -240,6 +240,22 @@ def live_parser() -> argparse.ArgumentParser:
         default="",
         help="comma-separated chunk IDs for detailed DiT/SDPA and clean-KV profiling",
     )
+    parser.add_argument(
+        "--upscale-x2",
+        action="store_true",
+        help="opt-in RealESRGAN_x2plus presentation refinement after base TAE RGB",
+    )
+    parser.add_argument(
+        "--upscaler-weight",
+        default="models/upscalers/RealESRGAN_x2plus.pth",
+        help="pinned RealESRGAN_x2plus checkpoint",
+    )
+    parser.add_argument(
+        "--upscaler-dtype",
+        choices=("fp32", "fp16"),
+        default="fp16",
+        help="precision for the opt-in RGB upscaler",
+    )
     return parser
 
 
@@ -394,6 +410,51 @@ def show_frame(viewer: LiveViewer, frame: torch.Tensor, status: str) -> str | No
     )
 
 
+def upscale_presented_frame(
+    model: torch.nn.Module,
+    frame: torch.Tensor,
+    device: torch.device,
+    dtype: torch.dtype,
+) -> tuple[torch.Tensor, dict[str, object]]:
+    """Run opt-in post-TAE refinement after base RGB is displayed."""
+    if frame.ndim != 3:
+        raise ValueError(f"expected a 3D RGB frame, got {tuple(frame.shape)}")
+    if frame.shape[0] == 3:
+        frame_chw = frame
+    elif frame.shape[-1] == 3:
+        frame_chw = frame.permute(2, 0, 1)
+    else:
+        raise ValueError(f"expected CHW or HWC RGB frame, got {tuple(frame.shape)}")
+    sync(device)
+    input_start = time.perf_counter()
+    model_input = frame_chw.unsqueeze(0).contiguous().to(
+        device=device, dtype=dtype
+    )
+    sync(device)
+    input_ms = (time.perf_counter() - input_start) * 1000.0
+
+    sync(device)
+    network_start = time.perf_counter()
+    with torch.inference_mode():
+        refined = model(model_input)
+    sync(device)
+    network_ms = (time.perf_counter() - network_start) * 1000.0
+
+    output_start = time.perf_counter()
+    refined_host = refined[0].float().clamp(0.0, 1.0).cpu()
+    sync(device)
+    output_ms = (time.perf_counter() - output_start) * 1000.0
+    return refined_host, {
+        "input_conversion_ms": input_ms,
+        "network_ms": network_ms,
+        "output_conversion_ms": output_ms,
+        "frame_ready_ms": input_ms + network_ms + output_ms,
+        "output_shape": list(refined_host.shape),
+        "output_dtype": str(refined_host.dtype),
+        "finite": bool(torch.isfinite(refined_host).all()),
+    }
+
+
 def action_from_key(key: str) -> tuple[str, torch.Tensor] | None:
     key = normalize_input_key(key)
     if len(key) != 1 or ord(key) not in KEY_ACTIONS:
@@ -525,6 +586,8 @@ def main() -> int:
     start = time.perf_counter()
     pipe: WanI2VCausal | None = None
     decoder: StreamingTAEHVDecoder | None = None
+    upscaler: torch.nn.Module | None = None
+    upscaler_dtype = torch.float16 if args.upscaler_dtype == "fp16" else torch.float32
     recorded_video_chunks: list[torch.Tensor] = []
     stopped = False
     try:
@@ -549,6 +612,21 @@ def main() -> int:
         startup_mark("session_preparation_start")
         state = prepare_session(pipe, args, device)
         decoder = StreamingTAEHVDecoder(args.taehv_dir, device, args.taehv_weights)
+        if args.upscale_x2:
+            from spatial_upscale import load_model
+
+            weight_path = Path(args.upscaler_weight)
+            if not weight_path.is_file():
+                raise SystemExit(f"missing --upscaler-weight: {weight_path}")
+            upscaler = load_model(weight_path, device, upscaler_dtype)
+            sync(device)
+            report["upscaler"] = {
+                "name": "RealESRGAN_x2plus",
+                "weight": str(weight_path),
+                "dtype": args.upscaler_dtype,
+                "output_scale": 2,
+                "mode": "presentation-only; base TAE RGB displayed first",
+            }
         startup_mark("session_preparation_end")
         startup_mark("runtime_ready")
         print("Runtime ready; automatic bootstrap is starting.", flush=True)
@@ -613,6 +691,20 @@ def main() -> int:
                 if key in ("q", "escape"):
                     raise KeyboardInterrupt
                 first_rgb_presented_ms = viewer.input_state.now_ms()
+                upscale_record = None
+                refined_visible_ms = None
+                if upscaler is not None:
+                    refined_frame, upscale_record = upscale_presented_frame(
+                        upscaler, first_frame, device, upscaler_dtype
+                    )
+                    refined_visible_ms = (time.perf_counter() - generated["chunk_t0"]) * 1000.0
+                    key = show_frame(
+                        viewer,
+                        refined_frame,
+                        f"{label} | refined RGB {refined_visible_ms:.0f} ms | Ctrl-C/Q/ESC emergency exit",
+                    )
+                    if key in ("q", "escape"):
+                        raise KeyboardInterrupt
                 clean_profiler = DecoderProfiler(pipe.model) if chunk_id in profile_contexts else None
                 clean_attention_probe = (
                     DitAttentionProbe(len(pipe.model.blocks))
@@ -657,6 +749,8 @@ def main() -> int:
                     "taehv_all_rgb_gpu_ms": first_gpu_ms + remaining_gpu_ms,
                     "first_visible_ms": first_visible_ms,
                     "first_host_copy_ms": first_host_ms,
+                    "upscaler": upscale_record,
+                    "refined_visible_ms": refined_visible_ms,
                     "clean_kv_ms": generated["clean_kv_ms"],
                     "next_action_ready_ms": (time.perf_counter() - generated["chunk_t0"]) * 1000.0,
                     "cache": cache_positions(state["self_kv_cache"]),
