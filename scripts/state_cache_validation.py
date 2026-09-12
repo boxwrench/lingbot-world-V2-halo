@@ -409,25 +409,209 @@ def compute_verdict(assertions: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
-    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
-    from run_live import action_from_key, make_plucker
+def build_pipe(args: argparse.Namespace, device: torch.device):
     from wan.configs import WAN_CONFIGS
     from wan.image2video import WanI2VCausal
-
-    device = torch.device("cuda:0")
-    pipe = WanI2VCausal(
+    return WanI2VCausal(
         config=WAN_CONFIGS["i2v-A14B"], checkpoint_dir=args.model_dir,
         device_id=0, rank=0, t5_fsdp=False, dit_fsdp=False, use_sp=False,
         t5_cpu=False, convert_model_dtype=False, local_attn_size=args.local_attn_size,
         sink_size=args.sink_size, infer_mode="causal_fast", metrics=None,
     )
-    session_args = SimpleNamespace(
+
+
+def make_session_args(args: argparse.Namespace) -> argparse.Namespace:
+    return SimpleNamespace(
         action_path=args.action_path, image=args.image, frames=4 * args.chunks + 1,
         max_area_pixels=args.max_area_pixels, size="480*832", seed=args.seed,
         denoise_schedule=args.denoise_schedule, prompt=args.prompt, local_attn_size=args.local_attn_size,
         sink_size=args.sink_size, host_kv_cursor=False,
     )
+
+
+def freeze_value(value: Any) -> dict[str, Any]:
+    if torch.is_tensor(value):
+        return {
+            "kind": "tensor",
+            "sha256": tensor_hash(value),
+            "shape": list(value.shape),
+            "dtype": str(value.dtype),
+        }
+    if isinstance(value, (list, tuple)):
+        return {"kind": type(value).__name__, "items": [freeze_value(item) for item in value]}
+    if isinstance(value, dict):
+        return {"kind": "dict", "items": {key: freeze_value(value[key]) for key in sorted(value)}}
+    return {"kind": type(value).__name__, "sha256": None}
+
+
+def max_abs_diff(left: torch.Tensor, right: torch.Tensor) -> float | None:
+    if left.shape != right.shape:
+        return None
+    return float((left.detach().float().cpu() - right.detach().float().cpu()).abs().max())
+
+
+def run_bootstrap_capture(pipe: Any, session_args: argparse.Namespace, device: torch.device) -> dict[str, Any]:
+    """One fresh prepare_session plus the exact chunk-0 path the reset check uses."""
+    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
+    state = prepare_session(pipe, session_args, device)
+    with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad():
+        generated = generate_chunk(
+            pipe, state, 0, state["noise_chunks"][0],
+            state["condition_chunks"][0], state["plucker_chunks"][0],
+            device, lambda: sync(device), defer_clean_kv=True,
+        )
+        commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
+    position = cache_positions(state["self_kv_cache"])
+    local_end = position["local_end_index"]
+    layer0 = state["self_kv_cache"][0]
+    tensors = {
+        "noise_chunk_0": state["noise_chunks"][0],
+        "condition_chunk_0": state["condition_chunks"][0],
+        "plucker_chunk_0": state["plucker_chunks"][0],
+        "text_context": state["context"],
+        "bootstrap_x0": generated["x0"],
+        "layer0_clean_k": layer0["k"][:, :local_end],
+        "layer0_clean_v": layer0["v"][:, :local_end],
+    }
+    frozen = {name: freeze_value(value) for name, value in tensors.items()}
+    kept = {
+        name: value.detach().float().cpu().clone()
+        for name, value in tensors.items() if torch.is_tensor(value)
+    }
+    del state, generated, tensors, layer0
+    torch.cuda.empty_cache()
+    return {
+        "position": position,
+        "prompt_sha256": hashlib.sha256(session_args.prompt.encode("utf-8")).hexdigest(),
+        "timestep_values": [int(timestep) for timestep in state["timesteps"]],
+        "frozen": frozen,
+        "tensors": kept,
+    }
+
+
+def compare_captures(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    order = (
+        "noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context",
+        "bootstrap_x0", "layer0_clean_k", "layer0_clean_v",
+    )
+    entries = {}
+    for name in order:
+        frozen_left = left["frozen"][name]
+        frozen_right = right["frozen"][name]
+        sha_equal = (
+            frozen_left.get("sha256") is not None
+            and frozen_left.get("sha256") == frozen_right.get("sha256")
+        )
+        diff = None
+        if name in left["tensors"] and name in right["tensors"]:
+            diff = max_abs_diff(left["tensors"][name], right["tensors"][name])
+        entries[name] = {"sha_equal": bool(sha_equal), "max_abs_diff": diff}
+    return entries
+
+
+def strip_tensors(capture: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in capture.items() if key != "tensors"}
+
+
+INPUT_ORDER = ("noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context")
+
+
+def classify_reset(ab: dict[str, Any], ac: dict[str, Any] | None) -> dict[str, Any]:
+    if not all(entry["sha_equal"] for entry in ab.values()):
+        return {
+            "classification": "BASELINE_NONDETERMINISM_OR_STRICT_HASH",
+            "detail": "Fresh bootstraps A and B differ without any rollout between them; "
+                      "do not claim persistent-state leakage. Use max_abs_diff to judge tolerance.",
+        }
+    if ac is None:
+        return {"classification": "NOT_RUN", "detail": "A==B gate failed; rollout and C were skipped."}
+    if all(entry["sha_equal"] for entry in ac.values()):
+        return {
+            "classification": "RESET_REPRODUCES",
+            "detail": "C matches A bitwise after the rollout; the earlier FAIL needs re-examination, not a leak claim.",
+        }
+    for name in INPUT_ORDER:
+        if not ac[name]["sha_equal"]:
+            return {
+                "classification": "PREPARATION_SIDE_STATE",
+                "detail": f"First differing input after rollout: {name}.",
+                "first_differing_input": name,
+            }
+    if not ac["bootstrap_x0"]["sha_equal"]:
+        return {
+            "classification": "MODEL_RUNTIME_STATE",
+            "detail": "C inputs identical to A, but bootstrap x0 differs: model/runtime persistent state.",
+        }
+    return {
+        "classification": "CACHE_VALIDATOR_PATH",
+        "detail": "x0 identical but clean K/V differ: cache or validator path issue.",
+    }
+
+
+def run_reset_discriminator(args: argparse.Namespace) -> dict[str, Any]:
+    device = torch.device("cuda:0")
+    pipe = build_pipe(args, device)
+    session_args = make_session_args(args)
+    capture_a = run_bootstrap_capture(pipe, session_args, device)
+    capture_b = run_bootstrap_capture(pipe, session_args, device)
+    comparison_ab = compare_captures(capture_a, capture_b)
+    gate_pass = all(entry["sha_equal"] for entry in comparison_ab.values())
+    rollout = None
+    capture_c = None
+    comparison_ac = None
+    if gate_pass:
+        rollout = run_gpu(args, pipe=pipe)
+        capture_c = run_bootstrap_capture(pipe, session_args, device)
+        comparison_ac = compare_captures(capture_a, capture_c)
+    state_probe = prepare_session_probe(pipe, session_args, device)
+    return {
+        "configuration": {
+            "seed": args.seed,
+            "chunks": args.chunks,
+            "local_attn_size_frames_total_including_sink": args.local_attn_size,
+            "sink_size_frames": args.sink_size,
+            "denoise_schedule": args.denoise_schedule,
+            "scripted_actions": args.scripted_actions,
+        },
+        "provenance": {
+            "base_commit": command_output(["git", "rev-parse", "HEAD"]),
+            "upstream_commit": command_output(["git", "-C", ".upstream/lingbot-world-v2", "rev-parse", "HEAD"]),
+            "model_dir": str(Path(args.model_dir).resolve()),
+            "image": str(Path(args.image).resolve()),
+            "action_path": str(Path(args.action_path).resolve()),
+        },
+        "capture_a": strip_tensors(capture_a),
+        "capture_b": strip_tensors(capture_b),
+        "comparison_ab": comparison_ab,
+        "gate_pass_ab_bitwise": gate_pass,
+        "rollout": rollout,
+        "capture_c": strip_tensors(capture_c) if capture_c is not None else None,
+        "comparison_ac": comparison_ac,
+        "classification": classify_reset(comparison_ab, comparison_ac),
+        "state_probe": state_probe,
+    }
+
+
+def prepare_session_probe(pipe: Any, session_args: argparse.Namespace, device: torch.device) -> dict[str, Any]:
+    from run_interactive import prepare_session
+    state = prepare_session(pipe, session_args, device)
+    return {
+        "timestep_values": [int(timestep) for timestep in state["timesteps"]],
+        "context": freeze_value(state["context"]),
+        "noise_0": freeze_value(state["noise_chunks"][0]),
+        "condition_0": freeze_value(state["condition_chunks"][0]),
+        "plucker_0": freeze_value(state["plucker_chunks"][0]),
+    }
+
+
+def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
+    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
+    from run_live import action_from_key, make_plucker
+
+    device = torch.device("cuda:0")
+    if pipe is None:
+        pipe = build_pipe(args, device)
+    session_args = make_session_args(args)
     state = prepare_session(pipe, session_args, device)
     validator = LayerZeroValidator(
         pipe.model.blocks[0].self_attn,
@@ -647,7 +831,7 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("fixture", "gpu"), required=True)
+    parser.add_argument("--mode", choices=("fixture", "gpu", "reset-discriminator"), required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-dir")
     parser.add_argument("--image")
@@ -673,14 +857,17 @@ def main() -> int:
     else:
         for name in ("model_dir", "image", "action_path"):
             if not getattr(args, name):
-                parser.error(f"--{name.replace('_', '-')} is required for --mode gpu")
+                parser.error(f"--{name.replace('_', '-')} is required for --mode {args.mode}")
         try:
             keys = parse_action_keys(args.scripted_actions)
         except ValueError as exc:
             parser.error(str(exc))
         if keys is not None and len(keys) != args.chunks - 1:
             parser.error("--scripted-actions must contain exactly --chunks minus one keys (bootstrap is implicit)")
-        payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
+        if args.mode == "gpu":
+            payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
+        else:
+            payload = {"kind": "gfx1151_reset_discriminator", **run_reset_discriminator(args)}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
