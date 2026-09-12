@@ -23,6 +23,39 @@ import torch
 import torch.nn.functional as F
 
 
+C1R_PHASE0_ACTIONS = ("w", "w", "j", "w", "l", "l", "s", "s", "j", "w", "d", "d", "w", "l", "a")
+
+
+def parse_action_keys(spec: str | None) -> list[str] | None:
+    if spec is None:
+        return None
+    keys = [item.strip().lower() for item in spec.split(",") if item.strip()]
+    valid = set("wsadjlik") | {"space"}
+    invalid = [key for key in keys if key not in valid]
+    if invalid:
+        raise ValueError(f"unsupported action key(s): {', '.join(invalid)}")
+    return [" " if key == "space" else key for key in keys]
+
+
+def scenario_labels(keys: list[str]) -> list[list[str]]:
+    """Label protocol coverage without claiming accumulated-pose closure."""
+    seen: set[str] = set()
+    labels = []
+    for key in keys:
+        current = []
+        if key == "w":
+            current.append("forward_motion")
+        if key == "s":
+            current.append("reversal")
+        if key in ("j", "l"):
+            current.append("turn")
+        if key in seen:
+            current.append("exact_conditioning_revisit")
+        seen.add(key)
+        labels.append(current)
+    return labels
+
+
 def tensor_hash(value: torch.Tensor) -> str:
     raw = value.detach().contiguous().view(torch.uint8).cpu().numpy().tobytes()
     return hashlib.sha256(raw).hexdigest()
@@ -260,6 +293,7 @@ class LayerZeroValidator:
         self.calls_per_chunk = calls_per_chunk
         self.reference: ReferenceCache | None = None
         self.records: list[dict[str, Any]] = []
+        self.broken_control: dict[str, Any] | None = None
         self.original = module.forward
         module.forward = self.forward
 
@@ -296,6 +330,23 @@ class LayerZeroValidator:
             expected = self.model_fast.attention(q_rope, selected_k, selected_v)
             expected = self.module.o(expected.flatten(2))
             output_diff = float((actual - expected).abs().max())
+            if self.broken_control is None and self.reference.global_end > self.capacity:
+                # Reverse only non-sink keys while keeping values fixed.  One
+                # rolled clean call is enough to prove this validator detects
+                # a broken key/value association.
+                indices = list(range(self.sink_tokens)) + list(
+                    range(self.reference.local_end - 1, self.sink_tokens - 1, -1)
+                )
+                broken_k = selected_k[:, indices]
+                broken = self.model_fast.attention(q_rope, broken_k, selected_v)
+                broken = self.module.o(broken.flatten(2))
+                delta = float((actual - broken).abs().max())
+                self.broken_control = {
+                    "condition": "reverse non-sink keys only while retaining value order",
+                    "chunk_id": current_start // frame_seqlen,
+                    "consumer_output_max_abs_delta": delta,
+                    "detected": delta > 1e-4,
+                }
         self.records.append(
             {
                 "call_index": call_index,
@@ -323,24 +374,244 @@ def command_output(command: list[str], cwd: Path | None = None) -> str:
     return subprocess.run(command, cwd=cwd, check=False, capture_output=True, text=True).stdout.strip()
 
 
-def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
-    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
+def tail_hashes(cache: dict[str, Any], frame_seqlen: int) -> dict[str, str]:
+    local_end = int(cache["local_end_index"].item())
+    start = max(0, local_end - frame_seqlen)
+    return {
+        "k_sha256": tensor_hash(cache["k"][:, start:local_end]),
+        "v_sha256": tensor_hash(cache["v"][:, start:local_end]),
+    }
+
+
+def assertion(assertion_id: str, expected: Any, observed: Any, passed: bool, kind: str) -> dict[str, Any]:
+    return {
+        "id": assertion_id,
+        "kind": kind,
+        "expected": expected,
+        "observed": observed,
+        "passed": bool(passed),
+    }
+
+
+def compute_verdict(assertions: list[dict[str, Any]]) -> dict[str, Any]:
+    failed = [item for item in assertions if not item["passed"]]
+    if not failed:
+        classification = "PASS"
+    elif any(item["kind"] == "correctness" for item in failed):
+        classification = "FAIL"
+    else:
+        classification = "INCONCLUSIVE"
+    return {
+        "classification": classification,
+        "all_assertions_pass": not failed,
+        "failed_assertion_ids": [item["id"] for item in failed],
+        "assertions": assertions,
+    }
+
+
+def build_pipe(args: argparse.Namespace, device: torch.device):
     from wan.configs import WAN_CONFIGS
     from wan.image2video import WanI2VCausal
-
-    device = torch.device("cuda:0")
-    pipe = WanI2VCausal(
+    return WanI2VCausal(
         config=WAN_CONFIGS["i2v-A14B"], checkpoint_dir=args.model_dir,
         device_id=0, rank=0, t5_fsdp=False, dit_fsdp=False, use_sp=False,
         t5_cpu=False, convert_model_dtype=False, local_attn_size=args.local_attn_size,
         sink_size=args.sink_size, infer_mode="causal_fast", metrics=None,
     )
-    session_args = SimpleNamespace(
+
+
+def make_session_args(args: argparse.Namespace) -> argparse.Namespace:
+    return SimpleNamespace(
         action_path=args.action_path, image=args.image, frames=4 * args.chunks + 1,
         max_area_pixels=args.max_area_pixels, size="480*832", seed=args.seed,
-        denoise_schedule="4", prompt=args.prompt, local_attn_size=args.local_attn_size,
+        denoise_schedule=args.denoise_schedule, prompt=args.prompt, local_attn_size=args.local_attn_size,
         sink_size=args.sink_size, host_kv_cursor=False,
     )
+
+
+def freeze_value(value: Any) -> dict[str, Any]:
+    if torch.is_tensor(value):
+        return {
+            "kind": "tensor",
+            "sha256": tensor_hash(value),
+            "shape": list(value.shape),
+            "dtype": str(value.dtype),
+        }
+    if isinstance(value, (list, tuple)):
+        return {"kind": type(value).__name__, "items": [freeze_value(item) for item in value]}
+    if isinstance(value, dict):
+        return {"kind": "dict", "items": {key: freeze_value(value[key]) for key in sorted(value)}}
+    return {"kind": type(value).__name__, "sha256": None}
+
+
+def max_abs_diff(left: torch.Tensor, right: torch.Tensor) -> float | None:
+    if left.shape != right.shape:
+        return None
+    return float((left.detach().float().cpu() - right.detach().float().cpu()).abs().max())
+
+
+def run_bootstrap_capture(pipe: Any, session_args: argparse.Namespace, device: torch.device) -> dict[str, Any]:
+    """One fresh prepare_session plus the exact chunk-0 path the reset check uses."""
+    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
+    state = prepare_session(pipe, session_args, device)
+    with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad():
+        generated = generate_chunk(
+            pipe, state, 0, state["noise_chunks"][0],
+            state["condition_chunks"][0], state["plucker_chunks"][0],
+            device, lambda: sync(device), defer_clean_kv=True,
+        )
+        commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
+    position = cache_positions(state["self_kv_cache"])
+    local_end = position["local_end_index"]
+    layer0 = state["self_kv_cache"][0]
+    tensors = {
+        "noise_chunk_0": state["noise_chunks"][0],
+        "condition_chunk_0": state["condition_chunks"][0],
+        "plucker_chunk_0": state["plucker_chunks"][0],
+        "text_context": state["context"],
+        "bootstrap_x0": generated["x0"],
+        "layer0_clean_k": layer0["k"][:, :local_end],
+        "layer0_clean_v": layer0["v"][:, :local_end],
+    }
+    frozen = {name: freeze_value(value) for name, value in tensors.items()}
+    kept = {
+        name: value.detach().float().cpu().clone()
+        for name, value in tensors.items() if torch.is_tensor(value)
+    }
+    del state, generated, tensors, layer0
+    torch.cuda.empty_cache()
+    return {
+        "position": position,
+        "prompt_sha256": hashlib.sha256(session_args.prompt.encode("utf-8")).hexdigest(),
+        "timestep_values": [int(timestep) for timestep in state["timesteps"]],
+        "frozen": frozen,
+        "tensors": kept,
+    }
+
+
+def compare_captures(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    order = (
+        "noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context",
+        "bootstrap_x0", "layer0_clean_k", "layer0_clean_v",
+    )
+    entries = {}
+    for name in order:
+        frozen_left = left["frozen"][name]
+        frozen_right = right["frozen"][name]
+        sha_equal = (
+            frozen_left.get("sha256") is not None
+            and frozen_left.get("sha256") == frozen_right.get("sha256")
+        )
+        diff = None
+        if name in left["tensors"] and name in right["tensors"]:
+            diff = max_abs_diff(left["tensors"][name], right["tensors"][name])
+        entries[name] = {"sha_equal": bool(sha_equal), "max_abs_diff": diff}
+    return entries
+
+
+def strip_tensors(capture: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in capture.items() if key != "tensors"}
+
+
+INPUT_ORDER = ("noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context")
+
+
+def classify_reset(ab: dict[str, Any], ac: dict[str, Any] | None) -> dict[str, Any]:
+    if not all(entry["sha_equal"] for entry in ab.values()):
+        return {
+            "classification": "BASELINE_NONDETERMINISM_OR_STRICT_HASH",
+            "detail": "Fresh bootstraps A and B differ without any rollout between them; "
+                      "do not claim persistent-state leakage. Use max_abs_diff to judge tolerance.",
+        }
+    if ac is None:
+        return {"classification": "NOT_RUN", "detail": "A==B gate failed; rollout and C were skipped."}
+    if all(entry["sha_equal"] for entry in ac.values()):
+        return {
+            "classification": "RESET_REPRODUCES",
+            "detail": "C matches A bitwise after the rollout; the earlier FAIL needs re-examination, not a leak claim.",
+        }
+    for name in INPUT_ORDER:
+        if not ac[name]["sha_equal"]:
+            return {
+                "classification": "PREPARATION_SIDE_STATE",
+                "detail": f"First differing input after rollout: {name}.",
+                "first_differing_input": name,
+            }
+    if not ac["bootstrap_x0"]["sha_equal"]:
+        return {
+            "classification": "MODEL_RUNTIME_STATE",
+            "detail": "C inputs identical to A, but bootstrap x0 differs: model/runtime persistent state.",
+        }
+    return {
+        "classification": "CACHE_VALIDATOR_PATH",
+        "detail": "x0 identical but clean K/V differ: cache or validator path issue.",
+    }
+
+
+def run_reset_discriminator(args: argparse.Namespace) -> dict[str, Any]:
+    device = torch.device("cuda:0")
+    pipe = build_pipe(args, device)
+    session_args = make_session_args(args)
+    capture_a = run_bootstrap_capture(pipe, session_args, device)
+    capture_b = run_bootstrap_capture(pipe, session_args, device)
+    comparison_ab = compare_captures(capture_a, capture_b)
+    gate_pass = all(entry["sha_equal"] for entry in comparison_ab.values())
+    rollout = None
+    capture_c = None
+    comparison_ac = None
+    if gate_pass:
+        rollout = run_gpu(args, pipe=pipe)
+        capture_c = run_bootstrap_capture(pipe, session_args, device)
+        comparison_ac = compare_captures(capture_a, capture_c)
+    state_probe = prepare_session_probe(pipe, session_args, device)
+    return {
+        "configuration": {
+            "seed": args.seed,
+            "chunks": args.chunks,
+            "local_attn_size_frames_total_including_sink": args.local_attn_size,
+            "sink_size_frames": args.sink_size,
+            "denoise_schedule": args.denoise_schedule,
+            "scripted_actions": args.scripted_actions,
+        },
+        "provenance": {
+            "base_commit": command_output(["git", "rev-parse", "HEAD"]),
+            "upstream_commit": command_output(["git", "-C", ".upstream/lingbot-world-v2", "rev-parse", "HEAD"]),
+            "model_dir": str(Path(args.model_dir).resolve()),
+            "image": str(Path(args.image).resolve()),
+            "action_path": str(Path(args.action_path).resolve()),
+        },
+        "capture_a": strip_tensors(capture_a),
+        "capture_b": strip_tensors(capture_b),
+        "comparison_ab": comparison_ab,
+        "gate_pass_ab_bitwise": gate_pass,
+        "rollout": rollout,
+        "capture_c": strip_tensors(capture_c) if capture_c is not None else None,
+        "comparison_ac": comparison_ac,
+        "classification": classify_reset(comparison_ab, comparison_ac),
+        "state_probe": state_probe,
+    }
+
+
+def prepare_session_probe(pipe: Any, session_args: argparse.Namespace, device: torch.device) -> dict[str, Any]:
+    from run_interactive import prepare_session
+    state = prepare_session(pipe, session_args, device)
+    return {
+        "timestep_values": [int(timestep) for timestep in state["timesteps"]],
+        "context": freeze_value(state["context"]),
+        "noise_0": freeze_value(state["noise_chunks"][0]),
+        "condition_0": freeze_value(state["condition_chunks"][0]),
+        "plucker_0": freeze_value(state["plucker_chunks"][0]),
+    }
+
+
+def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
+    from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
+    from run_live import action_from_key, make_plucker
+
+    device = torch.device("cuda:0")
+    if pipe is None:
+        pipe = build_pipe(args, device)
+    session_args = make_session_args(args)
     state = prepare_session(pipe, session_args, device)
     validator = LayerZeroValidator(
         pipe.model.blocks[0].self_attn,
@@ -349,21 +620,41 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
         len(state["timesteps"]) + 1,
     )
     chunks = []
+    action_keys = parse_action_keys(args.scripted_actions)
+    action_labels = scenario_labels(action_keys or [])
     first_x0_hash = None
     first_cache_hash = None
     with torch.amp.autocast("cuda", dtype=pipe.param_dtype), torch.no_grad():
         for chunk_id, values in enumerate(zip(state["noise_chunks"], state["condition_chunks"], state["plucker_chunks"])):
             if chunk_id >= args.chunks:
                 break
+            action_key = None
+            action_name = "bootstrap"
+            labels = ["bootstrap"]
+            plucker = values[2]
+            if chunk_id > 0 and action_keys is not None:
+                action_key = action_keys[chunk_id - 1]
+                selected = action_from_key(action_key)
+                if selected is None or selected[0] == "ignored":
+                    raise RuntimeError(f"invalid scripted action at chunk {chunk_id}: {action_key!r}")
+                action_name, pose = selected
+                labels = action_labels[chunk_id - 1]
+                plucker = make_plucker(pose, args, state, device, pipe.param_dtype)
+            values = (values[0], values[1], plucker)
             before = cache_positions(state["self_kv_cache"])
             generated = generate_chunk(pipe, state, chunk_id, *values, device, lambda: sync(device), defer_clean_kv=True)
             denoise_position = cache_positions(state["self_kv_cache"])
+            denoise_tail = tail_hashes(state["self_kv_cache"][0], int(state["frame_seqlen"]))
             commit_clean_kv(pipe, state, generated, device, lambda: sync(device))
             after = cache_positions(state["self_kv_cache"])
+            clean_tail = tail_hashes(state["self_kv_cache"][0], int(state["frame_seqlen"]))
             layer0 = state["self_kv_cache"][0]
             row = {
                 "chunk_id": chunk_id,
-                "action_association": "bootstrap" if chunk_id == 0 else f"pose/action latent {chunk_id}",
+                "action_key": action_key,
+                "action_name": action_name,
+                "scenario_labels": labels,
+                "action_association": "bootstrap" if chunk_id == 0 else f"scripted action {chunk_id - 1}",
                 "current_start": chunk_id * int(state["frame_seqlen"]),
                 "rope_frame": chunk_id,
                 "cache_before": before,
@@ -371,6 +662,8 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
                 "cache_after_clean_t0": after,
                 "x0_sha256": tensor_hash(generated["x0"]),
                 "plucker_sha256": tensor_hash(values[2]),
+                "tail_after_denoise": denoise_tail,
+                "tail_after_clean_t0": clean_tail,
                 "layer0_k_occupied_sha256": tensor_hash(layer0["k"][:, :after["local_end_index"]]),
                 "layer0_v_occupied_sha256": tensor_hash(layer0["v"][:, :after["local_end_index"]]),
                 "all_layer_cursors_equal": len({
@@ -399,10 +692,17 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
     reset_pos = cache_positions(reset_state["self_kv_cache"])
     reset_x0_hash = tensor_hash(reset_generated["x0"])
     reset_cache_hash = tensor_hash(reset_state["self_kv_cache"][0]["k"][:, :reset_pos["local_end_index"]])
+    reset_cache_v_hash = tensor_hash(reset_state["self_kv_cache"][0]["v"][:, :reset_pos["local_end_index"]])
+    first_cache_v_hash = chunks[0]["layer0_v_occupied_sha256"]
     reset_result = {
         "fresh_x0_matches_initial": reset_x0_hash == first_x0_hash,
         "fresh_layer0_cache_matches_initial": reset_cache_hash == first_cache_hash,
+        "fresh_layer0_v_matches_initial": reset_cache_v_hash == first_cache_v_hash,
         "fresh_positions": reset_pos,
+        "all_layer_cursors_equal": len({
+            (int(item["global_end_index"].item()), int(item["local_end_index"].item()))
+            for item in reset_state["self_kv_cache"]
+        }) == 1,
         "cross_cache_initialized": int(reset_state["cross_kv_cache"][0]["is_init"].item()),
         "pipe_cross_gate": bool(pipe._cross_attn_initialized),
     }
@@ -431,11 +731,11 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
     capacity_frames = int(state["kv_size"]) // frame_seqlen
     boundary_chunks = {
         "startup": 0,
-        "partially_filled": 1,
-        "immediately_before_first_eviction": capacity_frames - 1,
-        "immediately_after_first_eviction_first_rolled": capacity_frames,
-        "repeated_roll": capacity_frames + 1,
-        "later_steady_rolled": args.chunks - 1,
+        "capacity_filled": capacity_frames - 1,
+        "first_eviction_first_rolled": capacity_frames,
+        "repeated_roll_1": capacity_frames + 1,
+        "repeated_roll_2": capacity_frames + 2,
+        "repeated_roll_3": args.chunks - 1,
     }
     selected = {name: chunks[index] for name, index in boundary_chunks.items()}
     selected_reference = {name: clean_records[index] for name, index in boundary_chunks.items()}
@@ -447,7 +747,39 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
         and row["consumer_output_max_abs_diff"] <= tolerances["consumer_output_max_abs"]
         for row in selected_reference.values()
     )
-    return {
+    repeated_w_hashes = {
+        row["plucker_sha256"] for row in chunks if row["action_key"] == "w"
+    }
+    expected_timesteps = [999, 899, 702] if args.denoise_schedule == "3-drop-957" else [999, 957, 899, 702]
+    calls_expected = args.chunks * (len(expected_timesteps) + 1)
+    all_clean_overwrite = all(row["clean_transaction_same_logical_position"] for row in selected.values())
+    reset_pass = all((
+        reset_result["fresh_x0_matches_initial"],
+        reset_result["fresh_layer0_cache_matches_initial"],
+        reset_result["fresh_layer0_v_matches_initial"],
+        reset_result["all_layer_cursors_equal"],
+        reset_pos == {"global_end_index": frame_seqlen, "local_end_index": frame_seqlen},
+    ))
+    coverage = {label for row in chunks for label in row["scenario_labels"]}
+    assertions = [
+        assertion("exact_local_capacity", 12, args.local_attn_size, args.local_attn_size == 12, "configuration"),
+        assertion("exact_sink_size", 6, args.sink_size, args.sink_size == 6, "configuration"),
+        assertion("exact_timesteps", [999, 899, 702], state["timestep_values"], state["timestep_values"] == [999, 899, 702], "configuration"),
+        assertion("exact_chunk_count", 16, len(chunks), len(chunks) == 16, "coverage"),
+        assertion("exact_geometry", [384, 672], [int(state["height"]), int(state["width"])], [int(state["height"]), int(state["width"])] == [384, 672], "configuration"),
+        assertion("bf16_dit", "torch.bfloat16", str(pipe.param_dtype), str(pipe.param_dtype) == "torch.bfloat16", "configuration"),
+        assertion("deferred_clean_t0", True, True, True, "configuration"),
+        assertion("all_64_layer0_calls_recorded", 64, len(validator.records), len(validator.records) == 64 and len(validator.records) == calls_expected, "coverage"),
+        assertion("selected_boundaries_present", sorted(boundary_chunks), sorted(selected), len(selected) == len(boundary_chunks), "coverage"),
+        assertion("selected_reference_checks", True, positive_pass, positive_pass, "correctness"),
+        assertion("selected_clean_t0_overwrites", True, all_clean_overwrite, all_clean_overwrite, "correctness"),
+        assertion("scenario_coverage", ["exact_conditioning_revisit", "forward_motion", "reversal", "turn"], sorted(coverage - {"bootstrap"}), {"exact_conditioning_revisit", "forward_motion", "reversal", "turn"}.issubset(coverage), "coverage"),
+        assertion("repeated_w_exact_conditioning", 1, len(repeated_w_hashes), len(repeated_w_hashes) == 1, "coverage"),
+        assertion("fresh_reset", True, reset_pass, reset_pass, "correctness"),
+        assertion("stale_state_control", True, stale_delta_detected, stale_delta_detected, "discriminator"),
+        assertion("broken_kv_control", True, bool(validator.broken_control and validator.broken_control["detected"]), bool(validator.broken_control and validator.broken_control["detected"]), "discriminator"),
+    ]
+    result = {
         "device": {
             "name": torch.cuda.get_device_name(device),
             "properties": str(torch.cuda.get_device_properties(device)),
@@ -455,15 +787,31 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
         },
         "configuration": {
             "seed": args.seed, "chunks": args.chunks,
+            "chunk_size": 1,
+            "scripted_action_keys": action_keys,
             "local_attn_size_frames_total_including_sink": args.local_attn_size,
             "sink_size_frames": args.sink_size,
             "frame_seqlen": frame_seqlen,
             "capacity_tokens": int(state["kv_size"]),
             "capacity_frames": capacity_frames,
             "timesteps": state["timestep_values"],
+            "denoise_schedule": args.denoise_schedule,
+            "height": int(state["height"]),
+            "width": int(state["width"]),
+            "dit_dtype": str(pipe.param_dtype),
+            "taehv_dtype": "torch.float16 (RC1 presentation contract; decoder not invoked by this cache validator)",
             "deferred_clean_t0": True,
         },
+        "provenance": {
+            "base_commit": command_output(["git", "rev-parse", "HEAD"]),
+            "upstream_commit": command_output(["git", "-C", ".upstream/lingbot-world-v2", "rev-parse", "HEAD"]),
+            "model_dir": str(Path(args.model_dir).resolve()),
+            "image": str(Path(args.image).resolve()),
+            "action_path": str(Path(args.action_path).resolve()),
+        },
         "tolerances": tolerances,
+        "chunks": chunks,
+        "validator_records": validator.records,
         "boundaries": selected,
         "reference_checks": selected_reference,
         "all_boundary_reference_checks_pass": positive_pass,
@@ -475,12 +823,15 @@ def run_gpu(args: argparse.Namespace) -> dict[str, Any]:
             "stale_error": stale_error,
             "detected": stale_delta_detected,
         },
+        "broken_kv_negative_control": validator.broken_control,
     }
+    result["verdict"] = compute_verdict(assertions)
+    return result
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("fixture", "gpu"), required=True)
+    parser.add_argument("--mode", choices=("fixture", "gpu", "reset-discriminator"), required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-dir")
     parser.add_argument("--image")
@@ -491,6 +842,11 @@ def main() -> int:
     parser.add_argument("--local-attn-size", type=int, default=4)
     parser.add_argument("--sink-size", type=int, default=1)
     parser.add_argument("--max-area-pixels", type=int, default=264192)
+    parser.add_argument("--denoise-schedule", choices=("4", "3-drop-957"), default="4")
+    parser.add_argument(
+        "--scripted-actions",
+        help="comma-separated production run_live action keys; use 'space' for no-op",
+    )
     args = parser.parse_args()
     if args.mode == "fixture":
         payload = {
@@ -501,8 +857,17 @@ def main() -> int:
     else:
         for name in ("model_dir", "image", "action_path"):
             if not getattr(args, name):
-                parser.error(f"--{name.replace('_', '-')} is required for --mode gpu")
-        payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
+                parser.error(f"--{name.replace('_', '-')} is required for --mode {args.mode}")
+        try:
+            keys = parse_action_keys(args.scripted_actions)
+        except ValueError as exc:
+            parser.error(str(exc))
+        if keys is not None and len(keys) != args.chunks - 1:
+            parser.error("--scripted-actions must contain exactly --chunks minus one keys (bootstrap is implicit)")
+        if args.mode == "gpu":
+            payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
+        else:
+            payload = {"kind": "gfx1151_reset_discriminator", **run_reset_discriminator(args)}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
