@@ -1,0 +1,407 @@
+{
+  "kind": "gfx1151_real_lingbot_boundary_validation",
+  "device": {
+    "name": "AMD Radeon 8060S Graphics",
+    "properties": "_CudaDeviceProperties(name='AMD Radeon 8060S Graphics', major=11, minor=5, gcnArchName='gfx1151', total_memory=114688MB, multi_processor_count=20, uuid=58580000-0000-0000-0000-000000000000, pci_bus_id=197, pci_device_id=0, pci_domain_id=0, L2_cache_size=2MB)",
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0"
+  },
+  "configuration": {
+    "seed": 42,
+    "chunks": 9,
+    "local_attn_size_frames_total_including_sink": 4,
+    "sink_size_frames": 1,
+    "frame_seqlen": 1008,
+    "capacity_tokens": 4032,
+    "capacity_frames": 4,
+    "timesteps": [
+      999,
+      957,
+      899,
+      702
+    ],
+    "deferred_clean_t0": true
+  },
+  "tolerances": {
+    "cache_max_abs": 0.0,
+    "consumer_output_max_abs": 0.02
+  },
+  "boundaries": {
+    "startup": {
+      "chunk_id": 0,
+      "action_association": "bootstrap",
+      "current_start": 0,
+      "rope_frame": 0,
+      "cache_before": {
+        "global_end_index": 0,
+        "local_end_index": 0,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 1008,
+        "local_end_index": 1008,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 1008,
+        "local_end_index": 1008,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "5e66f83a768b74454ed1ae3b0504dcca1163bdc1c946148bd0876aa1452ef640",
+      "plucker_sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+      "layer0_k_occupied_sha256": "33ddfef8f2046e4e86ad27b0ae8ee686d4cddf4e915212eda743786925f3ae6e",
+      "layer0_v_occupied_sha256": "87cd458eef5ae152128f1d0be5f8885b9ffd79521ac65e2981e0c4452ddd94f5",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    },
+    "partially_filled": {
+      "chunk_id": 1,
+      "action_association": "pose/action latent 1",
+      "current_start": 1008,
+      "rope_frame": 1,
+      "cache_before": {
+        "global_end_index": 1008,
+        "local_end_index": 1008,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 2016,
+        "local_end_index": 2016,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 2016,
+        "local_end_index": 2016,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "6f32f71589356d2776b4456d7383d2a404cd35da790ed7e3e0f8f050cf24ce39",
+      "plucker_sha256": "14992a9b28d4f6a21840129b91dd106a1ced9df47ecbd0386edf039ad888b43b",
+      "layer0_k_occupied_sha256": "c824c82f938b18e41295a9fe6bc35ad372795cdc25fc1189da7ee1ac883a61ed",
+      "layer0_v_occupied_sha256": "d75552aa86602337fc7398bd45c7639610bec08127abe8fe6998bb1c8639387a",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    },
+    "immediately_before_first_eviction": {
+      "chunk_id": 3,
+      "action_association": "pose/action latent 3",
+      "current_start": 3024,
+      "rope_frame": 3,
+      "cache_before": {
+        "global_end_index": 3024,
+        "local_end_index": 3024,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 4032,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 4032,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "bb916f0b2c5d9e9eca9f3916c15323055b808d45c6b4832fa2a9cebc0a78be4e",
+      "plucker_sha256": "3de6ebc07e9d4d5bfd1656f8f23353220931aaf1c2059cf940bfb868d4e72d0c",
+      "layer0_k_occupied_sha256": "74bf28f4e56b4e798467960e56ed80b59f72ccdda7c79528b7245b7045b18254",
+      "layer0_v_occupied_sha256": "1b5dd612926712bc73a4e904a164f1163fbddc088a3f58603209c78f827cec93",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    },
+    "immediately_after_first_eviction_first_rolled": {
+      "chunk_id": 4,
+      "action_association": "pose/action latent 4",
+      "current_start": 4032,
+      "rope_frame": 4,
+      "cache_before": {
+        "global_end_index": 4032,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 5040,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 5040,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "880b752fc34b2bf5b65236b30ace4fd992bbd1bfe9ea2dfe3ac65de27c997854",
+      "plucker_sha256": "cd2c44f9530eab4723b241f2c31a53089fab9ff6091b3f7958186e90c2797ca6",
+      "layer0_k_occupied_sha256": "e9ceb96f31cd0c9693710a685b2d6c95e33465bf333f4094cb77927b115a0cf7",
+      "layer0_v_occupied_sha256": "67ad17a2b3c1d09568b9168d89b6e9d6a5aeaef19e3d6c7caa0dfb3846117a71",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    },
+    "repeated_roll": {
+      "chunk_id": 5,
+      "action_association": "pose/action latent 5",
+      "current_start": 5040,
+      "rope_frame": 5,
+      "cache_before": {
+        "global_end_index": 5040,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 6048,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 6048,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "3d7ce2f3efc6157482dc77fd7953a0eacebd91225d7670f88669b8785e9dd2e0",
+      "plucker_sha256": "bfa3a04bb6b7fcf53aaeefb261779bb7f1dfed108af8b9b0619476be0651d2ae",
+      "layer0_k_occupied_sha256": "526f7525d1b9eea89fa478f45bc7ac8fd4ac9729d8f047f0ac3d167cea4a1c85",
+      "layer0_v_occupied_sha256": "91b75a4dc6bade6a05915061aa6898e352aa8d0871cae494aaed77c2984fbbe9",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    },
+    "later_steady_rolled": {
+      "chunk_id": 8,
+      "action_association": "pose/action latent 8",
+      "current_start": 8064,
+      "rope_frame": 8,
+      "cache_before": {
+        "global_end_index": 8064,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_denoise": {
+        "global_end_index": 9072,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "cache_after_clean_t0": {
+        "global_end_index": 9072,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 4032
+      },
+      "x0_sha256": "89c51d9c3242347a1fd111700e60034a9399424b1b837b14cca6d3dd5d94469a",
+      "plucker_sha256": "de8cc9c2d194c1ad1f54e76a02f7f2efed4a5d84e58d328da5ccb5df57ff2747",
+      "layer0_k_occupied_sha256": "e6c9505f4f7b09c3bffdcca3aa7516ae6d442f390537600b490914e7fe85010a",
+      "layer0_v_occupied_sha256": "bd6c12c7bf709547248339f41da18209d6f1d1aed606b31c623f9e162eced7b4",
+      "all_layer_cursors_equal": true,
+      "clean_transaction_same_logical_position": true
+    }
+  },
+  "reference_checks": {
+    "startup": {
+      "call_index": 4,
+      "chunk_id": 0,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 0,
+      "rope_start_frame": 0,
+      "global_end": 1008,
+      "local_end": 1008,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        1004,
+        1005,
+        1006,
+        1007
+      ],
+      "logical_frame_ids": [
+        0
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    },
+    "partially_filled": {
+      "call_index": 9,
+      "chunk_id": 1,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 1008,
+      "rope_start_frame": 1,
+      "global_end": 2016,
+      "local_end": 2016,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        2012,
+        2013,
+        2014,
+        2015
+      ],
+      "logical_frame_ids": [
+        0,
+        1
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    },
+    "immediately_before_first_eviction": {
+      "call_index": 19,
+      "chunk_id": 3,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 3024,
+      "rope_start_frame": 3,
+      "global_end": 4032,
+      "local_end": 4032,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        4028,
+        4029,
+        4030,
+        4031
+      ],
+      "logical_frame_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    },
+    "immediately_after_first_eviction_first_rolled": {
+      "call_index": 24,
+      "chunk_id": 4,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 4032,
+      "rope_start_frame": 4,
+      "global_end": 5040,
+      "local_end": 4032,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        5036,
+        5037,
+        5038,
+        5039
+      ],
+      "logical_frame_ids": [
+        0,
+        2,
+        3,
+        4
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    },
+    "repeated_roll": {
+      "call_index": 29,
+      "chunk_id": 5,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 5040,
+      "rope_start_frame": 5,
+      "global_end": 6048,
+      "local_end": 4032,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        6044,
+        6045,
+        6046,
+        6047
+      ],
+      "logical_frame_ids": [
+        0,
+        3,
+        4,
+        5
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    },
+    "later_steady_rolled": {
+      "call_index": 44,
+      "chunk_id": 8,
+      "call_in_chunk": 4,
+      "phase": "clean-t0",
+      "current_start": 8064,
+      "rope_start_frame": 8,
+      "global_end": 9072,
+      "local_end": 4032,
+      "logical_ids_first": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "logical_ids_last": [
+        9068,
+        9069,
+        9070,
+        9071
+      ],
+      "logical_frame_ids": [
+        0,
+        6,
+        7,
+        8
+      ],
+      "evicted_token_count": 0,
+      "evicted_frame_ids": [],
+      "cache_k_max_abs_diff": 0.0,
+      "cache_v_max_abs_diff": 0.0,
+      "consumer_output_max_abs_diff": 0.0
+    }
+  },
+  "all_boundary_reference_checks_pass": true,
+  "reset": {
+    "fresh_x0_matches_initial": true,
+    "fresh_layer0_cache_matches_initial": true,
+    "fresh_positions": {
+      "global_end_index": 1008,
+      "local_end_index": 1008,
+      "cache_capacity_tokens": 4032
+    },
+    "cross_cache_initialized": 1,
+    "pipe_cross_gate": true
+  },
+  "stale_negative_control": {
+    "condition": "reuse later rolled self/cross cache and cross gate at current_start=0",
+    "fresh_x0_sha256": "5e66f83a768b74454ed1ae3b0504dcca1163bdc1c946148bd0876aa1452ef640",
+    "stale_x0_sha256": null,
+    "stale_error": "RuntimeError: The expanded size of the tensor (0) must match the existing size (1008) at non-singleton dimension 1.  Target sizes: [1, 0, 12, 128].  Tensor sizes: [1008, 12, 128]",
+    "detected": true
+  }
+}

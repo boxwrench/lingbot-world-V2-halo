@@ -1,0 +1,70 @@
+{
+  "campaign": "C1 LingRuntime state/cache validation",
+  "date": "2026-09-12",
+  "classification": "PASS",
+  "base_commit": "add8a69eb4aba79b720adea37fa9a4821b20201f",
+  "branch": "experiment/state-cache-validation",
+  "upstream_commit": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+  "no_optimization_implemented": true,
+  "fixtures": {
+    "device_tensor_cursor_pass": true,
+    "host_cursor_pass": true,
+    "states": [
+      "startup",
+      "partially_filled",
+      "immediately_before_first_eviction",
+      "immediately_after_first_eviction",
+      "first_rolled_state",
+      "repeated_roll",
+      "later_steady_rolled_state"
+    ],
+    "cache_tolerance_max_abs": 0.0,
+    "consumer_tolerance_max_abs": 0.000001
+  },
+  "gfx1151": {
+    "device": "AMD Radeon 8060S Graphics",
+    "arch": "gfx1151",
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0",
+    "chunks": 9,
+    "frame_seqlen": 1008,
+    "capacity_tokens": 4032,
+    "capacity_frames_total_including_sink": 4,
+    "sink_frames": 1,
+    "boundary_reference_checks_pass": true,
+    "cache_tolerance_max_abs": 0.0,
+    "consumer_tolerance_max_abs": 0.02,
+    "observed_max_cache_abs_diff": 0.0,
+    "observed_max_consumer_output_abs_diff": 0.0
+  },
+  "first_eviction": {
+    "result": "PASS",
+    "chunk_id": 4,
+    "global_end_tokens": 5040,
+    "local_end_tokens": 4032,
+    "logical_frames": [0, 2, 3, 4],
+    "evicted_frame": 1,
+    "sink_frame_retained": 0
+  },
+  "wrap": {
+    "implementation": "contiguous compaction, not circular ring",
+    "first_rolled_result": "PASS",
+    "repeated_roll_result": "PASS",
+    "later_rolled_result": "PASS",
+    "later_logical_frames": [0, 6, 7, 8]
+  },
+  "reset": {
+    "result": "PASS",
+    "fresh_x0_matches_initial": true,
+    "fresh_layer0_clean_k_matches_initial": true
+  },
+  "broken_control": {
+    "result": "PASS",
+    "invalid_key_value_association_detected": true,
+    "minimal_consumer_max_abs_delta": 7.632423400878906,
+    "stale_rolled_state_detected": true,
+    "stale_mode": "runtime slice error"
+  },
+  "c2_unblocked": true,
+  "next_statement": "C2 quality-causality testing is unblocked."
+}
