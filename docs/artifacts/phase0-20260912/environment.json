@@ -1,0 +1,56 @@
+{
+  "gate": "PASS",
+  "repo": {
+    "path": "/home/keith/Desktop/github/lingbot-world-V2-halo",
+    "git_metadata": ".git-experiment/.git",
+    "branch": "main",
+    "head": "5f858c53d88f0462de7ff44aae8d3ea70e0b9be8",
+    "initial_dirty_paths": [
+      "scripts/run_window_sweep.sh"
+    ],
+    "initial_dirty_diff_sha256": "2f8f41a04b97eaf5db3050af6cd2fe50f8bb10866dd87baddc0bbc4fed1af521"
+  },
+  "upstream": {
+    "revision": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+    "patched_paths": [
+      "wan/image2video.py",
+      "wan/modules/model_fast.py"
+    ],
+    "working_diff_sha256": "14222b0ddb9d13bd86e8e1a9d5b7743a7c4f418b66092ef247c27353e6ce668e"
+  },
+  "model": {
+    "repository": "robbyant/lingbot-world-v2-1.3b-causal-fast",
+    "revision": "7e36a5f919f86cb4255cc9bfc30adb44963fbde1",
+    "index_sha256": "b0409d663b57810af19443c9e8d8dde43320193c8dbb979d86f6618102922e42"
+  },
+  "hardware": {
+    "cpu_apu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+    "gpu_count": 1,
+    "gpu": "AMD Radeon 8060S Graphics",
+    "gfx_target": "gfx1151",
+    "device_memory_bytes": 120259084288,
+    "system_ram_bytes": 130459455488,
+    "bf16_supported": true,
+    "bf16_matmul_finite": true,
+    "performance_level": "auto"
+  },
+  "software": {
+    "kernel": "6.17.0-35-generic",
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "torch_hip": "7.15.0",
+    "system_hipconfig": "7.2.53211-671d39a71e",
+    "system_rocm_libraries": "7.2.2.70202-86~24.04",
+    "triton": "3.8.0+git4cff872c.rocm7.15.0a20260728"
+  },
+  "visibility": {
+    "PYTORCH_ROCM_ARCH": "gfx1151",
+    "HIP_VISIBLE_DEVICES": "0",
+    "CUDA_VISIBLE_DEVICES": "0"
+  },
+  "memory": {
+    "uma_gtt_total_bytes": 120259084288,
+    "rocm_smi_vram_aperture_note": "APU reports unified GTT as the usable device pool",
+    "kernel_cmdline": "amd_iommu=on iommu.passthrough=0"
+  },
+  "raw_gate_path": "results/raw/phase0-20260912/environment-gate"
+}

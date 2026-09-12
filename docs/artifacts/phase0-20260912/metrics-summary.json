@@ -1,0 +1,80 @@
+{
+  "protocol": {
+    "independent_rollouts": 3,
+    "actions_per_rollout": 15,
+    "rolled_actions_per_rollout": 4,
+    "pooled_rolled_actions": 12,
+    "profiling_enabled": false
+  },
+  "pooled_rolled": {
+    "action_to_base_rgb_ms": {
+      "median": 939.8773394932505,
+      "min": 927.6436389773153,
+      "max": 954.5048039872199
+    },
+    "action_to_next_ready_ms": {
+      "median": 1258.8872685155366,
+      "min": 1244.7612489922903,
+      "max": 1272.2809729748406
+    },
+    "denoise_ms": {
+      "median": 909.8165230243467,
+      "min": 899.4546749745496,
+      "max": 926.4716360485181
+    },
+    "transformer_ms": {
+      "median": 913.5439580131788,
+      "min": 903.4470680053346,
+      "max": 930.5374720133841
+    },
+    "clean_kv_ms": {
+      "median": 298.1521319888998,
+      "min": 295.1223240233958,
+      "max": 304.52890001470223
+    },
+    "taehv_first_rgb_gpu_ms": {
+      "median": 20.01461200416088,
+      "min": 19.604183034971356,
+      "max": 20.19472001120448
+    },
+    "taehv_remaining_rgb_gpu_ms": {
+      "median": 17.842678498709574,
+      "min": 17.581619962584227,
+      "max": 18.643290037289262
+    },
+    "taehv_total_gpu_ms": {
+      "median": 37.82704149489291,
+      "min": 37.47210500296205,
+      "max": 38.774218992330134
+    }
+  },
+  "per_rollout_rolled_medians": [
+    {
+      "actions": 4,
+      "action_to_rgb_p50_ms": 946.008984989021,
+      "action_to_rgb_p95_ms": 950.0618809834123,
+      "next_ready_p50_ms": 1263.5755719966255,
+      "next_ready_p95_ms": 1265.825538954232,
+      "denoise_p50_ms": 914.7047390579246,
+      "clean_kv_p50_ms": 297.8203549864702
+    },
+    {
+      "actions": 4,
+      "action_to_rgb_p50_ms": 944.7551209595986,
+      "action_to_rgb_p95_ms": 954.5048039872199,
+      "next_ready_p50_ms": 1270.0268119806424,
+      "next_ready_p95_ms": 1272.2809729748406,
+      "denoise_p50_ms": 912.6983539899811,
+      "clean_kv_p50_ms": 300.4676690325141
+    },
+    {
+      "actions": 4,
+      "action_to_rgb_p50_ms": 937.5047000357881,
+      "action_to_rgb_p95_ms": 948.6241079866886,
+      "next_ready_p50_ms": 1258.1509680021554,
+      "next_ready_p95_ms": 1266.3915589801036,
+      "denoise_p50_ms": 909.0016390546225,
+      "clean_kv_p50_ms": 301.09101301059127
+    }
+  ]
+}

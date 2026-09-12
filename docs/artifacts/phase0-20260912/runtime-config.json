@@ -1,0 +1,82 @@
+{
+  "source": "loaded runtime, unprofiled action ledger, and rolled action-13 probe",
+  "width": 672,
+  "height": 384,
+  "session_latent_dimensions": [
+    15,
+    48,
+    84
+  ],
+  "accepted_chunk_latent_shape": [
+    1,
+    16,
+    1,
+    48,
+    84
+  ],
+  "chunk_size": 1,
+  "tokens_per_frame": 1008,
+  "local_attention_frames": 12,
+  "sink_frames": 6,
+  "kv_capacity_tokens": 12096,
+  "local_capacity_includes_sink_tokens": true,
+  "sink_tokens": 6048,
+  "rolled_recent_history_tokens_excluding_current": 5040,
+  "denoise_timesteps": [
+    999,
+    899,
+    702
+  ],
+  "dit_blocks": 30,
+  "attention_heads": 12,
+  "head_dimension": 128,
+  "dit_precision": "torch.bfloat16 (observed Q/K/V and loaded runtime autocast)",
+  "decoder": "TAEHV taew2_1",
+  "decoder_precision": "torch.float16",
+  "decoder_weight_sha256": "d26151e76cdc2c9424bef988de874b33d9a53f30ef3060cd556c429c469c797e",
+  "attention_backend": "PyTorch flash SDPA / aten::_scaled_dot_product_flash_attention / attn_fwd.kd",
+  "serial_execution": true,
+  "clean_kv": "deferred exact t=0 full DiT forward before next-ready",
+  "tunableop": {
+    "enabled": true,
+    "tuning_enabled": false,
+    "record_untuned": false,
+    "filename": "/home/keith/Desktop/github/lingbot-world-V2-halo/docs/artifacts/tunable-op-20260910/tunableop_results.csv",
+    "validators": [
+      [
+        "PT_VERSION",
+        "2.13.0"
+      ],
+      [
+        "HIP_VERSION",
+        "715"
+      ],
+      [
+        "HIPBLASLT_VERSION",
+        "100401-baa93758"
+      ],
+      [
+        "GCN_ARCH_NAME",
+        "gfx1151"
+      ],
+      [
+        "ROCBLAS_VERSION",
+        "5.6.0.baa93758"
+      ]
+    ],
+    "loaded_results": 16
+  },
+  "pure_helper_compilation": {
+    "compiled_blocks": 30,
+    "compiled_helpers": [
+      "modulation",
+      "affine",
+      "scaled_residual",
+      "add",
+      "silu",
+      "gelu_tanh",
+      "camera_update"
+    ],
+    "prewarmed": true
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "policy": "Large/generated raw outputs remain gitignored; paths and SHA-256 digests are committed.",
+  "artifacts": [
+    {
+      "path": "results/raw/phase0-20260912/aa-run-1/benchmark.json",
+      "bytes": 36007,
+      "sha256": "49171a509fd42660584b099054cce652c0e53891fbf22a79eede75faf2f35904"
+    },
+    {
+      "path": "results/raw/phase0-20260912/aa-run-2/benchmark.json",
+      "bytes": 36018,
+      "sha256": "cf4b431b790b3100e1e7a62b108b3d1d2557b1530dc3c0a74741a81aa95226f0"
+    },
+    {
+      "path": "results/raw/phase0-20260912/aa-run-3/benchmark.json",
+      "bytes": 36051,
+      "sha256": "7d9f02c9739cbc145db9fce818f2d462b0f29a937fef5d4764ddefa863fd462c"
+    },
+    {
+      "path": "results/raw/phase0-20260912/waterfall-run/benchmark.json",
+      "bytes": 89338,
+      "sha256": "0c8ca34a2d7357d66837bad99ff2ee80ac31164f43bfa86d4af402e13c7a5296"
+    },
+    {
+      "path": "results/raw/phase0-20260912/waterfall-run/browser_metrics.json",
+      "bytes": 82993,
+      "sha256": "297c12f2c093e981a1845878bc507b802ea6f4d0ea574bc53713807204199bf1"
+    },
+    {
+      "path": "results/raw/phase0-20260912/detailed-profile/live_metrics.json",
+      "bytes": 1873142,
+      "sha256": "7789be51670e903edc2b95e2d2f9d64693fe0a9a9ecd21fa180468e8e085ff1c"
+    },
+    {
+      "path": "results/raw/phase0-20260912/detailed-profile/pure_compile_metrics.json",
+      "bytes": 5781,
+      "sha256": "1af36f5a58455b1d84636409fc7af2e322a80779edaafd1753170b51797ec436"
+    }
+  ]
+}

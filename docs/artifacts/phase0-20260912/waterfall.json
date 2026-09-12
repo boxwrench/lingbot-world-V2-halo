@@ -1,0 +1,61 @@
+{
+  "selection": {
+    "source_run": "waterfall-run",
+    "action_id": 15,
+    "rule": "rolled action nearest pooled A/A base-RGB and next-ready medians",
+    "profiling_enabled": false
+  },
+  "wall_clock_ms": {
+    "input_to_selection": 0.14172605006024241,
+    "selection_to_generation_start": 2.703679958358407,
+    "generation_to_accepted_x0": 917.108633031603,
+    "accepted_x0_to_base_rgb": 21.21282700682059,
+    "base_rgb_to_clean_kv_start": 0.19847496878355742,
+    "clean_kv": 300.6061670021154,
+    "clean_kv_complete_to_next_ready": 19.353342009708285,
+    "input_to_base_rgb": 941.1668660468422,
+    "input_to_next_ready": 1261.3248500274494
+  },
+  "gpu_synchronized_forwards_ms": {
+    "denoise_1_t999": 314.32873400626704,
+    "denoise_2_t899": 297.35219303984195,
+    "denoise_3_t702": 298.6675439751707,
+    "clean_kv_t0": 300.50335999112576
+  },
+  "other_measured_ms": {
+    "transformer_total": 915.1372099877335,
+    "latent_postprocess_total": 3.4236290375702083,
+    "taehv_first_rgb_gpu": 20.028422004543245,
+    "taehv_remaining_rgb_gpu": 17.49950594967231,
+    "action_prepare_internal": 0.03501900937408209
+  },
+  "cache": {
+    "global_end_index": 16128,
+    "local_end_index": 12096,
+    "capacity_tokens": 12096
+  },
+  "finite": true,
+  "critical_path": {
+    "before_base_rgb": [
+      "input selection",
+      "camera/action preparation",
+      "three serialized DiT denoise forwards",
+      "latent postprocess between forwards",
+      "TAEHV first-RGB decode",
+      "first-frame device-to-host copy"
+    ],
+    "after_base_rgb_before_next_ready": [
+      "exact t=0 clean-KV DiT forward",
+      "TAEHV remaining-frame decode",
+      "remaining frame copies"
+    ],
+    "overlap": [
+      "CPU JPEG encoding/presentation worker after base-frame submission"
+    ],
+    "not_generation_state_critical": [
+      "JPEG encoding",
+      "WebSocket transport",
+      "browser decode/presentation"
+    ]
+  }
+}

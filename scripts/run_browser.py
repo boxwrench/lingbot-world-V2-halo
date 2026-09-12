@@ -606,6 +606,7 @@ class ModelOwner:
                 denoise_forward_count=len(state_timesteps(self.state)),
                 denoise_ms=denoise_ms,
                 transformer_ms=float(generated["transformer_ms"]),
+                forward_records=generated["forward_records"],
                 action_prepare_ms=float(generated["action_prepare_ms"]),
                 latent_postprocess_ms=float(generated["latent_postprocess_ms"]),
                 clean_kv_ms=float(generated["clean_kv_ms"]),

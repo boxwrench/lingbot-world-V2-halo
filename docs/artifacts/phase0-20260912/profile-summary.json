@@ -1,0 +1,88 @@
+{
+  "warning": "Intrusive CUDA-event/module-hook run; use only for attribution, not acceptance latency.",
+  "profiled_chunk": 13,
+  "rolled": true,
+  "phases": {
+    "denoise": {
+      "intrusive_wall_ms": 944.7491260361858,
+      "module_exclusive_total_ms": 931.8813091218472,
+      "module_class_exclusive_ms": {
+        "CausalWanSelfAttention": 446.0946766734123,
+        "Linear": 327.6807850599289,
+        "CausalWanAttentionBlock": 86.72223768755794,
+        "WanRMSNorm": 36.19635298848152,
+        "WanCrossAttention": 20.611528053879738,
+        "WanLayerNorm": 11.825538970530033,
+        "Conv3d": 1.6709120273590088,
+        "CausalHead": 0.4783469997346401,
+        "Sequential": 0.39753566309809685,
+        "SiLU": 0.16819599829614162,
+        "GELU": 0.03519899956882
+      },
+      "self_sdpa_ms": 369.3281524181366,
+      "cross_sdpa_ms": 18.722301945090294,
+      "self_sdpa_contract": {
+        "calls": 90,
+        "q_shapes": {
+          "(1, 12, 1008, 128)": 90
+        },
+        "k_shapes": {
+          "(1, 12, 12096, 128)": 90
+        },
+        "k_strides": {
+          "(18579456, 128, 1536, 1)": 90
+        },
+        "dtypes": {
+          "('torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16')": 90
+        },
+        "mask_modes": {
+          "(False, False)": 90
+        }
+      }
+    },
+    "clean": {
+      "intrusive_wall_ms": 311.456928960979,
+      "module_exclusive_total_ms": 308.77383786439896,
+      "module_class_exclusive_ms": {
+        "CausalWanSelfAttention": 144.7946437075734,
+        "Linear": 111.59464279562235,
+        "CausalWanAttentionBlock": 28.83216178789735,
+        "WanRMSNorm": 11.756903022527695,
+        "WanCrossAttention": 6.767803929746151,
+        "WanLayerNorm": 4.0244819931685925,
+        "Conv3d": 0.7306789755821228,
+        "CausalHead": 0.16011500358581543,
+        "SiLU": 0.05099800042808056,
+        "Sequential": 0.04920864850282669,
+        "GELU": 0.012199999764561653
+      },
+      "self_sdpa_ms": 121.18936228752136,
+      "cross_sdpa_ms": 6.14938297867775,
+      "self_sdpa_contract": {
+        "calls": 30,
+        "q_shapes": {
+          "(1, 12, 1008, 128)": 30
+        },
+        "k_shapes": {
+          "(1, 12, 12096, 128)": 30
+        },
+        "k_strides": {
+          "(18579456, 128, 1536, 1)": 30
+        },
+        "dtypes": {
+          "('torch.bfloat16', 'torch.bfloat16', 'torch.bfloat16')": 30
+        },
+        "mask_modes": {
+          "(False, False)": 30
+        }
+      }
+    }
+  },
+  "current_exact_shape_dispatch_probe": {
+    "operator": "aten::_scaled_dot_product_flash_attention",
+    "kernel": "attn_fwd.kd",
+    "device": "AMD Radeon 8060S Graphics",
+    "gfx_target": "gfx1151",
+    "finite": true
+  }
+}
