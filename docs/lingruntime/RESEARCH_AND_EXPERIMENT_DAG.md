@@ -90,7 +90,7 @@ C0B RC1 Phase 0 waterfall                        DONE  (commit add8a69)
 C1 state/cache correctness                       INCONCLUSIVE  (commit 2bf97c3)
         |
         v
-C1R exact-RC1 state/cache confirmation            READY  (gpu-exclusive)
+C1R exact-RC1 state/cache confirmation            RUNNING  (gpu-exclusive)
         |
         v
 C2 quality causality                             BLOCKED  (waits on C1R PASS)
@@ -157,14 +157,19 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   [`docs/artifacts/state-cache-validation-20260912/README.md`](../artifacts/state-cache-validation-20260912/README.md),
   `summary.json`, `fixtures.json`, and `gfx1151-validation.json`.
 
-### Ready
+### Running
 
-- **C1R** — exact-RC1 state/cache confirmation. This is a bounded confirmation,
-  not a repeat of the broad C1 campaign: use the accepted 12-frame/6-sink,
-  three-step RC1 configuration, cross first eviction and repeated rollover,
-  explicitly label direction changes/revisits, and retain the reference,
-  reset, and negative-control checks. Preparation is source/CPU work;
-  execution requires the exclusive Strix GPU lease.
+- **C1R** — exact-RC1 state/cache confirmation. First execution (2026-09-12)
+  recorded validator FAIL driven solely by `fresh_reset`: 15 of 16 assertions
+  PASS on the exact 12-frame/6-sink, three-step operating point (configuration,
+  64/64 calls, reference checks, clean-t0 overwrites, eviction/roll boundaries,
+  scenario coverage, both negative controls). A fresh post-rollout bootstrap
+  reproduced neither x0 nor layer-0 clean K/V bitwise; positions and cursors
+  were correct. Cause unresolved: persistent-state leak vs invalid hash
+  criterion. Active work is the minimal A/B/C tensor discriminator
+  (`--mode reset-discriminator` in `scripts/state_cache_validation.py`,
+  commit `77f0ad7`); the expensive rollout reruns only if fresh A==B bitwise.
+  Evidence: [`docs/artifacts/state-cache-c1r-20260912/`](../artifacts/state-cache-c1r-20260912/README.md).
 
 ### Blocked
 
@@ -271,11 +276,14 @@ forward:
 ## Recommended queue
 
 ```text
+RUNNING
+C1R — first execution recorded; reset discriminator queued (gpu-exclusive)
+
 READY
-C1R — exact-RC1 state/cache confirmation (gpu-exclusive for execution)
+C1R reset-discriminator execution
 
 BLOCKED
-C2 — quality causality, waiting on C1R PASS
+C2 — quality causality, waiting on reset-discriminator classification
 C3, C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
 
 DEFERRED
@@ -283,7 +291,6 @@ C8 — pending a measured residual opportunity from the C4-C7 loop
 
 INDEPENDENT WORK AVAILABLE NOW
 repository/DAG integration and review
-C1R experiment preparation/source inspection (no GPU)
 
 NOT YET VALID
 performance optimization

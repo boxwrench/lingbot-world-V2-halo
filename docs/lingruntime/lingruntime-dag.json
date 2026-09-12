@@ -215,13 +215,13 @@
     "docs/artifacts/state-cache-validation-20260912/commands.md"
    ],
    "result": "INCONCLUSIVE for full C1 closure. PASS for the tested accelerated stress configuration: both device-tensor and host-cursor fixtures matched an independent logical-list reference exactly; the real gfx1151 4-frame/1-sink, four-denoise-step run verified startup, fill, first and repeated compaction, layer-zero K/V and consumer output, clean-t0 overwrite position, reset replay, and invalid controls. The run did not execute the accepted RC1 12-frame/6-sink, three-denoise-step operating point named in the node question, and did not explicitly label direction-change/revisit coverage.",
-   "notes": "Preserved as strong mechanism/stress evidence, not discarded or promoted to PASS. A bounded exact-RC1 confirmation is instantiated as C1R. GPU evidence independently mirrors layer-zero K/V values and checks all-layer cursor agreement; reset hashes x0 and layer-zero K, not every layer/value."
+   "notes": "Preserved as strong mechanism/stress evidence, not discarded or promoted to PASS. A bounded exact-RC1 confirmation is instantiated as C1R. GPU evidence independently mirrors layer-zero K/V values and checks all-layer cursor agreement; reset hashes x0 and layer-zero K, not every layer/value. C1R first execution (2026-09-12) passed everything except fresh_reset; the reset discriminator is now the active closure path."
   },
   {
    "id": "C1R",
    "name": "Exact-RC1 state/cache confirmation",
    "type": "experiment",
-   "status": "ready",
+   "status": "running",
    "priority": 11,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -256,10 +256,14 @@
     "inconclusive -> keep C2 blocked and record the unresolved evidence gap"
    ],
    "evidence": [
-    "C1 gap review against commit 2bf97c3 and docs/artifacts/phase0-20260912/runtime-config.json"
+    "C1 gap review against commit 2bf97c3 and docs/artifacts/phase0-20260912/runtime-config.json",
+    "docs/artifacts/state-cache-c1r-20260912/README.md",
+    "docs/artifacts/state-cache-c1r-20260912/c1r-gpu.json",
+    "commit c4f9656 (C1R first execution)",
+    "commit 77f0ad7 (reset discriminator mode)"
    ],
-   "result": null,
-   "notes": "Bounded confirmation only, not a new optimization or timing benchmark. Preparation/source work is CPU-only; execution owns gpu:strix-gfx1151 exclusively. Do not rerun the broad 4/1 campaign."
+   "result": "First exact-RC1 execution (2026-09-12, validator base 4f92ca5): validator FAIL driven solely by fresh_reset; 15 of 16 assertions PASS (exact 12/6 three-step config, 64/64 calls, reference checks, clean-t0 overwrites, eviction/roll boundaries, scenario coverage, stale-state and broken-KV controls). Post-rollout fresh bootstrap reproduced neither x0 nor layer-0 clean K/V bitwise; positions and cursors correct. Cause unresolved: persistent-state leak vs invalid hash criterion; A/B/C tensor discriminator now active.",
+   "notes": "First execution recorded; full rollout reruns only inside the discriminator and only if fresh A==B bitwise. Preparation/source work is CPU-only; execution owns gpu:strix-gfx1151 exclusively."
   },
   {
    "id": "C2",
@@ -312,7 +316,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged."
+   "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged. Current gate (2026-09-12): C1R reset discriminator must classify the fresh_reset FAIL before any C2 work."
   },
   {
    "id": "C3",
@@ -596,12 +600,14 @@
   }
  ],
  "recommendedQueue": {
-  "running": [],
+  "running": [
+   "C1R \u2014 first execution recorded; reset discriminator queued (gpu-exclusive)"
+  ],
   "readyNow": [
-   "C1R"
+   "C1R reset-discriminator execution"
   ],
   "blocked": [
-   "C2 (waiting on C1R PASS)",
+   "C2 (waiting on reset-discriminator classification)",
    "C3",
    "C4",
    "C5A",
@@ -614,8 +620,7 @@
    "C8"
   ],
   "independentWorkAvailableNow": [
-   "repository/DAG integration and review",
-   "C1R experiment preparation/source inspection (no GPU)"
+   "repository/DAG integration and review"
   ],
   "notYetValid": [
    "performance optimization",
@@ -638,6 +643,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (fresh reconstruction cycle)",
    "change": "Verified C1 gap from committed artifacts (gfx1151-validation.json used 4-frame/1-sink, 4-step schedule, not RC1 12/6 3-step) and Phase 0 RC1 policy from runtime-config.json; C1 stays inconclusive, C1R stays READY. Reviewed C1R validator prep, committed it as 4f92ca5 on experiment/c1r-exact-rc1 (unverified on GPU; C1R_PHASE0_ACTIONS must be passed via --scripted-actions). C1R worktree upstream pinned at 45fa406 with patches applied. This shell has no /dev/kfd so fixture/GPU execution was not started here; Strix GPU idle (rocm-smi 0%). No status transitions; main untouched at add8a69."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (reset-discriminator cycle)",
+   "change": "Ingested /tmp/state-cache-c1r-gpu.json and independently verified the verdict: FAIL driven solely by fresh_reset (x0, layer-0 clean K and V all differ; positions/cursors correct); all 15 other assertions PASS on the exact RC1 operating point. Committed the evidence (c4f9656) and a minimal A/B/C tensor discriminator mode (77f0ad7; helpers unit-tested on CPU, run_gpu body untouched). C1R set to running, C2 stays blocked on the reset classification. No optimization started; main untouched."
   }
  ]
 }
