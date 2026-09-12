@@ -1,0 +1,39 @@
+{
+  "captured_date": "2026-09-12",
+  "repository": {
+    "worktree": "/home/keith/Desktop/github/lingbot-world-V2-halo-wt-state-cache-validation",
+    "branch": "experiment/state-cache-validation",
+    "base_commit": "add8a69eb4aba79b720adea37fa9a4821b20201f",
+    "remote": "https://github.com/boxwrench/lingbot-world-V2-halo.git",
+    "upstream_commit": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+    "patched_upstream_diff_sha256": "3e2223fb16f3ada7e2a83266a2f9a4b97563dff1fed606a33f8b2502b29c3331"
+  },
+  "patch_sha256": {
+    "0001-strix-halo-sdpa-cross-attention.patch": "3f47d2bff67e0c51c41278b68e6a32795045903c805a86edd38ff577e021aec6",
+    "0002-experiment-metrics.patch": "bcfd9a58e7b44306de91cdcde7ffd805fe70cb2ba5f4484c78ed70152cb8e046",
+    "0003-per-forward-metrics.patch": "32721b055560fc54ead052185458f1820e70fb97a933351860ad5fcfcb433fa4",
+    "0004-opt-in-host-kv-cursor.patch": "b30e72331def68b1f75ed64f5e5edb4006d0915ed046c76df1912b2414275cff"
+  },
+  "input_sha256": {
+    "examples/03/image.jpg": "6ee3dacfef32cfef504dd698adb8a660cf15f686535c52fed4903fef27c0edd0",
+    "examples/03/poses.npy": "bd0a23a696e184b0b43e7767eb432bfe644690560fe327fa96961affc941c404",
+    "examples/03/intrinsics.npy": "821fca6cf957ae8fbb1181307f02479efb1705e04c9e05734cd02fb43462e082"
+  },
+  "machine": {
+    "hostname": "Nimo",
+    "kernel": "Linux 6.17.0-35-generic x86_64",
+    "python": "3.12.3",
+    "device": "AMD Radeon 8060S Graphics",
+    "arch": "gfx1151",
+    "device_total_memory_mib": 114688,
+    "torch": "2.13.0+rocm7.15.0a20260728",
+    "hip": "7.15.0"
+  },
+  "gpu_preflight": {
+    "gpu_use_percent": 0,
+    "reported_vram_percent": 3,
+    "other_substantial_gpu_workload_observed": false,
+    "note": "rocm-smi listed a stale/unresolvable UNKNOWN KFD PID 1481 while reporting 0% GPU use; no matching host process existed"
+  },
+  "phase0_reference": "docs/artifacts/phase0-20260912/"
+}

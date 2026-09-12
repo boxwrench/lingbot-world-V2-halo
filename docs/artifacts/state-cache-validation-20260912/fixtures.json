@@ -1,0 +1,229 @@
+{
+  "kind": "deterministic_minimal_reference_fixtures",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "variants": [
+    {
+      "host_cursor": false,
+      "tolerances": {
+        "cache_max_abs": 0.0,
+        "consumer_output_max_abs": 1e-06
+      },
+      "boundaries": {
+        "startup-first-clean": {
+          "position": 0,
+          "phase": "clean-t0",
+          "global_end": 1,
+          "local_end": 1,
+          "logical_ids": [
+            0
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "partially-filled": {
+          "position": 1,
+          "phase": "clean-t0",
+          "global_end": 2,
+          "local_end": 2,
+          "logical_ids": [
+            0,
+            1
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "immediately-before-first-eviction": {
+          "position": 3,
+          "phase": "clean-t0",
+          "global_end": 4,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "immediately-after-first-eviction/first-rolled-state": {
+          "position": 4,
+          "phase": "clean-t0",
+          "global_end": 5,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            2,
+            3,
+            4
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "repeated-roll": {
+          "position": 5,
+          "phase": "clean-t0",
+          "global_end": 6,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            3,
+            4,
+            5
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "later-steady-rolled-state": {
+          "position": 8,
+          "phase": "clean-t0",
+          "global_end": 9,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            6,
+            7,
+            8
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        }
+      },
+      "all_records_pass": true,
+      "reset_discriminator": {
+        "fresh_reproduces_startup_by_construction": true,
+        "stale_vs_fresh_max_abs_diff": 7.10792875289917,
+        "stale_detected": true
+      },
+      "broken_control": {
+        "condition": "reverse non-sink keys only (invalid key/value token association)",
+        "max_abs_output_delta": 7.632423400878906,
+        "detected": true
+      }
+    },
+    {
+      "host_cursor": true,
+      "tolerances": {
+        "cache_max_abs": 0.0,
+        "consumer_output_max_abs": 1e-06
+      },
+      "boundaries": {
+        "startup-first-clean": {
+          "position": 0,
+          "phase": "clean-t0",
+          "global_end": 1,
+          "local_end": 1,
+          "logical_ids": [
+            0
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "partially-filled": {
+          "position": 1,
+          "phase": "clean-t0",
+          "global_end": 2,
+          "local_end": 2,
+          "logical_ids": [
+            0,
+            1
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "immediately-before-first-eviction": {
+          "position": 3,
+          "phase": "clean-t0",
+          "global_end": 4,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "immediately-after-first-eviction/first-rolled-state": {
+          "position": 4,
+          "phase": "clean-t0",
+          "global_end": 5,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            2,
+            3,
+            4
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "repeated-roll": {
+          "position": 5,
+          "phase": "clean-t0",
+          "global_end": 6,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            3,
+            4,
+            5
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        },
+        "later-steady-rolled-state": {
+          "position": 8,
+          "phase": "clean-t0",
+          "global_end": 9,
+          "local_end": 4,
+          "logical_ids": [
+            0,
+            6,
+            7,
+            8
+          ],
+          "evicted": [],
+          "cache_k_max_abs_diff": 0.0,
+          "cache_v_max_abs_diff": 0.0,
+          "consumer_output_max_abs_diff": 0.0
+        }
+      },
+      "all_records_pass": true,
+      "reset_discriminator": {
+        "fresh_reproduces_startup_by_construction": true,
+        "stale_vs_fresh_max_abs_diff": 7.10792875289917,
+        "stale_detected": true
+      },
+      "broken_control": {
+        "condition": "reverse non-sink keys only (invalid key/value token association)",
+        "max_abs_output_delta": 7.632423400878906,
+        "detected": true
+      }
+    }
+  ]
+}
