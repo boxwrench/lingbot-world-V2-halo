@@ -1,0 +1,401 @@
+{
+  "schemaVersion": 1,
+  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
+  "lastUpdated": "2026-09-12",
+  "updatedBy": "Codex B (docs/research-orchestration)",
+  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
+  "statusesAllowed": ["blocked", "ready", "running", "done", "failed", "inconclusive", "deferred"],
+  "resourcesAllowed": {
+    "source-cpu": "reading/writing source, docs, or DAG state; no GPU involved",
+    "api-research": "DSH/LLM-backed research campaign; no local GPU involved",
+    "gpu-light": "brief, non-sustained GPU use (e.g. device/env verification) that does not require exclusive ownership of the Radeon 8060S",
+    "gpu-exclusive": "sustained and/or timing-sensitive GPU work; only one gpu-exclusive node may run at a time on the Radeon 8060S",
+    "implementation": "code/config authoring, safely parallelizable in isolated worktrees; its GPU evaluation step (if any) is gpu-exclusive and must be called out explicitly in that node's notes"
+  },
+  "updateProtocol": [
+    "attach evidence path/commit",
+    "record concise result",
+    "update node status",
+    "evaluate branch conditions",
+    "unblock newly valid nodes",
+    "mark new independent work",
+    "rerank recommended queue",
+    "preserve failed and inconclusive results"
+  ],
+  "updateRule": "Append to changelog on every accepted result; never rewrite or delete a prior node result/status to make history look cleaner. Corrections are new changelog entries, not edits to old ones.",
+  "nodes": [
+    {
+      "id": "H0",
+      "name": "DSH research harness validated",
+      "type": "milestone",
+      "status": "done",
+      "priority": 0,
+      "resource": "api-research",
+      "dependsOn": [],
+      "blocks": ["P0"],
+      "canRunParallelWith": [],
+      "question": "Is the DSH-based research composition (DeepSeek lead + four Muse worker roles: Source Scout, Systems Analyst, Skeptic, Experiment Designer) live-proven end to end?",
+      "entryCriteria": [],
+      "outputs": [
+        "dsh-research-team (repository): pinned DSH composition, role prompts, result schemas, campaign export tooling"
+      ],
+      "exitCriteria": ["S1-S9 smoke checks pass"],
+      "nextIf": [],
+      "evidence": [
+        "dsh-research-team/reports/live-validation.md (S7-followup, S8-bounded-failure, S9-restart, S9-state: 4 passed, 0 failed)",
+        "dsh-research-team/docs/smoke-tests.md"
+      ],
+      "result": "PASS. Routing, parallel four-role fan-out, in-flight continuation, bounded failure handling, and restart inspection all validated on the pinned DSH release.",
+      "notes": "Owned entirely by dsh-research-team; this repository only consumes its output. See docs/lingruntime/RESEARCH_WORKFLOW.md for the ownership boundary."
+    },
+    {
+      "id": "P0",
+      "name": "LingRuntime preflight research complete",
+      "type": "milestone",
+      "status": "done",
+      "priority": 0,
+      "resource": "api-research",
+      "dependsOn": ["H0"],
+      "blocks": ["C0A"],
+      "canRunParallelWith": [],
+      "question": "Before any GPU work, what is already resolvable from source/artifact inspection, and what is the highest-value next GPU action?",
+      "entryCriteria": ["H0 done"],
+      "outputs": [
+        "triage of preflight questions into source-answerable vs GPU-required",
+        "recommendation: environment/GPU gate, then one warmed RC1 waterfall, then an A/A noise floor, before any DiT/KV/attention intervention"
+      ],
+      "exitCriteria": ["executive answer produced", "highest-value next experiment identified"],
+      "nextIf": [],
+      "evidence": [
+        "dsh-research-team/reports/lingruntime-preflight.md",
+        "dsh-research-team/reports/lingruntime-preflight-live.md"
+      ],
+      "result": "Source/runtime inspection sufficient to make Phase 0 executable; quantitative questions require the real gfx1151 runtime. Recommended: device/stack gate, then one warmed rolled RC1 waterfall, then an A/A noise floor. Explicitly deferred: exact DiT/KV/attention interventions, HIP graph capture.",
+      "notes": "Produced by a DSH campaign researching this project; the conclusion above is what carried forward into this repository. Full campaign artifact stays in dsh-research-team."
+    },
+    {
+      "id": "C0A",
+      "name": "Strix Halo environment / gfx1151 gate",
+      "type": "gate",
+      "status": "done",
+      "priority": 1,
+      "resource": "gpu-light",
+      "dependsOn": ["P0"],
+      "blocks": ["C0B"],
+      "canRunParallelWith": [],
+      "question": "Is execution actually and unambiguously on the Radeon 8060S / gfx1151, with a known-consistent ROCm/HIP/PyTorch/Triton/TunableOp stack?",
+      "entryCriteria": ["P0 done"],
+      "outputs": ["docs/artifacts/phase0-20260912/environment.json"],
+      "exitCriteria": [
+        "exactly one CUDA/HIP device visible, name and gcnArchName both match Radeon 8060S / gfx1151",
+        "no CPU or alternate-GPU fallback possible under HIP_VISIBLE_DEVICES/CUDA_VISIBLE_DEVICES",
+        "repo/upstream/model revisions recorded"
+      ],
+      "nextIf": [],
+      "evidence": [
+        "docs/artifacts/phase0-20260912/environment.json (gate: PASS)",
+        "results/raw/phase0-20260912/environment-gate/ (gitignored; hashed in docs/artifacts/phase0-20260912/raw-artifacts.json)"
+      ],
+      "result": "PASS. Single unambiguous Radeon 8060S / gfx1151 device. PyTorch 2.13.0+rocm7.15.0a20260728, HIP 7.15.0, Triton 3.8.0+git4cff872c.rocm7.15.0a20260728, TunableOp enabled with 16 validator-matched results. Repo HEAD add8a69, upstream 45fa406, model revision 7e36a5f.",
+      "notes": "Captured with the existing scripts/env_report.sh; not re-derived here."
+    },
+    {
+      "id": "C0B",
+      "name": "Warmed RC1 Phase 0 waterfall",
+      "type": "experiment",
+      "status": "done",
+      "priority": 1,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C0A"],
+      "blocks": ["C1"],
+      "canRunParallelWith": [],
+      "commit": "add8a69",
+      "question": "Where does a warmed, rolled RC1 12+6 action's latency actually go, and does it reproduce the 2026-09-11 historical RC1 measurement?",
+      "entryCriteria": ["C0A PASS"],
+      "outputs": [
+        "docs/artifacts/phase0-20260912/waterfall.json",
+        "docs/artifacts/phase0-20260912/metrics-summary.json",
+        "docs/artifacts/phase0-20260912/profile-summary.json",
+        "docs/artifacts/phase0-20260912/timings.jsonl"
+      ],
+      "exitCriteria": [
+        ">=3 independent unprofiled A/A rollouts captured",
+        "one representative rolled waterfall action captured with per-forward GPU-synchronized boundaries",
+        "classified against the 2026-09-11 historical RC1 measurement"
+      ],
+      "nextIf": [
+        "measured hotspots become candidate input to C5 only after C3/C4 confirm they remain relevant under the quality-approved configuration (see Parked Findings)"
+      ],
+      "evidence": [
+        "docs/artifacts/phase0-20260912/README.md",
+        "docs/artifacts/phase0-20260912/waterfall.json",
+        "docs/artifacts/phase0-20260912/metrics-summary.json",
+        "docs/artifacts/phase0-20260912/commands.md"
+      ],
+      "result": "PASS/reproduced. Base-RGB median 939.9 ms (927.6-954.5 ms range, n=12 pooled rolled actions). Next-ready median 1258.9 ms (1244.8-1272.3 ms range). Reproduces the 2026-09-11 historical RC1 P50 (938.4 ms / 1255.3 ms) within measured A/A noise (delta +1.5 ms / +3.6 ms). Three serialized denoise forwards (~910 ms, ~97% of base-RGB) dominate base-RGB latency. The exact clean-KV forward (~298-300 ms) dominates most of the additional delay from base-RGB to next-ready (~93% of that ~320 ms delta). No optimization implemented.",
+      "notes": "An independently-derived cross-check of this same raw evidence was reportedly written in the primary LingBot working tree on 2026-09-12 but is not committed on any branch as of this DAG; do not treat it as a citable artifact until it is committed and its path is confirmed. See 'Ambiguities' in the DAG markdown."
+    },
+    {
+      "id": "C1",
+      "name": "State/cache semantic correctness",
+      "type": "experiment",
+      "status": "running",
+      "priority": 10,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C0A", "C0B"],
+      "blocks": ["C2"],
+      "canRunParallelWith": [],
+      "question": "Do sink/recent cache semantics, ordering/positions, eviction, wrap, reset, recurrence, and the exact clean-KV transaction all hold correctly under the accepted RC1 configuration and under stress (long rollouts, rollover, direction change, revisit)?",
+      "entryCriteria": ["C0A PASS", "C0B complete"],
+      "outputs": [],
+      "exitCriteria": [
+        "sink/recent cache semantics verified",
+        "eviction/wrap/reset behavior verified",
+        "clean-KV transaction ordering verified under stress",
+        "explicit PASS or FAIL/inconclusive verdict recorded"
+      ],
+      "nextIf": [
+        "PASS -> unblock C2",
+        "FAIL or inconclusive -> C2 stays blocked; this DAG must be updated with the failure before any further work proceeds down this branch"
+      ],
+      "evidence": [],
+      "result": null,
+      "notes": "Owned by another agent (Codex C) as of 2026-09-12; this repository's docs/research-orchestration branch does not run, does not invent, and does not assume the result of this campaign. Uses the Radeon 8060S; no other gpu-exclusive node may run concurrently with it."
+    },
+    {
+      "id": "C2",
+      "name": "Quality causality investigation",
+      "type": "experiment",
+      "status": "blocked",
+      "priority": 20,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C1"],
+      "blocks": ["C3"],
+      "canRunParallelWith": [],
+      "question": "Under a matched-state comparison, what in the current pipeline actually determines output quality, and does the RC1 latency-oriented configuration (3-step denoise, TAEHV presentation, 12+6 window) hold acceptable quality, or does some axis need to change before we freeze a contract in C3?",
+      "entryCriteria": ["C1 result == PASS"],
+      "outputs": [],
+      "exitCriteria": [
+        "bounded chunk/context screen completed with a recorded verdict",
+        "any triggered follow-up branches (see nextIf) completed or explicitly deferred with a reason"
+      ],
+      "nextIf": [
+        {"condition": "chunk/context screen shows quality sensitivity to context window size", "branch": "context-sensitive branch (not yet instantiated)"},
+        {"condition": "chunk/context screen shows quality artifacts at chunk boundaries", "branch": "chunk-boundary-sensitive branch (not yet instantiated)"},
+        {"condition": "chunk/context screen implicates the presentation decoder rather than the DiT/world state", "branch": "decoder-specific check (not yet instantiated)"},
+        {"condition": "chunk/context screen implicates numeric precision (BF16 DiT / FP16 TAEHV)", "branch": "precision check (not yet instantiated)"},
+        {"condition": "chunk/context screen shows drift/degradation only under repeated actions or long recurrence", "branch": "recurrence/action stress branch (not yet instantiated)"},
+        {"condition": "none of the above explain an observed quality gap", "branch": "deeper model/checkpoint limitation review (not yet instantiated)"}
+      ],
+      "evidence": [],
+      "result": null,
+      "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged."
+    },
+    {
+      "id": "C3",
+      "name": "Freeze quality-approved semantic contract",
+      "type": "decision",
+      "status": "blocked",
+      "priority": 30,
+      "resource": "source-cpu",
+      "dependsOn": ["C2"],
+      "blocks": ["C4"],
+      "canRunParallelWith": [],
+      "question": "What is the exact operating point we are committing to before policy-dependent performance optimization begins?",
+      "entryCriteria": ["C2 exit criteria satisfied (bounded screen plus any triggered branches resolved or deferred)"],
+      "outputs": [
+        "chunk size",
+        "local attention size",
+        "sink size",
+        "denoise schedule",
+        "resolution",
+        "decoder contract",
+        "responsiveness requirement",
+        "quality horizon"
+      ],
+      "exitCriteria": ["all eight contract fields above recorded and traceable to C2 evidence"],
+      "nextIf": [],
+      "evidence": [],
+      "result": null,
+      "notes": "This is a decision/documentation step, not a new GPU experiment; it consumes C2's evidence. The frozen point may or may not equal the RC1 configuration measured in C0B."
+    },
+    {
+      "id": "C4",
+      "name": "Profile the quality-approved runtime",
+      "type": "profile",
+      "status": "blocked",
+      "priority": 40,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C3"],
+      "blocks": ["C5A", "C5B"],
+      "canRunParallelWith": [],
+      "question": "Where does latency actually go in the C3-frozen configuration? (This may differ from the RC1 configuration profiled in C0B if C2/C3 changed any axis.)",
+      "entryCriteria": ["C3 done"],
+      "outputs": [],
+      "exitCriteria": ["waterfall + attribution profile captured for the frozen configuration", "measured hotspot ranking produced"],
+      "nextIf": ["ranked hotspot list feeds C5A/C5B naming and count"],
+      "evidence": [],
+      "result": null,
+      "notes": "Distinct from C0B. Do not assume C0B's hotspot ranking (rolled self-SDPA, non-SDPA clean-KV recomputation) still applies if C3's frozen point differs from RC1's 12+6/3-step/TAEHV configuration."
+    },
+    {
+      "id": "C5A",
+      "name": "Measured hotspot #1 research",
+      "type": "research",
+      "status": "blocked",
+      "priority": 50,
+      "resource": "source-cpu",
+      "dependsOn": ["C4"],
+      "blocks": ["C6A"],
+      "canRunParallelWith": ["C5B"],
+      "question": "(set by C4's ranking) What mechanism actually explains measured hotspot #1, and what candidate interventions are supported by source/trace evidence rather than assumption?",
+      "entryCriteria": ["C4 done"],
+      "outputs": [],
+      "exitCriteria": ["mechanism identified with source/trace support", "at least one concrete, evidence-supported candidate intervention proposed"],
+      "nextIf": ["candidate accepted for a trial -> C6A"],
+      "evidence": [],
+      "result": null,
+      "notes": "Deliberately unlabeled (not pre-named attention/KV/graph-capture/decoder/fusion/PM4/etc.) until C4 says what it is. Independent of C5B; both are normally source/API-research and safely parallelizable."
+    },
+    {
+      "id": "C5B",
+      "name": "Measured hotspot #2 research",
+      "type": "research",
+      "status": "blocked",
+      "priority": 50,
+      "resource": "source-cpu",
+      "dependsOn": ["C4"],
+      "blocks": ["C6B"],
+      "canRunParallelWith": ["C5A"],
+      "question": "(set by C4's ranking) What mechanism actually explains measured hotspot #2, and what candidate interventions are supported by source/trace evidence rather than assumption?",
+      "entryCriteria": ["C4 done"],
+      "outputs": [],
+      "exitCriteria": ["mechanism identified with source/trace support", "at least one concrete, evidence-supported candidate intervention proposed"],
+      "nextIf": ["candidate accepted for a trial -> C6B"],
+      "evidence": [],
+      "result": null,
+      "notes": "The DAG shows exactly two hotspot-research nodes as an illustrative minimum; C4 may justify more or fewer. Do not manufacture a fixed count."
+    },
+    {
+      "id": "C6A",
+      "name": "Candidate implementation #1",
+      "type": "implementation",
+      "status": "blocked",
+      "priority": 60,
+      "resource": "implementation",
+      "dependsOn": ["C5A"],
+      "blocks": ["C7"],
+      "canRunParallelWith": ["C6B"],
+      "question": "Does implementing C5A's candidate intervention, in isolation, produce a measured improvement without breaking C1/C2 correctness or quality gates?",
+      "entryCriteria": ["C5A candidate accepted"],
+      "outputs": [],
+      "exitCriteria": ["candidate implemented in an isolated worktree", "candidate re-validated against C1-equivalent correctness checks", "candidate's GPU evaluation completed with a measured delta"],
+      "nextIf": ["measured improvement and correctness/quality preserved -> feed into C7", "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"],
+      "evidence": [],
+      "result": null,
+      "notes": "The coding step is parallelizable with C6B in a separate isolated worktree. Its GPU evaluation step is gpu-exclusive and must not run at the same time as C6B's GPU evaluation, C1, C2, C4, or any other gpu-exclusive node."
+    },
+    {
+      "id": "C6B",
+      "name": "Candidate implementation #2",
+      "type": "implementation",
+      "status": "blocked",
+      "priority": 60,
+      "resource": "implementation",
+      "dependsOn": ["C5B"],
+      "blocks": ["C7"],
+      "canRunParallelWith": ["C6A"],
+      "question": "Does implementing C5B's candidate intervention, in isolation, produce a measured improvement without breaking C1/C2 correctness or quality gates?",
+      "entryCriteria": ["C5B candidate accepted"],
+      "outputs": [],
+      "exitCriteria": ["candidate implemented in an isolated worktree", "candidate re-validated against C1-equivalent correctness checks", "candidate's GPU evaluation completed with a measured delta"],
+      "nextIf": ["measured improvement and correctness/quality preserved -> feed into C7", "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"],
+      "evidence": [],
+      "result": null,
+      "notes": "The coding step is parallelizable with C6A in a separate isolated worktree. Its GPU evaluation step is gpu-exclusive and must not run at the same time as C6A's GPU evaluation, C1, C2, C4, or any other gpu-exclusive node."
+    },
+    {
+      "id": "C7",
+      "name": "Integration and reprofile",
+      "type": "integration",
+      "status": "blocked",
+      "priority": 70,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C6A", "C6B"],
+      "blocks": [],
+      "canRunParallelWith": [],
+      "question": "When accepted candidates from C6A/C6B are combined, does the workload still pass correctness/quality gates, and where is the new bottleneck?",
+      "entryCriteria": ["at least one of C6A/C6B accepted (a candidate rejected in C6 is simply not combined here)"],
+      "outputs": [],
+      "exitCriteria": ["combined workload reprofiled", "new bottleneck ranking produced"],
+      "nextIf": ["new bottleneck identified -> spawn new C5x node(s) against the updated ranking; the DAG is iterative, not a one-shot pipeline"],
+      "evidence": [],
+      "result": null,
+      "notes": "Only accepted candidates are integrated. A rejected C6A or C6B result is preserved in this file's history (never deleted), not silently dropped."
+    },
+    {
+      "id": "C8",
+      "name": "Advanced runtime escalation",
+      "type": "escalation",
+      "status": "deferred",
+      "priority": 90,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C7"],
+      "blocks": [],
+      "canRunParallelWith": [],
+      "question": "Is there a measured residual opportunity large enough, after the iterative C4-C7 loop, to justify graph capture, AOT specialization, large-scale fusion, a fixed memory arena, retained PM4, custom ROCr/HIP work, or removing major PyTorch layers?",
+      "entryCriteria": ["a specific C4 (or later re-profile) measurement shows residual opportunity whose scale justifies this complexity class -- no fixed threshold is prescribed in advance"],
+      "outputs": [],
+      "exitCriteria": [],
+      "nextIf": [],
+      "evidence": [],
+      "result": null,
+      "notes": "Conditional and deferred by default, not an inevitable phase of the project. Do not begin any item in this category without an explicit, evidence-based entry decision recorded against this node."
+    }
+  ],
+  "parkedFindings": [
+    {
+      "id": "PF1",
+      "sourceNode": "C0B",
+      "description": "Rolled rectangular self-SDPA in the three denoise passes appears to offer a plausible future base-RGB latency opportunity.",
+      "measuredMsRange": "37-92 ms base-RGB (49-123 ms next-ready if the clean pass also benefits)",
+      "confidence": "medium-low",
+      "evidence": "docs/artifacts/phase0-20260912/README.md (Measured opportunity ranking table)",
+      "activationCondition": "Not an active optimization campaign. Only becomes candidate input to a C5x node if C3/C4 confirm this hotspot remains present and relevant under the C3-frozen, quality-approved configuration."
+    },
+    {
+      "id": "PF2",
+      "sourceNode": "C0B",
+      "description": "The non-SDPA portion of the exact clean-KV recomputation appears to offer a plausible future next-ready latency opportunity.",
+      "measuredMsRange": "44-89 ms next-ready",
+      "confidence": "low",
+      "evidence": "docs/artifacts/phase0-20260912/README.md (Measured opportunity ranking table)",
+      "activationCondition": "Not an active optimization campaign. Only becomes candidate input to a C5x node if C3/C4 confirm this hotspot remains present and relevant under the C3-frozen, quality-approved configuration, and only after C1 (clean-KV correctness) has returned PASS."
+    }
+  ],
+  "currentParallelismExamples": [
+    {"agent": "Codex B", "activity": "DAG / documentation maintenance", "resource": "source-cpu", "usesGpu": false},
+    {"agent": "Codex C", "activity": "C1 state/cache correctness", "resource": "gpu-exclusive", "usesGpu": true}
+  ],
+  "recommendedQueue": {
+    "running": ["C1"],
+    "readyNow": [],
+    "blocked": ["C2 (waiting on C1 PASS)", "C3", "C4", "C5A", "C5B", "C6A", "C6B", "C7", "C8"],
+    "independentWorkAvailableNow": [
+      "repository/DAG maintenance (this branch)",
+      "source-only research that does not presume C1's result"
+    ],
+    "notYetValid": [
+      "performance optimization",
+      "C5/C6 work",
+      "advanced runtime work (C8)"
+    ]
+  },
+  "changelog": [
+    {
+      "date": "2026-09-12",
+      "by": "Codex B (docs/research-orchestration)",
+      "change": "Initial DAG created: H0, P0, C0A, C0B recorded as done from existing repository evidence; C1 recorded as running (owned by another agent, result not invented); C2-C8 recorded as blocked/deferred per the accepted plan. No experiments run, no GPU used."
+    }
+  ]
+}

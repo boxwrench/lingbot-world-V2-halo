@@ -12,8 +12,10 @@ This document is this repository's side of the contract with
 `lingbot-world-V2-halo` is the authoritative scientific/engineering history
 for LingRuntime on Strix Halo. It owns:
 
-- the LingRuntime research and experiment DAG, once added (not yet present
-  as of this document — see "Status" below);
+- the LingRuntime research and experiment DAG:
+  [`RESEARCH_AND_EXPERIMENT_DAG.md`](RESEARCH_AND_EXPERIMENT_DAG.md) (human-
+  readable) and [`lingruntime-dag.json`](lingruntime-dag.json)
+  (machine-readable, the current source of truth for node status);
 - experiment status, the current recommended work queue, and dependency
   relationships between experiments;
 - source findings that materially define LingBot behavior;
@@ -95,8 +97,10 @@ repository concurrently:
 
 ## Status
 
-As of this document, the LingRuntime research/experiment DAG referenced
-above has not yet been added to this repository. This document only
-establishes the ownership boundary and workflow rules in preparation for
-that DAG; it does not itself define experiment nodes, dependencies, or
-queue ordering.
+The LingRuntime research/experiment DAG now exists:
+[`RESEARCH_AND_EXPERIMENT_DAG.md`](RESEARCH_AND_EXPERIMENT_DAG.md) explains
+it, and [`lingruntime-dag.json`](lingruntime-dag.json) is its current,
+authoritative machine-readable state (node status, dependencies, evidence,
+recommended queue). This document defines the ownership boundary and
+workflow rules that the DAG operates under; it does not itself track
+node-by-node status — read the DAG files for that.
