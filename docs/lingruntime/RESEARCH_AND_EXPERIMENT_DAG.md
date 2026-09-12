@@ -87,10 +87,13 @@ C0A environment/gfx1151 gate                     DONE
 C0B RC1 Phase 0 waterfall                        DONE  (commit add8a69)
         |
         v
-C1 state/cache correctness                       RUNNING  (owned by Codex C)
+C1 state/cache correctness                       INCONCLUSIVE  (commit 2bf97c3)
         |
         v
-C2 quality causality                             BLOCKED  (waits on C1 PASS)
+C1R exact-RC1 state/cache confirmation            READY  (gpu-exclusive)
+        |
+        v
+C2 quality causality                             BLOCKED  (waits on C1R PASS)
    |-- bounded chunk/context screen (first, mandatory branch)
    +-- conditional, evidence-triggered only:
        context-sensitive / chunk-boundary-sensitive / decoder-specific /
@@ -140,21 +143,34 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   dominates most of the additional next-ready delay. No optimization was
   implemented.
 
-### Running
+### Inconclusive
 
-- **C1** — state/cache semantic correctness. Owned by another agent (Codex
-  C) as of 2026-09-12. Validates sink/recent cache semantics,
-  ordering/positions, eviction, wrap, reset, recurrence, and clean-KV
-  transaction behavior. This document does **not** invent or assume its
-  result; `lingruntime-dag.json`'s `C1.result` stays `null` until that
-  agent reports a verdict.
+- **C1** — state/cache semantic correctness, commit `2bf97c3`. The fixtures
+  matched an independent logical-list reference exactly, and the real gfx1151
+  run verified startup, fill, first and repeated compaction, layer-zero K/V
+  and consumer output, clean-`t=0` overwrite position, reset replay, and
+  invalid controls under an accelerated 4-frame/1-sink, four-step stress
+  configuration. It is **inconclusive for full C1 closure** because it did
+  not execute the accepted RC1 12-frame/6-sink, three-step operating point
+  named in the node question and did not explicitly label direction-change/
+  revisit coverage. Evidence:
+  [`docs/artifacts/state-cache-validation-20260912/README.md`](../artifacts/state-cache-validation-20260912/README.md),
+  `summary.json`, `fixtures.json`, and `gfx1151-validation.json`.
+
+### Ready
+
+- **C1R** — exact-RC1 state/cache confirmation. This is a bounded confirmation,
+  not a repeat of the broad C1 campaign: use the accepted 12-frame/6-sink,
+  three-step RC1 configuration, cross first eviction and repeated rollover,
+  explicitly label direction changes/revisits, and retain the reference,
+  reset, and negative-control checks. Preparation is source/CPU work;
+  execution requires the exclusive Strix GPU lease.
 
 ### Blocked
 
-C2 through C8, in the chain shown above. C2 specifically is blocked on C1
-returning `PASS` — not merely on C1 finishing, since a `failed` or
-`inconclusive` C1 result should keep C2 blocked and require this DAG to be
-updated with that outcome before anything downstream proceeds.
+C2 through C7 remain blocked in the chain shown above; C8 remains deferred.
+C2 specifically is blocked on C1R returning `PASS`. C1's inconclusive result
+is preserved rather than treated as completion-by-assertion.
 
 ## C2 — quality causality: bounded, not a sweep
 
@@ -213,8 +229,8 @@ scratch later — but they are **not active optimization campaigns**:
 Both are gated: they only become candidate input to a C5x node if C3/C4
 confirm the hotspot they describe is still present and relevant under
 whatever configuration C3 freezes. PF2 additionally requires C1 to have
-returned `PASS`, since it targets the exact clean-KV transaction that C1 is
-currently validating for correctness.
+been closed by a C1R `PASS`, since it targets the exact clean-KV transaction
+whose accepted-RC1 confirmation remains open.
 
 ## Parallelism
 
@@ -223,18 +239,20 @@ from multiple agents at once. Write-capable work must not collide in the
 same working tree. As of this DAG:
 
 ```text
-Codex B:
-DAG / documentation (this branch)
+Orchestration reconciliation:
+integrate evidence and update DAG
 source-cpu
 NO GPU
 
-Codex C:
-C1 state/cache correctness
-GPU owner (gpu-exclusive)
+C1R preparation:
+fix exact configuration, traversal labels, artifact schema, and verdict checks
+source-cpu
+NO GPU
 ```
 
-These two are independent and are correctly running concurrently right
-now. General rules this DAG follows going forward:
+These two source/CPU activities are independent. C1R's later execution is
+gpu-exclusive and must be serialized. General rules this DAG follows going
+forward:
 
 - DSH/API research (`api-research`) can run while a GPU experiment
   (`gpu-exclusive`) executes elsewhere — they don't touch the same
@@ -253,17 +271,19 @@ now. General rules this DAG follows going forward:
 ## Recommended queue
 
 ```text
-RUNNING
-C1 — state/cache correctness (owned by Codex C)
+READY
+C1R — exact-RC1 state/cache confirmation (gpu-exclusive for execution)
 
 BLOCKED
-C2 — quality causality, waiting on C1 PASS
+C2 — quality causality, waiting on C1R PASS
 C3, C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
-C8 — deferred pending a measured residual opportunity from the C4-C7 loop
+
+DEFERRED
+C8 — pending a measured residual opportunity from the C4-C7 loop
 
 INDEPENDENT WORK AVAILABLE NOW
-repository/DAG maintenance (this branch)
-source-only research that does not presume C1's result
+repository/DAG integration and review
+C1R experiment preparation/source inspection (no GPU)
 
 NOT YET VALID
 performance optimization
@@ -271,9 +291,8 @@ C5/C6 work
 advanced runtime work (C8)
 ```
 
-No node was added merely to fill this queue; the two "independent work"
-entries are the only work this DAG currently identifies as both valid and
-unblocked besides C1 itself.
+No node was added merely to fill this queue. C1R exists only to close the
+specific accepted-RC1 evidence gap found during independent review.
 
 ## Update protocol
 
@@ -304,13 +323,9 @@ changelog even after a later attempt succeeds.
   therefore not cited as evidence here. If it is committed later, add it to
   `C0B.evidence` in `lingruntime-dag.json` rather than treating this
   markdown file as needing a rewrite.
-- `add8a69` is on local `main` but was not on `origin/main` as of this
-  DAG's creation (only reachable via the separately-pushed
-  `docs/research-orchestration` branch). If `main` is later rebased,
-  amended, or diverges before being pushed, `C0B.commit` in the JSON should
-  be re-verified rather than assumed still accurate.
-- C1's actual exit criteria/verdict format has not been negotiated with
-  Codex C; this DAG guesses a PASS/FAIL/inconclusive shape consistent with
-  the rest of the schema. If Codex C's campaign reports something
-  differently structured, reconcile the node's `exitCriteria`/`result`
-  shape rather than forcing Codex C's report into this DAG's guess.
+- The earlier ambiguity about `add8a69` not being on `origin/main` is
+  resolved: the 2026-09-12 reconciliation fetch found local `main` and
+  `origin/main` both at `add8a69`.
+- C1's reported PASS was independently reconciled as inconclusive for the
+  full node scope. Its positive stress evidence remains cited; C1R records
+  the bounded exact-RC1 work needed for closure.

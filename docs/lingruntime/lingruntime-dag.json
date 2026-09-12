@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
   "lastUpdated": "2026-09-12",
-  "updatedBy": "Codex B (docs/research-orchestration)",
+  "updatedBy": "top-level orchestrator (orchestration/reconcile-c1)",
   "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
   "statusesAllowed": ["blocked", "ready", "running", "done", "failed", "inconclusive", "deferred"],
   "resourcesAllowed": {
@@ -139,15 +139,19 @@
       "id": "C1",
       "name": "State/cache semantic correctness",
       "type": "experiment",
-      "status": "running",
+      "status": "inconclusive",
       "priority": 10,
       "resource": "gpu-exclusive",
       "dependsOn": ["C0A", "C0B"],
-      "blocks": ["C2"],
+      "blocks": ["C1R"],
       "canRunParallelWith": [],
+      "commit": "2bf97c3",
       "question": "Do sink/recent cache semantics, ordering/positions, eviction, wrap, reset, recurrence, and the exact clean-KV transaction all hold correctly under the accepted RC1 configuration and under stress (long rollouts, rollover, direction change, revisit)?",
       "entryCriteria": ["C0A PASS", "C0B complete"],
-      "outputs": [],
+      "outputs": [
+        "scripts/state_cache_validation.py",
+        "docs/artifacts/state-cache-validation-20260912/"
+      ],
       "exitCriteria": [
         "sink/recent cache semantics verified",
         "eviction/wrap/reset behavior verified",
@@ -158,9 +162,57 @@
         "PASS -> unblock C2",
         "FAIL or inconclusive -> C2 stays blocked; this DAG must be updated with the failure before any further work proceeds down this branch"
       ],
-      "evidence": [],
+      "evidence": [
+        "commit 2bf97c3 (experiment/state-cache-validation)",
+        "docs/artifacts/state-cache-validation-20260912/README.md",
+        "docs/artifacts/state-cache-validation-20260912/summary.json",
+        "docs/artifacts/state-cache-validation-20260912/fixtures.json",
+        "docs/artifacts/state-cache-validation-20260912/gfx1151-validation.json",
+        "docs/artifacts/state-cache-validation-20260912/environment.json",
+        "docs/artifacts/state-cache-validation-20260912/commands.md"
+      ],
+      "result": "INCONCLUSIVE for full C1 closure. PASS for the tested accelerated stress configuration: both device-tensor and host-cursor fixtures matched an independent logical-list reference exactly; the real gfx1151 4-frame/1-sink, four-denoise-step run verified startup, fill, first and repeated compaction, layer-zero K/V and consumer output, clean-t0 overwrite position, reset replay, and invalid controls. The run did not execute the accepted RC1 12-frame/6-sink, three-denoise-step operating point named in the node question, and did not explicitly label direction-change/revisit coverage.",
+      "notes": "Preserved as strong mechanism/stress evidence, not discarded or promoted to PASS. A bounded exact-RC1 confirmation is instantiated as C1R. GPU evidence independently mirrors layer-zero K/V values and checks all-layer cursor agreement; reset hashes x0 and layer-zero K, not every layer/value."
+    },
+    {
+      "id": "C1R",
+      "name": "Exact-RC1 state/cache confirmation",
+      "type": "experiment",
+      "status": "ready",
+      "priority": 11,
+      "resource": "gpu-exclusive",
+      "dependsOn": ["C1"],
+      "blocks": ["C2"],
+      "canRunParallelWith": [],
+      "question": "Does the C1 semantic result reproduce on the accepted RC1 12-frame/6-sink, three-denoise-step configuration through first eviction, repeated rollover, direction changes, and revisits?",
+      "entryCriteria": [
+        "C1 accelerated stress result preserved as inconclusive",
+        "base contains commit 2bf97c3 and the accepted RC1 production path from add8a69",
+        "gpu:strix-gfx1151 lease is free"
+      ],
+      "outputs": [
+        "exact-RC1 validator configuration and command",
+        "machine-readable per-call/boundary evidence",
+        "explicit PASS, FAIL, or inconclusive verdict"
+      ],
+      "exitCriteria": [
+        "12-frame total capacity, 6-frame sink, timesteps 999/899/702, chunk size 1, 384x672, BF16 DiT, FP16 TAEHV, exact deferred clean-t0 recorded",
+        "startup, capacity fill, first eviction, and at least two repeated rolled states verified against the independent cache reference",
+        "clean-t0 overwrites the current logical tail without advancing it at the selected boundaries",
+        "the action fixture explicitly includes and labels forward motion, turns, reversal, and revisit cases",
+        "reset and negative controls remain discriminating",
+        "explicit PASS, FAIL, or inconclusive verdict recorded with base commit and evidence paths"
+      ],
+      "nextIf": [
+        "PASS -> unblock C2",
+        "FAIL -> keep C2 blocked and diagnose the exact RC1 semantic failure",
+        "inconclusive -> keep C2 blocked and record the unresolved evidence gap"
+      ],
+      "evidence": [
+        "C1 gap review against commit 2bf97c3 and docs/artifacts/phase0-20260912/runtime-config.json"
+      ],
       "result": null,
-      "notes": "Owned by another agent (Codex C) as of 2026-09-12; this repository's docs/research-orchestration branch does not run, does not invent, and does not assume the result of this campaign. Uses the Radeon 8060S; no other gpu-exclusive node may run concurrently with it."
+      "notes": "Bounded confirmation only, not a new optimization or timing benchmark. Preparation/source work is CPU-only; execution owns gpu:strix-gfx1151 exclusively. Do not rerun the broad 4/1 campaign."
     },
     {
       "id": "C2",
@@ -169,11 +221,11 @@
       "status": "blocked",
       "priority": 20,
       "resource": "gpu-exclusive",
-      "dependsOn": ["C1"],
+      "dependsOn": ["C1R"],
       "blocks": ["C3"],
       "canRunParallelWith": [],
       "question": "Under a matched-state comparison, what in the current pipeline actually determines output quality, and does the RC1 latency-oriented configuration (3-step denoise, TAEHV presentation, 12+6 window) hold acceptable quality, or does some axis need to change before we freeze a contract in C3?",
-      "entryCriteria": ["C1 result == PASS"],
+      "entryCriteria": ["C1R result == PASS"],
       "outputs": [],
       "exitCriteria": [
         "bounded chunk/context screen completed with a recorded verdict",
@@ -321,7 +373,7 @@
       "status": "blocked",
       "priority": 70,
       "resource": "gpu-exclusive",
-      "dependsOn": ["C6A", "C6B"],
+      "dependsOn": [],
       "blocks": [],
       "canRunParallelWith": [],
       "question": "When accepted candidates from C6A/C6B are combined, does the workload still pass correctness/quality gates, and where is the new bottleneck?",
@@ -331,7 +383,7 @@
       "nextIf": ["new bottleneck identified -> spawn new C5x node(s) against the updated ranking; the DAG is iterative, not a one-shot pipeline"],
       "evidence": [],
       "result": null,
-      "notes": "Only accepted candidates are integrated. A rejected C6A or C6B result is preserved in this file's history (never deleted), not silently dropped."
+      "notes": "Condition-gated rather than AND-dependent: instantiate/run C7 when at least one C6x candidate is accepted, using the complete accepted set. A rejected or absent candidate does not deadlock integration. Only accepted candidates are integrated; rejected results remain in history."
     },
     {
       "id": "C8",
@@ -340,7 +392,7 @@
       "status": "deferred",
       "priority": 90,
       "resource": "gpu-exclusive",
-      "dependsOn": ["C7"],
+      "dependsOn": [],
       "blocks": [],
       "canRunParallelWith": [],
       "question": "Is there a measured residual opportunity large enough, after the iterative C4-C7 loop, to justify graph capture, AOT specialization, large-scale fusion, a fixed memory arena, retained PM4, custom ROCr/HIP work, or removing major PyTorch layers?",
@@ -350,7 +402,7 @@
       "nextIf": [],
       "evidence": [],
       "result": null,
-      "notes": "Conditional and deferred by default, not an inevitable phase of the project. Do not begin any item in this category without an explicit, evidence-based entry decision recorded against this node."
+      "notes": "Condition-gated and deferred by default, not hard-dependent on C7 and not an inevitable phase. It may be activated by a specific residual opportunity measured at C4 or any later reprofile. Do not begin any item in this category without an explicit, evidence-based entry decision recorded against this node."
     }
   ],
   "parkedFindings": [
@@ -374,16 +426,17 @@
     }
   ],
   "currentParallelismExamples": [
-    {"agent": "Codex B", "activity": "DAG / documentation maintenance", "resource": "source-cpu", "usesGpu": false},
-    {"agent": "Codex C", "activity": "C1 state/cache correctness", "resource": "gpu-exclusive", "usesGpu": true}
+    {"component": "orchestration reconciliation", "activity": "integrate evidence and update DAG", "resource": "source-cpu", "usesGpu": false},
+    {"component": "C1R preparation", "activity": "fix exact configuration, traversal labels, artifact schema, and verdict checks before execution", "resource": "source-cpu", "usesGpu": false}
   ],
   "recommendedQueue": {
-    "running": ["C1"],
-    "readyNow": [],
-    "blocked": ["C2 (waiting on C1 PASS)", "C3", "C4", "C5A", "C5B", "C6A", "C6B", "C7", "C8"],
+    "running": [],
+    "readyNow": ["C1R"],
+    "blocked": ["C2 (waiting on C1R PASS)", "C3", "C4", "C5A", "C5B", "C6A", "C6B", "C7"],
+    "deferred": ["C8"],
     "independentWorkAvailableNow": [
-      "repository/DAG maintenance (this branch)",
-      "source-only research that does not presume C1's result"
+      "repository/DAG integration and review",
+      "C1R experiment preparation/source inspection (no GPU)"
     ],
     "notYetValid": [
       "performance optimization",
@@ -396,6 +449,11 @@
       "date": "2026-09-12",
       "by": "Codex B (docs/research-orchestration)",
       "change": "Initial DAG created: H0, P0, C0A, C0B recorded as done from existing repository evidence; C1 recorded as running (owned by another agent, result not invented); C2-C8 recorded as blocked/deferred per the accepted plan. No experiments run, no GPU used."
+    },
+    {
+      "date": "2026-09-12",
+      "by": "top-level orchestrator (orchestration/reconcile-c1)",
+      "change": "Ingested commit 2bf97c3 after independent evidence review. Recorded C1 as inconclusive rather than accepting its reported PASS: its 4-frame/1-sink, four-step gfx1151 run strongly verifies accelerated rollover semantics but does not execute the exact accepted RC1 12-frame/6-sink, three-step configuration or explicitly label direction-change/revisit coverage. Added bounded gpu-exclusive confirmation node C1R as READY; C2 remains blocked on C1R PASS. Corrected C7 and C8 to use their stated conditional entry criteria rather than contradictory hard AND dependencies. Integrated the DAG and C1 artifacts on a separate reconciliation branch; main was not modified and no GPU work was started."
     }
   ]
 }
