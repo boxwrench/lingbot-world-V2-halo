@@ -280,7 +280,7 @@
    "id": "C2",
    "name": "Quality causality investigation",
    "type": "experiment",
-   "status": "ready",
+   "status": "running",
    "priority": 20,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -294,7 +294,11 @@
    "entryCriteria": [
     "C1R reset closure: first-encode probe confirms the prepare effect and the strict post-warmup reset criterion passes (a blanket bitwise C1R PASS on the original unwarmed path is superseded)"
    ],
-   "outputs": [],
+   "outputs": [
+    "docs/artifacts/c2-screen-20260912/PLAN.md (screen design, branch experiment/c2-quality-screen)",
+    "scripts/c2_context_screen.py + scripts/c2_screen_compare.py (commit 8f6ef1a)",
+    "machine-readable per-config trajectories + verdict (pending execution)"
+   ],
    "exitCriteria": [
     "bounded chunk/context screen completed with a recorded verdict",
     "any triggered follow-up branches (see nextIf) completed or explicitly deferred with a reason"
@@ -327,7 +331,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "Entry evaluation (2026-09-12): first-encode probe confirms the prepare effect (X,Y,Y,Y / X,Y, universal Y); strict post-warmup reset criterion passes (gate 7/7 bitwise + in-rollout fresh_reset strict PASS on the exact RC1 point); blanket unwarmed PASS superseded per the corrected entryCriteria. Mandatory first branch: bounded chunk/context screen. Follow-up branches instantiate only on its evidence. Warmed-Y baseline note carries forward: post-warmup steady state is the valid comparison baseline; single-prepare post-rollout reversion is characterized first-encode behavior, not a quality signal."
+   "notes": "Entry evaluation (2026-09-12): first-encode probe confirms the prepare effect (X,Y,Y,Y / X,Y, universal Y); strict post-warmup reset criterion passes (gate 7/7 bitwise + in-rollout fresh_reset strict PASS on the exact RC1 point); blanket unwarmed PASS superseded per the corrected entryCriteria. Mandatory first branch: bounded chunk/context screen. Follow-up branches instantiate only on its evidence. Warmed-Y baseline note carries forward: post-warmup steady state is the valid comparison baseline; single-prepare post-rollout reversion is characterized first-encode behavior, not a quality signal. Screen design committed (8f6ef1a): headless live-path harness modeled on action_response_probe.py; configs A1/A2 (RC1 A/A pair), B (18+6), C (4-step), D (offline canonical-vs-TAEHV on A1 latents); first-encode guards (score chunks 2..17); A/A noise-floor ruler. GPU execution started 2026-09-12."
   },
   {
    "id": "C3",
@@ -612,7 +616,7 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C2 \u2014 bounded chunk/context screen design (source-cpu), then GPU execution"
+   "C2 \u2014 screen GPU execution (gpu-exclusive, ~6-12 min)"
   ],
   "readyNow": [],
   "blocked": [
@@ -681,6 +685,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous closure cycle)",
    "change": "Evaluated all six C1R exit criteria against the committed rerun rollout (16/16 PASS): satisfied. Recorded C1R as done (qualified PASS; WARMED_C_MISMATCH explained as characterized one-shot reversion, blanket C==A superseded). C1 preserved as inconclusive. C2 entry criteria satisfied; C2 set ready with the bounded chunk/context screen as the mandatory first branch and the warmed-Y baseline note. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C2 cycle)",
+   "change": "Designed the bounded chunk/context screen from two read-only surveys (quality signals, screen axes): all knobs are CLI flags except live chunk size (fixed 1); harness exists (scripted actions, save-latents, save-video, offline decoder compare) so no production change was needed. Committed harness+plan (8f6ef1a) on a new branch off main. C2 set running; GPU screen started."
   }
  ]
 }
