@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-13",
- "updatedBy": "orchestrator (C8 open)",
+ "updatedBy": "orchestrator (C8 stage-1 research)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -917,8 +917,8 @@
    "evidence": [
     "frozen contract verified 2026-09-13 from accepted runtime (see notes)"
    ],
-   "result": "OPEN (2026-09-13). Authorized by P2.9 audit closure. Stage 1: attention backend bakeoff (current FA2 path vs ROCm FA2-CK vs Triton FA vs AITER vs discovered). NO custom kernel until escalation criteria met. NO mainline merge without full evidence + gates + audit + human approval.",
-   "notes": "Frozen production attention contract: Q=[1,12,1008,128] K=V=[1,12,12096,128] BF16, mask none, causal false, gfx1151. Verified: num_heads=12 dim=1536 (transformers/config.json); head_dim=128; call site model_fast.py:198 attention(roped_query,k_cache,v_cache) no mask args (defaults causal=False); DiT params 100% BF16 (P2.1 module-metrics); Lq/Lk corroborated by P2.1 module-metrics hit counts; torch 2.13+rocm7.15; flash_attn(FA2) installed, FA3 absent. Thresholds: 5%=marginal 10%=interesting 20%=strong 30%=very strong (end-to-end decides). NEXT_PLAN B1-B5 from P2.9 enter here (B3=SDPA probe first)."
+   "result": "OPEN (2026-09-13). Authorized by P2.9 audit closure. Stage 1 research DONE 2026-09-13 (campaign 20260913T171052Z): FA2-varlen/CK/AITER/FA3/xFormers REJECTED by source proof for pinned stack; Triton-AMD CONDITIONAL (launch+stability only); AOTriton flash SDPA SURVIVOR; SDPA-math reference only. Decisive correction: brief premise FA2-varlen is NOT the executing path. Probe 0/1 (backend identity + production-equivalence microbench) next. NO custom kernel until escalation criteria met. NO mainline merge without full evidence + gates + audit + human approval.",
+   "notes": "Frozen production attention contract: Q=[1,12,1008,128] K=V=[1,12,12096,128] BF16, mask none, causal false, gfx1151. Verified: num_heads=12 dim=1536 (transformers/config.json); head_dim=128; call site model_fast.py:198 attention(roped_query,k_cache,v_cache) no mask args (defaults causal=False); DiT params 100% BF16 (P2.1 module-metrics); Lq/Lk corroborated by P2.1 module-metrics hit counts; torch 2.13+rocm7.15; flash_attn pkg present WITHOUT compiled ext (import fails: no flash_attn_2_cuda in either venv) so upstream wrapper falls back to torch SDPA; preferred_rocm_fa_library()=AOTriton, CK unavailable (unsupported-arch warning); FA3 absent. First-hand probe 2026-09-13 in production venv. Thresholds: 5%=marginal 10%=interesting 20%=strong 30%=very strong (end-to-end decides). NEXT_PLAN B1-B5 from P2.9 enter here (B3=SDPA probe first)."
   }
  ],
  "parkedFindings": [
@@ -1124,6 +1124,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (C8 open)",
    "change": "Plan 2 DONE (P2.9 AUDIT_PASS_WITH_ACTIONS, A1-A6 closed). C8 authorized and opened; production attention contract frozen and source-verified; Stage-1 bakeoff research launching."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (C8 stage-1 research)",
+   "change": "Stage-1 research verdict recorded; brief premise corrected by first-hand probe (SDPA/AOTriton executes, not FA2 varlen); CK/AITER/FA3 rejected; AOTriton survivor; Probe 0/1 authorized."
   }
  ]
 }
