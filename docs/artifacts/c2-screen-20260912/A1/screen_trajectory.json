@@ -1,0 +1,1019 @@
+{
+  "kind": "c2_context_screen_trajectory",
+  "configuration": {
+    "local_attn_size": 12,
+    "sink_size": 6,
+    "denoise_schedule": "3-drop-957",
+    "timestep_values": [
+      999,
+      899,
+      702
+    ],
+    "geometry": [
+      384,
+      672
+    ],
+    "seed": 42,
+    "screen_actions": [
+      "w",
+      "w",
+      "j",
+      "w",
+      "l",
+      "l",
+      "s",
+      "s",
+      "j",
+      "w",
+      "d",
+      "d",
+      "w",
+      "l",
+      "a",
+      "a"
+    ],
+    "warmup_generations": 2,
+    "scored_chunks": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ]
+  },
+  "provenance": {
+    "base_commit": "e9a912d8137091886c1436fc0e52e5d6a07ea139",
+    "upstream_commit": "unknown",
+    "model_dir": "/home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast"
+  },
+  "warmup_hashes": [
+    {
+      "chunk_id": 0,
+      "condition_sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+      "x0_sha256": "ac27f6a4d31d9c9e6458c9540ac701dd4b5c6ccbb464da1a514a8856cf67b67c"
+    },
+    {
+      "chunk_id": 1,
+      "action_key": "w",
+      "condition_sha256": "2b7ef80c1e67bee4d84498f927cef939e7e002a344bd43e3f3523b999eb6d2e5",
+      "x0_sha256": "267b95cc1821f79093c82266dc8f388b3d40662cad54dbe7857af8af5b24f196"
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": 2,
+      "action_key": "w",
+      "condition_sha256": "a3ad9c2ab59c71434000da490dec4a5610b0d4252b8f75dd3cccb88949c038bd",
+      "x0_sha256": "e8dbd0504030b46292bd485e3a8376d6538153733378f82f7e8a7e929bf35e40",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.0044052600860596,
+        "max": 2.8406944274902344,
+        "mean": 0.18471628427505493,
+        "std": 0.8868133425712585
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 754.4167409650981,
+          "host_ready_ms": 754.7334809787571,
+          "presented_proxy_ms": 754.7334809787571,
+          "decode_call_ms": 9.314826922491193,
+          "host_copy_ms": 0.28162100352346897,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1048.0897179804742,
+          "host_ready_ms": 1048.4339670510963,
+          "presented_proxy_ms": 1048.4339670510963,
+          "decode_call_ms": 1.3850879622623324,
+          "host_copy_ms": 0.3193500451743603,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1082.2741880547255,
+          "host_ready_ms": 1082.488970947452,
+          "presented_proxy_ms": 1082.488970947452,
+          "decode_call_ms": 5.594370071776211,
+          "host_copy_ms": 0.1963739050552249,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1111.173489014618,
+          "host_ready_ms": 1111.6398950107396,
+          "presented_proxy_ms": 1111.6398950107396,
+          "decode_call_ms": 2.53737298771739,
+          "host_copy_ms": 0.4501870134845376,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 744.8678910732269,
+      "clean_commit_ms": 252.9545659199357,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 3024,
+        "local_end_index": 3024,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 3,
+      "action_key": "w",
+      "condition_sha256": "52fc4159a1ad763ad4c38eb41956a38610f392a53210d7cb105a26a363c18782",
+      "x0_sha256": "9b646db1b3ca16065d605f87fb2477d8c86c3cf34f22feaf3bab4a929539a8b3",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.2248141765594482,
+        "max": 3.1492440700531006,
+        "mean": 0.17413084208965302,
+        "std": 0.9548631906509399
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 781.4368110848591,
+          "host_ready_ms": 781.9154959870502,
+          "presented_proxy_ms": 781.9154959870502,
+          "decode_call_ms": 15.381902107037604,
+          "host_copy_ms": 0.4339359002187848,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1081.4186760690063,
+          "host_ready_ms": 1081.8551130359992,
+          "presented_proxy_ms": 1081.8551130359992,
+          "decode_call_ms": 1.7691460670903325,
+          "host_copy_ms": 0.3829180495813489,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1115.7556120306253,
+          "host_ready_ms": 1115.9512560116127,
+          "presented_proxy_ms": 1115.9512560116127,
+          "decode_call_ms": 5.632449057884514,
+          "host_copy_ms": 0.18138403538614511,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1146.3021730305627,
+          "host_ready_ms": 1146.6530719771981,
+          "presented_proxy_ms": 1146.6530719771981,
+          "decode_call_ms": 2.27947102393955,
+          "host_copy_ms": 0.3463989123702049,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 765.8113359939307,
+      "clean_commit_ms": 266.42629597336054,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 4032,
+        "local_end_index": 4032,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 4,
+      "action_key": "j",
+      "condition_sha256": "affc49128f296cdb35e039fd9b38cdf7ef3e7b27c4d6f3cde218894ef575035b",
+      "x0_sha256": "26a8abe36a7d4c4ed31e72e87162e7ef0e2e8f2a4b5e0e88a09d61a7f4389d93",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.0728888511657715,
+        "max": 2.9230642318725586,
+        "mean": 0.2869195342063904,
+        "std": 0.9395140409469604
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 803.7046060198918,
+          "host_ready_ms": 804.0441849734634,
+          "presented_proxy_ms": 804.0441849734634,
+          "decode_call_ms": 9.198560030199587,
+          "host_copy_ms": 0.2874309429898858,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1111.1619749572128,
+          "host_ready_ms": 1111.5927019855008,
+          "presented_proxy_ms": 1111.5927019855008,
+          "decode_call_ms": 1.5835919184610248,
+          "host_copy_ms": 0.4023879300802946,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1135.2105929981917,
+          "host_ready_ms": 1135.3951479541138,
+          "presented_proxy_ms": 1135.3951479541138,
+          "decode_call_ms": 5.314238020218909,
+          "host_copy_ms": 0.16947498079389334,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1158.7906359927729,
+          "host_ready_ms": 1158.9877599617466,
+          "presented_proxy_ms": 1158.9877599617466,
+          "decode_call_ms": 2.028477960266173,
+          "host_copy_ms": 0.19127398263663054,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 794.2659630207345,
+      "clean_commit_ms": 272.6348680444062,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 5040,
+        "local_end_index": 5040,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 5,
+      "action_key": "w",
+      "condition_sha256": "5b1f9a62d98b7c67a6750dfc2df3baca926df7556369190fcbf279436bf1e091",
+      "x0_sha256": "2e1ba353102fb427bd1583c58aeba529e2406a0f78b158d566783da3272397b9",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.1541409492492676,
+        "max": 2.845569372177124,
+        "mean": 0.2165224403142929,
+        "std": 0.938976526260376
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 848.2718529412523,
+          "host_ready_ms": 848.858124925755,
+          "presented_proxy_ms": 848.858124925755,
+          "decode_call_ms": 9.406195022165775,
+          "host_copy_ms": 0.5096449749544263,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1156.6864729393274,
+          "host_ready_ms": 1157.3297039140016,
+          "presented_proxy_ms": 1157.3297039140016,
+          "decode_call_ms": 1.5824519796296954,
+          "host_copy_ms": 0.608371919952333,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1192.722276900895,
+          "host_ready_ms": 1192.9743299260736,
+          "presented_proxy_ms": 1192.9743299260736,
+          "decode_call_ms": 5.967617966234684,
+          "host_copy_ms": 0.22277398966252804,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1226.1794599471614,
+          "host_ready_ms": 1226.6685049980879,
+          "presented_proxy_ms": 1226.6685049980879,
+          "decode_call_ms": 2.583281951956451,
+          "host_copy_ms": 0.4730160580947995,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 838.6585840489715,
+      "clean_commit_ms": 281.37126297224313,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 6048,
+        "local_end_index": 6048,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 6,
+      "action_key": "l",
+      "condition_sha256": "7e3b4f1f5f6066e82c536256641bdb44da816ddbf187689f556da69585a4e5a6",
+      "x0_sha256": "61ca6b3a02020a66cfb30933830599ad81cae1bcd589a4e972f56081bc1522be",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.1042826175689697,
+        "max": 2.889878034591675,
+        "mean": 0.31244122982025146,
+        "std": 0.9726285338401794
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 866.7842110153288,
+          "host_ready_ms": 867.1692790230736,
+          "presented_proxy_ms": 867.1692790230736,
+          "decode_call_ms": 9.292047005146742,
+          "host_copy_ms": 0.34048897214233875,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1189.163077971898,
+          "host_ready_ms": 1189.6730220178142,
+          "presented_proxy_ms": 1189.6730220178142,
+          "decode_call_ms": 1.6429899260401726,
+          "host_copy_ms": 0.48403500113636255,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1226.8597020301968,
+          "host_ready_ms": 1227.090114960447,
+          "presented_proxy_ms": 1227.090114960447,
+          "decode_call_ms": 5.758124985732138,
+          "host_copy_ms": 0.21021394059062004,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1256.3182259909809,
+          "host_ready_ms": 1256.6400959622115,
+          "presented_proxy_ms": 1256.6400959622115,
+          "decode_call_ms": 2.388758002780378,
+          "host_copy_ms": 0.30636100564152,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 857.2874809615314,
+      "clean_commit_ms": 289.2947030486539,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 7056,
+        "local_end_index": 7056,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 7,
+      "action_key": "l",
+      "condition_sha256": "b04fb079f310b08a1c9e83d59b4343d780531507e3eeb9c4b6a265e12920a91c",
+      "x0_sha256": "cb317ecd4b5c7f2753c340c2ab45cadc4067824090224eaedfe66fc5c65875de",
+      "x0_stats": {
+        "finite": true,
+        "min": -2.704193115234375,
+        "max": 2.9740989208221436,
+        "mean": 0.2839159369468689,
+        "std": 0.990839421749115
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 934.3492289772257,
+          "host_ready_ms": 934.6676599234343,
+          "presented_proxy_ms": 934.6676599234343,
+          "decode_call_ms": 9.190959972329438,
+          "host_copy_ms": 0.2819719957187772,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1262.1283329790458,
+          "host_ready_ms": 1262.4752420233563,
+          "presented_proxy_ms": 1262.4752420233563,
+          "decode_call_ms": 1.236272044479847,
+          "host_copy_ms": 0.31815003603696823,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1296.6977619798854,
+          "host_ready_ms": 1296.8768869759515,
+          "presented_proxy_ms": 1296.8768869759515,
+          "decode_call_ms": 5.603409954346716,
+          "host_copy_ms": 0.1667350297793746,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1324.1875659441575,
+          "host_ready_ms": 1324.553475016728,
+          "presented_proxy_ms": 1324.553475016728,
+          "decode_call_ms": 2.3165090242400765,
+          "host_copy_ms": 0.35704905167222023,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 924.9559351010248,
+      "clean_commit_ms": 302.9133699601516,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 8064,
+        "local_end_index": 8064,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 8,
+      "action_key": "s",
+      "condition_sha256": "6545d8f29953a4462e774ffd9670710d1a5938ce8c281394c2250b9343f4add7",
+      "x0_sha256": "51ec4c1b9742faa04aa77eb27114c63e4d357486fc6418f813e12796a05816bb",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.21115779876709,
+        "max": 3.136112689971924,
+        "mean": 0.21105946600437164,
+        "std": 1.0358879566192627
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 930.773910949938,
+          "host_ready_ms": 931.1424499610439,
+          "presented_proxy_ms": 931.1424499610439,
+          "decode_call_ms": 8.716905023902655,
+          "host_copy_ms": 0.3282700199633837,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1274.1911899065599,
+          "host_ready_ms": 1274.5272499741986,
+          "presented_proxy_ms": 1274.5272499741986,
+          "decode_call_ms": 1.2953199911862612,
+          "host_copy_ms": 0.310020986944437,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1318.375936942175,
+          "host_ready_ms": 1318.638338940218,
+          "presented_proxy_ms": 1318.638338940218,
+          "decode_call_ms": 6.252459948882461,
+          "host_copy_ms": 0.2422829857096076,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1352.1321509033442,
+          "host_ready_ms": 1352.6062259916216,
+          "presented_proxy_ms": 1352.6062259916216,
+          "decode_call_ms": 2.7212679851800203,
+          "host_copy_ms": 0.43819600250571966,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 921.829023049213,
+      "clean_commit_ms": 310.7813820242882,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 9072,
+        "local_end_index": 9072,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 9,
+      "action_key": "s",
+      "condition_sha256": "16c826a0cf5bbdedd2fb0f1be6f86230f43a636ea0bc2e7c7ac3ddb3e23a1a7f",
+      "x0_sha256": "0d63a2fe5b37f837acba6737141f5f715d27714985e070ddd51d7feb320eb6d9",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.394861936569214,
+        "max": 3.0647318363189697,
+        "mean": 0.19540442526340485,
+        "std": 1.0835456848144531
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 972.1993539715186,
+          "host_ready_ms": 972.6865489501506,
+          "presented_proxy_ms": 972.6865489501506,
+          "decode_call_ms": 9.314156952314079,
+          "host_copy_ms": 0.43519691098481417,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1327.5979299796745,
+          "host_ready_ms": 1327.9808280058205,
+          "presented_proxy_ms": 1327.9808280058205,
+          "decode_call_ms": 1.2697719503194094,
+          "host_copy_ms": 0.3513289848342538,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1371.5000150259584,
+          "host_ready_ms": 1371.7757370322943,
+          "presented_proxy_ms": 1371.7757370322943,
+          "decode_call_ms": 6.3980750273913145,
+          "host_copy_ms": 0.2519030822440982,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1401.7656650394201,
+          "host_ready_ms": 1402.124203974381,
+          "presented_proxy_ms": 1402.124203974381,
+          "decode_call_ms": 2.509544021449983,
+          "host_copy_ms": 0.34347991459071636,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 962.6897830748931,
+      "clean_commit_ms": 323.30502197146416,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 10080,
+        "local_end_index": 10080,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 10,
+      "action_key": "j",
+      "condition_sha256": "4696c2ad17ea30091abbb909a218cd435a4971038109c09edbf7cf3b1e80e3ec",
+      "x0_sha256": "52ad542560e59807b6e914b4470b2d6686bdabc43ec5056d56bf958d91530868",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.3840014934539795,
+        "max": 2.909036159515381,
+        "mean": 0.3066520094871521,
+        "std": 1.0163662433624268
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1010.8307730406523,
+          "host_ready_ms": 1011.199761996977,
+          "presented_proxy_ms": 1011.199761996977,
+          "decode_call_ms": 9.056665003299713,
+          "host_copy_ms": 0.33065001480281353,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1375.9447650518268,
+          "host_ready_ms": 1376.4539990806952,
+          "presented_proxy_ms": 1376.4539990806952,
+          "decode_call_ms": 1.4933550264686346,
+          "host_copy_ms": 0.4845650400966406,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1412.6135800033808,
+          "host_ready_ms": 1412.7752750646323,
+          "presented_proxy_ms": 1412.7752750646323,
+          "decode_call_ms": 5.5771899642422795,
+          "host_copy_ms": 0.1544749829918146,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1444.3461659830064,
+          "host_ready_ms": 1444.8248010594398,
+          "presented_proxy_ms": 1444.8248010594398,
+          "decode_call_ms": 2.475854940712452,
+          "host_copy_ms": 0.46038604341447353,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1001.5370949404314,
+      "clean_commit_ms": 330.3477489389479,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 11088,
+        "local_end_index": 11088,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 11,
+      "action_key": "w",
+      "condition_sha256": "1bf20a82e42701370a0e4e2e84d3fdab184b0fb68d528e3ccdd7051914925847",
+      "x0_sha256": "73e7947c8c7f49556b2821bee38afe2491891e862670889d1af71d0edfe58355",
+      "x0_stats": {
+        "finite": true,
+        "min": -2.9099254608154297,
+        "max": 2.834038734436035,
+        "mean": 0.19824910163879395,
+        "std": 0.9893320798873901
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1039.0784470364451,
+          "host_ready_ms": 1039.519143057987,
+          "presented_proxy_ms": 1039.519143057987,
+          "decode_call_ms": 9.180671069771051,
+          "host_copy_ms": 0.4015570739284158,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1425.7006159750745,
+          "host_ready_ms": 1426.0840240167454,
+          "presented_proxy_ms": 1426.0840240167454,
+          "decode_call_ms": 1.4146269531920552,
+          "host_copy_ms": 0.34997903276234865,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1466.1022280342877,
+          "host_ready_ms": 1466.346180997789,
+          "presented_proxy_ms": 1466.346180997789,
+          "decode_call_ms": 6.036087055690587,
+          "host_copy_ms": 0.21994393318891525,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1495.392538025044,
+          "host_ready_ms": 1495.8641630364582,
+          "presented_proxy_ms": 1495.8641630364582,
+          "decode_call_ms": 2.576941973529756,
+          "host_copy_ms": 0.45227608643472195,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1029.6598139684647,
+      "clean_commit_ms": 344.3049159832299,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 12096,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 12,
+      "action_key": "d",
+      "condition_sha256": "842a34823b9450d0f6f35f829f2f4e057ad254ebd5e55db88e62d6361d626265",
+      "x0_sha256": "ece4943689e23ea1102855666481e01fbc0a5d28e2972d28a11177d264b65a15",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.0230233669281006,
+        "max": 2.898179531097412,
+        "mean": 0.21003751456737518,
+        "std": 1.0477327108383179
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1047.7279869373888,
+          "host_ready_ms": 1048.1629939749837,
+          "presented_proxy_ms": 1048.1629939749837,
+          "decode_call_ms": 9.09670302644372,
+          "host_copy_ms": 0.3787080058827996,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1417.6304260035977,
+          "host_ready_ms": 1417.953735915944,
+          "presented_proxy_ms": 1417.953735915944,
+          "decode_call_ms": 1.2072940589860082,
+          "host_copy_ms": 0.296190963126719,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1462.5737100141123,
+          "host_ready_ms": 1462.8426819108427,
+          "presented_proxy_ms": 1462.8426819108427,
+          "decode_call_ms": 6.39429606962949,
+          "host_copy_ms": 0.24560291785746813,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1496.4422410121188,
+          "host_ready_ms": 1496.7833500122651,
+          "presented_proxy_ms": 1496.7833500122651,
+          "decode_call_ms": 2.473705098964274,
+          "host_copy_ms": 0.32933009788393974,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1038.3746419101954,
+      "clean_commit_ms": 342.2757680527866,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 13104,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 13,
+      "action_key": "d",
+      "condition_sha256": "f12a82a006b8a270c05a96722302e4459a1c8baea44d37f07a8b2c3ec9298e2a",
+      "x0_sha256": "491939bbb8c957b54d3fbe1d79ce5bab52d7e8e317b83a4ca8d4ad019df3a42c",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.1156623363494873,
+        "max": 3.0523526668548584,
+        "mean": 0.21337924897670746,
+        "std": 1.0639441013336182
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1051.6980299726129,
+          "host_ready_ms": 1052.1535360021517,
+          "presented_proxy_ms": 1052.1535360021517,
+          "decode_call_ms": 8.896459941752255,
+          "host_copy_ms": 0.3935180138796568,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1420.7434359705076,
+          "host_ready_ms": 1421.063486021012,
+          "presented_proxy_ms": 1421.063486021012,
+          "decode_call_ms": 1.2894709361717105,
+          "host_copy_ms": 0.2974909730255604,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1458.6790830362588,
+          "host_ready_ms": 1458.828788017854,
+          "presented_proxy_ms": 1458.828788017854,
+          "decode_call_ms": 5.533701973035932,
+          "host_copy_ms": 0.14224497135728598,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1487.144147977233,
+          "host_ready_ms": 1487.3739710310474,
+          "presented_proxy_ms": 1487.3739710310474,
+          "decode_call_ms": 2.183333970606327,
+          "host_copy_ms": 0.22478296887129545,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1042.5463090650737,
+      "clean_commit_ms": 341.3764759898186,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 14112,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 14,
+      "action_key": "w",
+      "condition_sha256": "af5a019e94dcc22125887b44d5d4034d50714c92a1e9f96e941381044b73f694",
+      "x0_sha256": "1576aef1262e6f26268c666a90fb4ff11407fe3ba439e942ca2dde0cd9abacb6",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.043196439743042,
+        "max": 3.076084613800049,
+        "mean": 0.21052010357379913,
+        "std": 1.0666269063949585
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1048.854329972528,
+          "host_ready_ms": 1049.3015659740195,
+          "presented_proxy_ms": 1049.3015659740195,
+          "decode_call_ms": 9.323697071522474,
+          "host_copy_ms": 0.4047780530527234,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1428.6163909127936,
+          "host_ready_ms": 1428.9451909717172,
+          "presented_proxy_ms": 1428.9451909717172,
+          "decode_call_ms": 1.3674079673364758,
+          "host_copy_ms": 0.2943610306829214,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1477.944451966323,
+          "host_ready_ms": 1478.230222943239,
+          "presented_proxy_ms": 1478.230222943239,
+          "decode_call_ms": 7.697066059336066,
+          "host_copy_ms": 0.25244196876883507,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1510.7046569464728,
+          "host_ready_ms": 1511.062715901062,
+          "presented_proxy_ms": 1511.062715901062,
+          "decode_call_ms": 2.446015947498381,
+          "host_copy_ms": 0.34309993498027325,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1039.3145100679249,
+      "clean_commit_ms": 342.064097058028,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 15120,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 15,
+      "action_key": "l",
+      "condition_sha256": "0994b120332cad5b8bd94a2b95b5953a2d6fb694ea743ea1cb044f5c2b4bda66",
+      "x0_sha256": "975ff017a9c12552803e19f9cd4e24b34277d708d5cce45a150c6b159844e9f5",
+      "x0_stats": {
+        "finite": true,
+        "min": -2.794454574584961,
+        "max": 3.109355926513672,
+        "mean": 0.321262389421463,
+        "std": 1.0258134603500366
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1047.500154003501,
+          "host_ready_ms": 1047.86598298233,
+          "presented_proxy_ms": 1047.86598298233,
+          "decode_call_ms": 8.949297945946455,
+          "host_copy_ms": 0.32385997474193573,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1423.4202130464837,
+          "host_ready_ms": 1423.7692030146718,
+          "presented_proxy_ms": 1423.7692030146718,
+          "decode_call_ms": 1.2214529560878873,
+          "host_copy_ms": 0.322459964081645,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1468.6781680211425,
+          "host_ready_ms": 1468.9274510601535,
+          "presented_proxy_ms": 1468.9274510601535,
+          "decode_call_ms": 6.439273944124579,
+          "host_copy_ms": 0.2284629736095667,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1505.434042075649,
+          "host_ready_ms": 1505.9184069978073,
+          "presented_proxy_ms": 1505.9184069978073,
+          "decode_call_ms": 2.635010052472353,
+          "host_copy_ms": 0.46669598668813705,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1038.3474129484966,
+      "clean_commit_ms": 343.05043797940016,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 16128,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 16,
+      "action_key": "a",
+      "condition_sha256": "402fbf9808d70c43582276c55f5a812059ae952a0b2173dc0e278be104591a9d",
+      "x0_sha256": "858aaae7929d21c56077b5d5cea30e097d02e62c249d5e931887a807c4ca0438",
+      "x0_stats": {
+        "finite": true,
+        "min": -3.1876423358917236,
+        "max": 3.001699686050415,
+        "mean": 0.244649276137352,
+        "std": 1.0386077165603638
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1042.1810299158096,
+          "host_ready_ms": 1042.6754750078544,
+          "presented_proxy_ms": 1042.6754750078544,
+          "decode_call_ms": 9.354955982416868,
+          "host_copy_ms": 0.42162800673395395,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1412.1894489508122,
+          "host_ready_ms": 1412.6118269050494,
+          "presented_proxy_ms": 1412.6118269050494,
+          "decode_call_ms": 1.876902999356389,
+          "host_copy_ms": 0.3958079032599926,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1456.3524179393426,
+          "host_ready_ms": 1456.5990898991004,
+          "presented_proxy_ms": 1456.5990898991004,
+          "decode_call_ms": 6.375015946105123,
+          "host_copy_ms": 0.22777297999709845,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1492.8687289357185,
+          "host_ready_ms": 1493.9104369841516,
+          "presented_proxy_ms": 1493.9104369841516,
+          "decode_call_ms": 3.029657993465662,
+          "host_copy_ms": 1.016539055854082,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1032.6183600118384,
+      "clean_commit_ms": 342.50281495042145,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 17136,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    },
+    {
+      "chunk_id": 17,
+      "action_key": "a",
+      "condition_sha256": "6f1ef41f51dbc68eae2fc76a84c41bc55061d804000ad35e9898d1b0c50dcb89",
+      "x0_sha256": "0e0cb2f9d9f3047ace8307f76c4d743cd0ea53a0999aa1b65aa5a007959aba27",
+      "x0_stats": {
+        "finite": true,
+        "min": -2.9442005157470703,
+        "max": 3.097722291946411,
+        "mean": 0.2701161801815033,
+        "std": 1.0773392915725708
+      },
+      "rgb_frames": [
+        {
+          "index": 0,
+          "gpu_ready_ms": 1048.0623539770022,
+          "host_ready_ms": 1048.4794209478423,
+          "presented_proxy_ms": 1048.4794209478423,
+          "decode_call_ms": 9.28561796899885,
+          "host_copy_ms": 0.3658889327198267,
+          "finite": true
+        },
+        {
+          "index": 1,
+          "gpu_ready_ms": 1427.645573974587,
+          "host_ready_ms": 1427.983053959906,
+          "presented_proxy_ms": 1427.983053959906,
+          "decode_call_ms": 1.3142299139872193,
+          "host_copy_ms": 0.3103009657934308,
+          "finite": true
+        },
+        {
+          "index": 2,
+          "gpu_ready_ms": 1474.730213987641,
+          "host_ready_ms": 1474.9884760240093,
+          "presented_proxy_ms": 1474.9884760240093,
+          "decode_call_ms": 6.568821030668914,
+          "host_copy_ms": 0.23286300711333752,
+          "finite": true
+        },
+        {
+          "index": 3,
+          "gpu_ready_ms": 1508.4032310405746,
+          "host_ready_ms": 1508.7576700607315,
+          "presented_proxy_ms": 1508.7576700607315,
+          "decode_call_ms": 2.4601450422778726,
+          "host_copy_ms": 0.3424400929361582,
+          "finite": true
+        }
+      ],
+      "denoise_ms": 1038.5731620481238,
+      "clean_commit_ms": 342.206726083532,
+      "output_finite": true,
+      "cache_after": {
+        "global_end_index": 18144,
+        "local_end_index": 12096,
+        "cache_capacity_tokens": 12096
+      }
+    }
+  ]
+}
