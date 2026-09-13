@@ -52,6 +52,24 @@ def _gelu_tanh(x: torch.Tensor) -> torch.Tensor:
     return F.gelu(x, approximate="tanh")
 
 
+def _norm_affine(x: torch.Tensor, scale: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
+    """Fused block-norm + affine, preserving the exact eager op order.
+
+    Eager sequence in the block forward is ``affine(norm(x).float(), ...)``;
+    the bf16 round-trip is kept so the compiled result matches bit for bit
+    up to Inductor codegen (verified by scripts/c6a_norm_check.py).
+    """
+    normed = F.layer_norm(x.float(), (x.shape[-1],), eps=1e-6).to(x.dtype)
+    return normed.float() * (1 + scale) + bias
+
+
+def _rmsnorm(x: torch.Tensor, weight: torch.Tensor, eps: float) -> torch.Tensor:
+    """Compiled WanRMSNorm math (eps pinned per call site, default 1e-6)."""
+    raw = x.float()
+    normed = (raw * torch.rsqrt(raw.pow(2).mean(dim=-1, keepdim=True) + eps)).to(x.dtype)
+    return normed * weight
+
+
 def _camera_update(
     x: torch.Tensor,
     hidden: torch.Tensor,
@@ -100,6 +118,8 @@ class PureTensorIslands:
     silu: Callable
     gelu_tanh: Callable
     camera_update: Callable
+    norm_affine: Callable
+    rmsnorm: Callable
     helper_names: tuple[str, ...]
 
     @classmethod
@@ -119,6 +139,12 @@ class PureTensorIslands:
             camera_update=torch.compile(
                 _camera_update, name="lingbot_pure_camera_update", **common
             ),
+            norm_affine=torch.compile(
+                _norm_affine, name="lingbot_pure_norm_affine", **common
+            ),
+            rmsnorm=torch.compile(
+                _rmsnorm, name="lingbot_pure_rmsnorm", **common
+            ),
             helper_names=(
                 "modulation",
                 "affine",
@@ -127,6 +153,8 @@ class PureTensorIslands:
                 "silu",
                 "gelu_tanh",
                 "camera_update",
+                "norm_affine",
+                "rmsnorm",
             ),
         )
 
@@ -185,6 +213,11 @@ def prewarm_pure_tensor_islands(
         scale2 = modulation_parts[2].squeeze(2)
         scale5 = modulation_parts[5].squeeze(2)
         islands.affine(x_float, scale1, scale0)
+        islands.norm_affine(x_bf16, scale1, scale0)
+        norm_weight_f32 = torch.ones(hidden_dim, device=device, dtype=torch.float32)
+        norm_weight_bf16 = torch.ones(hidden_dim, device=device, dtype=torch.bfloat16)
+        islands.rmsnorm(x_bf16, norm_weight_f32, 1e-6)
+        islands.rmsnorm(x_bf16, norm_weight_bf16, 1e-6)
         islands.scaled_residual(x_bf16, y_bf16, scale2)
         islands.scaled_residual(x_float, y_bf16, scale5)
         islands.add(x_float, y_bf16)
@@ -219,7 +252,7 @@ def prewarm_pure_tensor_islands(
             "ffn_hidden": {"shape": [1, tokens, ffn_dim], "dtype": "torch.bfloat16"},
         },
         "helpers_invoked": list(islands.helper_names),
-        "graphs_expected": 8,
+        "graphs_expected": 11,
     }
 
 
@@ -248,9 +281,11 @@ def make_pure_block_forward(islands: PureTensorIslands):
         e = islands.modulation(self.modulation, e)
         assert e[0].dtype == torch.float32
 
-        # LayerNorm, attention, cache indexing, and KV writes remain eager.
-        self_input = islands.affine(
-            self.norm1(x).float(),
+        # Fused norm+affine islands; attention, cache indexing, and KV writes
+        # remain eager. norm3 stays eager: it feeds the eager cross-attention
+        # call directly with no adjacent compiled op to fuse with.
+        self_input = islands.norm_affine(
+            x,
             e[1].squeeze(2),
             e[0].squeeze(2),
         )
@@ -293,8 +328,8 @@ def make_pure_block_forward(islands: PureTensorIslands):
                 cross_attn_first_call=cross_attn_first_call,
             ),
         )
-        ffn_input = islands.affine(
-            self.norm2(x).float(),
+        ffn_input = islands.norm_affine(
+            x,
             e[4].squeeze(2),
             e[3].squeeze(2),
         )
@@ -306,6 +341,33 @@ def make_pure_block_forward(islands: PureTensorIslands):
     return forward
 
 
+def _wrap_qk_norms(islands: PureTensorIslands, attention: torch.nn.Module) -> list[tuple]:
+    """Swap qk-norm modules for the compiled island; return restoration pairs.
+
+    Only WanRMSNorm instances with the constructed eps are wrapped; anything
+    else (Identity, unexpected eps) stays eager. The upstream import is
+    deferred so CPU-only consumers of this module never need the model tree.
+    """
+    from wan.modules.model import WanRMSNorm
+
+    swapped = []
+    for name in ("norm_q", "norm_k"):
+        module = getattr(attention, name, None)
+        if not isinstance(module, WanRMSNorm):
+            continue
+        if float(module.eps) != 1e-6:
+            continue
+        weight = module.weight
+        compiled = islands.rmsnorm
+
+        def call(x, _compiled=compiled, _weight=weight):
+            return _compiled(x, _weight, 1e-6)
+
+        setattr(attention, name, call)
+        swapped.append((attention, name, module))
+    return swapped
+
+
 def install_on_blocks(model: torch.nn.Module, block_count: int) -> dict[str, object]:
     """Install helpers on leading causal blocks and return restoration state."""
     blocks = list(model.blocks)
@@ -313,13 +375,18 @@ def install_on_blocks(model: torch.nn.Module, block_count: int) -> dict[str, obj
     islands = PureTensorIslands.compile()
     forward = make_pure_block_forward(islands)
     originals = []
+    norm_swaps = []
     for index, block in enumerate(blocks):
         if index < count:
             originals.append((block, block.forward))
             block.forward = types.MethodType(forward, block)
+            for attention in (getattr(block, "self_attn", None), getattr(block, "cross_attn", None)):
+                if attention is not None:
+                    norm_swaps.extend(_wrap_qk_norms(islands, attention))
     return {
         "islands": islands,
         "originals": originals,
+        "norm_swaps": norm_swaps,
         "compiled_block_indices": list(range(count)),
         "total_model_blocks": len(blocks),
     }
@@ -328,3 +395,5 @@ def install_on_blocks(model: torch.nn.Module, block_count: int) -> dict[str, obj
 def restore_blocks(installation: dict[str, object]) -> None:
     for block, original in installation["originals"]:
         block.forward = original
+    for module, name, original in installation.get("norm_swaps", []):
+        setattr(module, name, original)
