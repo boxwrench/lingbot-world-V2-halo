@@ -921,8 +921,8 @@
   ],
   "independentWorkAvailableNow": [
    "P2.0 GPU baseline measurement (serialized GPU)",
-   "A5 second-scene matched 3v4 screen (serialized GPU; blinded package already committed)",
-   "A5 human rating of committed blinded pairs (user)"
+   "A5 clip runs: 4x20-action matched screens + build_a5_clips.py (BLOCKED: no /dev/kfd in current sandbox; run /tmp/run-a5-clips.sh where GPU visible, then build clips)",
+   "A5 human rating of blinded pairs (user; clips primary, stills supporting)"
   ],
   "notYetValid": [
    "performance optimization",
@@ -1030,6 +1030,11 @@
    "date": "2026-09-12",
    "by": "orchestrator (Plan 2 open)",
    "change": "Plan 2 authorized on B001 closure (main 9cc986c, tag lingruntime-gfx1151-b001). Nodes P2.0-P2.9 opened; P2.0 running (static done, GPU measurement queued); P2.1+ blocked. A5 blinded pairs committed on experiment/a5-visual-3v4 (9d692a0); second scene + human rating pending. GPU idle at open."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "orchestrator (A5 revision)",
+   "change": "A5 revised to clip-primary: stills supporting-only; 4-run matched protocol (/tmp/run-a5-clips.sh, chunks 10-21) + verified builder (scripts/build_a5_clips.py on experiment/a5-visual-3v4) with mismatch guards; review template per-scene + gate. Clip runs blocked on GPU device access in current sandbox."
   }
  ]
 }
