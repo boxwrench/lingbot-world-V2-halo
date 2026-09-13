@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-13",
- "updatedBy": "orchestrator (C8 stage 2)",
+ "updatedBy": "orchestrator (C8 stop verdict)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -895,7 +895,7 @@
    "id": "C8",
    "name": "C8 - gfx1151 Attention Kernel Feasibility",
    "type": "research",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu then gpu-exclusive",
    "dependsOn": [
@@ -919,7 +919,7 @@
     "experiment/c8-attention: docs/artifacts/c8-probe01-20260913/ (Probe 0/1/1b/3 evidence + README)",
     "experiment/c8-attention: docs/artifacts/c8-stage2-20260913/ (tuning-DB decode, rocprofv3 geometry, isolation sweep)"
    ],
-   "result": "Stage 2 DONE 2026-09-13. Exactly ONE runnable shipped config (0_0) for this workload; 0_1/3_0 fail at launch. Grid 2048x12x1, LDS 16KB/WG, ~18 TFLOPS effective at ~19GB/s (occupancy/latency regime, no knob). No evidenced mechanism at any bar. RECOMMENDATION: close C8 as clean negative. Awaiting human confirm.",
+   "result": "C8_STOP_NEGATIVE (2026-09-13, human-confirmed direction recorded; formal terminal audit pending after play session). Scope: current AOTriton attn_fwd.kd is the practical gfx1151 floor for the tested exact production shape on the pinned stack. Supporting: alternative exposed backends equal/slower (Stage 1 bakeoff); production backend identity established (torch SDPA -> AOTriton, FA2-varlen premise falsified); gfx1151 AOTriton image set inspected (3 baked F_F bf16/hd128 configs decoded); only executable image (0_0) is performance parity; alternative baked images (0_1/3_0) fail at launch for this shape; no exposed tuning knob; no >=5% evidenced mechanism; custom-kernel escalation therefore not justified. Main unchanged at 9cc986c. Evidence: experiment/c8-attention (probe01 + stage2 records).",
    "notes": "Frozen production attention contract: Q=[1,12,1008,128] K=V=[1,12,12096,128] BF16, mask none, causal false, gfx1151. Verified: num_heads=12 dim=1536 (transformers/config.json); head_dim=128; call site model_fast.py:198 attention(roped_query,k_cache,v_cache) no mask args (defaults causal=False); DiT params 100% BF16 (P2.1 module-metrics); Lq/Lk corroborated by P2.1 module-metrics hit counts; torch 2.13+rocm7.15; flash_attn pkg present WITHOUT compiled ext (import fails: no flash_attn_2_cuda in either venv) so upstream wrapper falls back to torch SDPA; preferred_rocm_fa_library()=AOTriton, CK unavailable (unsupported-arch warning); FA3 absent. First-hand probe 2026-09-13 in production venv. Thresholds: 5%=marginal 10%=interesting 20%=strong 30%=very strong (end-to-end decides). NEXT_PLAN B1-B5 from P2.9 enter here (B3=SDPA probe first)."
   }
  ],
@@ -1141,6 +1141,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (C8 stage 2)",
    "change": "Stage 2 done: single viable config, geometry characterized, isolation sweep negative. C8 close-as-negative recommended; held for human confirm."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (C8 stop verdict)",
+   "change": "C8_STOP_NEGATIVE recorded per human direction; terminal C8 audit queued after play session; no new optimization plan until play + closures complete."
   }
  ]
 }
