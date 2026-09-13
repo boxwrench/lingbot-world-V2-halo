@@ -191,6 +191,15 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   plus C1/C2 recovery classification in `--mode warmed-reset`); rerun
   pending. C1R stays running, C2 stays blocked.
 
+  Rerun on fixed code (2026-09-12, `state-cache-warmed-reset-rerun.json`,
+  base `06ba33c` clean): gate 7/7 PASS; rollout PASS all 16 assertions
+  including `fresh_reset`; C==A FAIL with C.condition == warmup X exactly
+  once; recovery `RECOVERED_IMMEDIATELY` (C1==C2==A bitwise). A mid-cycle
+  KeyError in the new probe (7-key compare on the 4-key warmup capture)
+  was fixed in `06ba33c`. `WARMED_RESET_PASS` was not achieved, so C1R
+  closure needs an explicit reset-criterion decision; C2 stays blocked.
+  No further GPU work is queued.
+
 ### Blocked
 
 C2 through C7 remain blocked in the chain shown above; C8 remains deferred.
@@ -297,10 +306,10 @@ forward:
 
 ```text
 RUNNING
-C1R — dict bug fixed, recovery probe added; warmed-reset rerun pending (gpu-exclusive)
+C1R — rerun ingested; closure decision pending (source-cpu, no GPU)
 
 READY
-warmed validator reset test (throwaway prepare + strict A/B gate + conditional rollout + strict C)
+C1R closure decision: qualified PASS with warmed-Y baseline note vs further evidence
 
 BLOCKED
 C2 — quality causality, waiting on a valid reset criterion

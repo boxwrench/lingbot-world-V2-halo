@@ -268,10 +268,13 @@
     "commit 123db37 (first-encode probe mode and evidence)",
     "commit ec3b4f1 (reset cursor fix via reset_cursors_at_bootstrap + C1/C2 recovery probe in --mode warmed-reset)",
     "docs/artifacts/state-cache-c1r-20260912/state-cache-warmed-reset.json",
-    "commit dd0e4da (warmed evidence + provenance dirt record)"
+    "commit dd0e4da (warmed evidence + provenance dirt record)",
+    "commit 06ba33c (warmed recovery compare fixed for prepare-shaped warmup capture)",
+    "docs/artifacts/state-cache-c1r-20260912/state-cache-warmed-reset-rerun.json",
+    "commit f6ec5a0 (rerun evidence, clean-tree provenance)"
    ],
-   "result": "Reset discriminator executed (2026-09-12, validator base bad1234): classification BASELINE_NONDETERMINISM_OR_STRICT_HASH. Fresh A/B bootstraps differ with no rollout between, so the rollout was skipped and no leak is claimed. Noise/plucker/text-context stable bitwise; condition chunk 0 differs (max-abs 0.159), driving x0 (0.167), clean K (0.156), clean V (1.478) beyond tolerance. A matches the first-execution chunk 0 bitwise (first prepare reproduces across processes); third prepare matches B (X,Y,Y). VAE feature-cache staleness eliminated by inspection; first-encode warmup effect is the follow-up hypothesis, not a conclusion. Warmed-reset first execution (2026-09-12, uncommitted tree on 123db37, see dd0e4da dirt record): gate A==B strict PASS 7/7; rollout 15/16 with fresh_reset FAIL caused solely by the validator dict bug (reset_pos carries cache_capacity_tokens; all semantic sub-checks true in data); C==A FAIL with C.condition==warmup X. Dict bug fixed in ec3b4f1; C1/C2 recovery probe added; rerun pending.",
-   "notes": "Next: rerun --mode warmed-reset on the fixed code (bash /tmp/run-warmed-reset.sh) and ingest the recovery classification. No full unwarmed rollout, no optimization, no production change."
+   "result": "Reset discriminator executed (2026-09-12, validator base bad1234): classification BASELINE_NONDETERMINISM_OR_STRICT_HASH. Fresh A/B bootstraps differ with no rollout between, so the rollout was skipped and no leak is claimed. Noise/plucker/text-context stable bitwise; condition chunk 0 differs (max-abs 0.159), driving x0 (0.167), clean K (0.156), clean V (1.478) beyond tolerance. A matches the first-execution chunk 0 bitwise (first prepare reproduces across processes); third prepare matches B (X,Y,Y). VAE feature-cache staleness eliminated by inspection; first-encode warmup effect is the follow-up hypothesis, not a conclusion. Warmed-reset first execution (2026-09-12, uncommitted tree on 123db37, see dd0e4da dirt record): gate A==B strict PASS 7/7; rollout 15/16 with fresh_reset FAIL caused solely by the validator dict bug (reset_pos carries cache_capacity_tokens; all semantic sub-checks true in data); C==A FAIL with C.condition==warmup X. Dict bug fixed in ec3b4f1; C1/C2 recovery probe added; rerun pending. Rerun on fixed code (2026-09-12, base 06ba33c clean): gate 7/7 PASS; rollout PASS all 16 assertions including fresh_reset; C==A FAIL (C.condition==warmup X once); recovery RECOVERED_IMMEDIATELY (C1==C2==A bitwise). The post-rollout first-encode reversion lasts exactly one prepare and self-heals. WARMED_RESET_PASS not achieved, so C1R closure needs an explicit reset-criterion decision; C2 stays blocked.",
+   "notes": "No further GPU work queued: the recovery question is answered. Pending decision is interpretive \u2014 whether C1R closes with a qualified post-warmup reset criterion (rollout 16/16 PASS + immediate recovery) or requires more evidence. No optimization, no production change."
   },
   {
    "id": "C2",
@@ -609,10 +612,10 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C1R \u2014 dict bug fixed, recovery probe added; warmed-reset rerun pending (gpu-exclusive)"
+   "C1R \u2014 rerun ingested; closure decision pending (source-cpu, no GPU)"
   ],
   "readyNow": [
-   "warmed validator reset test (throwaway prepare + strict A/B gate + conditional rollout + strict C)"
+   "C1R closure decision: qualified PASS with warmed-Y baseline note vs further evidence"
   ],
   "blocked": [
    "C2 (waiting on reset-discriminator classification)",
@@ -671,6 +674,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (dict-fix cycle)",
    "change": "Fixed the reset_pos whole-dict comparison bug (always False; root cause of both fresh_reset FAILs) via reset_cursors_at_bootstrap with a 2-test CPU regression file, and extended --mode warmed-reset with retained warmup hashes plus C1/C2 recovery classification (ec3b4f1). Committed the /tmp warmed evidence with a provenance dirt record (dd0e4da): gate 7/7 PASS, rollout FAIL purely the dict bug, C==warmup X. C1R stays running, C2 stays blocked; main untouched; no push."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (rerun-ingest cycle)",
+   "change": "Ingested warmed-reset rerun (f6ec5a0, clean tree): rollout PASS 16/16 incl. fresh_reset, recovery RECOVERED_IMMEDIATELY, C==warmup X for exactly one post-rollout prepare. Also fixed a KeyError crash in the new recovery probe (06ba33c). C1R stays running pending an explicit reset-criterion/closure decision; C2 stays blocked; main untouched; no push."
   }
  ]
 }
