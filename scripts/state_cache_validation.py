@@ -786,6 +786,24 @@ def warmed_strict_equal(capture_a: dict[str, Any], capture_b: dict[str, Any]) ->
     return all(detail.values()), detail
 
 
+WARMED_INPUT_ORDER = (
+    "noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context",
+)
+
+
+def warmed_input_strict_equal(warmup: dict[str, Any], capture: dict[str, Any]) -> tuple[bool, dict[str, bool]]:
+    """Strict bitwise equality on the prepare-side input keys only.
+
+    The throwaway warmup capture holds input hashes but no DiT outputs,
+    so the full 7-key comparison does not apply to it.
+    """
+    detail = {
+        name: frozen_strict_equal(warmup["frozen"][name], capture["frozen"][name])
+        for name in WARMED_INPUT_ORDER
+    }
+    return all(detail.values()), detail
+
+
 def reset_cursors_at_bootstrap(reset_pos: dict[str, Any], frame_seqlen: int) -> bool:
     """Fresh-bootstrap cursor check: compare the two cursor keys only.
 
@@ -820,6 +838,8 @@ def run_warmed_reset(args: argparse.Namespace) -> dict[str, Any]:
     capture_c2 = None
     c1_detail = None
     c2_detail = None
+    c1_warmup_detail = None
+    c2_warmup_detail = None
     recovery: str | None = None
     if gate_pass:
         rollout = run_gpu(args, pipe=pipe)
@@ -833,8 +853,8 @@ def run_warmed_reset(args: argparse.Namespace) -> dict[str, Any]:
         capture_c2 = run_bootstrap_capture(pipe, session_args, device)
         c1_vs_a, c1_detail = warmed_strict_equal(capture_a, capture_c1)
         c2_vs_a, c2_detail = warmed_strict_equal(capture_a, capture_c2)
-        c1_vs_warmup, _ = warmed_strict_equal(warmup_stripped, capture_c1)
-        c2_vs_warmup, _ = warmed_strict_equal(warmup_stripped, capture_c2)
+        c1_vs_warmup, c1_warmup_detail = warmed_input_strict_equal(warmup_stripped, capture_c1)
+        c2_vs_warmup, c2_warmup_detail = warmed_input_strict_equal(warmup_stripped, capture_c2)
         if c1_vs_a and c2_vs_a:
             recovery = "RECOVERED_IMMEDIATELY"
         elif c1_vs_warmup and c2_vs_a:
@@ -877,6 +897,8 @@ def run_warmed_reset(args: argparse.Namespace) -> dict[str, Any]:
         "capture_c2": strip_tensors(capture_c2) if capture_c2 is not None else None,
         "recovery_c1_vs_a_strict": c1_detail,
         "recovery_c2_vs_a_strict": c2_detail,
+        "recovery_c1_vs_warmup_strict": c1_warmup_detail,
+        "recovery_c2_vs_warmup_strict": c2_warmup_detail,
         "recovery": recovery,
         "verdict": {
             "classification": classification,
