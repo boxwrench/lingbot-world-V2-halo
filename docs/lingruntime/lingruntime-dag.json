@@ -665,7 +665,7 @@
    "id": "P2.2",
    "name": "Plan 2 \u2014 Mechanism research",
    "type": "research",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -684,15 +684,17 @@
    "nextIf": [
     "done -> P2.3"
    ],
-   "evidence": [],
-   "result": "RUNNING (2026-09-13): mechanism research on P2.1 residuals (GEMM gaps, block-remainder split, SDPA alternatives).",
+   "evidence": [
+    "experiment/p2-baseline: docs/artifacts/p22-p23-research-20260913.md"
+   ],
+   "result": "DONE (2026-09-13). GEMM: no gaps (floor). Block split: time-projection memo NEW (timestep-only source proof); camera hoist REJECTED (per-block weights); modulation re-confirmed dead. SDPA PARKED (C8).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.3",
    "name": "Plan 2 \u2014 Candidate ranking",
    "type": "research",
-   "status": "blocked",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -712,14 +714,14 @@
     "done -> P2.4"
    ],
    "evidence": [],
-   "result": "",
+   "result": "DONE (2026-09-13). Ranked: time-projection memo ACCEPTED (~66ms/phase, microbench 22.2ms/call, high confidence, low complexity).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.4",
    "name": "Plan 2 \u2014 Implementation",
    "type": "implementation",
-   "status": "blocked",
+   "status": "running",
    "priority": 50,
    "resource": "implementation",
    "dependsOn": [
@@ -739,7 +741,7 @@
     "done -> P2.5"
    ],
    "evidence": [],
-   "result": "",
+   "result": "RUNNING (2026-09-13): implementing time-projection memo in isolated worktree.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -913,7 +915,7 @@
  "recommendedQueue": {
   "running": [],
   "readyNow": [
-   "P2.2 mechanism research (source-only; GPU free)"
+   "P2.4 time-projection memo implementation"
   ],
   "blocked": [],
   "deferred": [
@@ -1049,6 +1051,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (P2.1 done)",
    "change": "P2.1 DONE with re-rank (SDPA kernel/GEMMs/block-remainder). P2.2 running."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.2/P2.3 done)",
+   "change": "P2.2/P2.3 DONE: memo accepted for P2.4; camera rejected; SDPA parked. P2.4 running."
   }
  ]
 }
