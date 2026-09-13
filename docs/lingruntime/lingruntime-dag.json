@@ -260,10 +260,13 @@
     "docs/artifacts/state-cache-c1r-20260912/README.md",
     "docs/artifacts/state-cache-c1r-20260912/c1r-gpu.json",
     "commit c4f9656 (C1R first execution)",
-    "commit 77f0ad7 (reset discriminator mode)"
+    "commit 77f0ad7 (reset discriminator mode)",
+    "docs/artifacts/state-cache-c1r-20260912/reset-discriminator.json",
+    "commit e5730db (discriminator result)",
+    "commit bad1234 (use-after-del fix)"
    ],
-   "result": "First exact-RC1 execution (2026-09-12, validator base 4f92ca5): validator FAIL driven solely by fresh_reset; 15 of 16 assertions PASS (exact 12/6 three-step config, 64/64 calls, reference checks, clean-t0 overwrites, eviction/roll boundaries, scenario coverage, stale-state and broken-KV controls). Post-rollout fresh bootstrap reproduced neither x0 nor layer-0 clean K/V bitwise; positions and cursors correct. Cause unresolved: persistent-state leak vs invalid hash criterion; A/B/C tensor discriminator now active.",
-   "notes": "First execution recorded; full rollout reruns only inside the discriminator and only if fresh A==B bitwise. Preparation/source work is CPU-only; execution owns gpu:strix-gfx1151 exclusively."
+   "result": "Reset discriminator executed (2026-09-12, validator base bad1234): classification BASELINE_NONDETERMINISM_OR_STRICT_HASH. Fresh A/B bootstraps differ with no rollout between, so the rollout was skipped and no leak is claimed. Noise/plucker/text-context stable bitwise; condition chunk 0 differs (max-abs 0.159), driving x0 (0.167), clean K (0.156), clean V (1.478) beyond tolerance. A matches the first-execution chunk 0 bitwise (first prepare reproduces across processes); third prepare matches B (X,Y,Y). VAE feature-cache staleness eliminated by inspection; first-encode warmup effect is the follow-up hypothesis, not a conclusion.",
+   "notes": "Next: minimal first-encode determinism probe (several fresh prepares on one pipe, compare condition hashes) to confirm the X,Y,Y pattern and decide a valid reset criterion. No full rollout, no optimization."
   },
   {
    "id": "C2",
@@ -316,7 +319,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged. Current gate (2026-09-12): C1R reset discriminator must classify the fresh_reset FAIL before any C2 work."
+   "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged. Current gate (2026-09-12): C1R reset discriminator must classify the fresh_reset FAIL before any C2 work. Discriminator update (2026-09-12): no rollout-dependent leak evidenced; reset closure now waits on the first-encode probe and a valid reset criterion. Still no C2 work."
   },
   {
    "id": "C3",
@@ -601,10 +604,10 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C1R \u2014 first execution recorded; reset discriminator queued (gpu-exclusive)"
+   "C1R \u2014 discriminator classified; first-encode probe queued (gpu-exclusive)"
   ],
   "readyNow": [
-   "C1R reset-discriminator execution"
+   "C1R first-encode determinism probe (several fresh prepares, condition-hash comparison)"
   ],
   "blocked": [
    "C2 (waiting on reset-discriminator classification)",
@@ -648,6 +651,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (reset-discriminator cycle)",
    "change": "Ingested /tmp/state-cache-c1r-gpu.json and independently verified the verdict: FAIL driven solely by fresh_reset (x0, layer-0 clean K and V all differ; positions/cursors correct); all 15 other assertions PASS on the exact RC1 operating point. Committed the evidence (c4f9656) and a minimal A/B/C tensor discriminator mode (77f0ad7; helpers unit-tested on CPU, run_gpu body untouched). C1R set to running, C2 stays blocked on the reset classification. No optimization started; main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (discriminator-ingest cycle)",
+   "change": "Ingested reset-discriminator.json: A/B differ without rollout (condition 0.159, x0 0.167, K 0.156, V 1.478; noise/plucker/text stable), rollout skipped per protocol, classification BASELINE_NONDETERMINISM_OR_STRICT_HASH with no leak claim. A==first-execution chunk 0 bitwise; probe==B. VAE feature-cache staleness eliminated (encode brackets clear_cache). Evidence committed (e5730db); C1R stays running with first-encode probe queued; C2 stays blocked; main untouched."
   }
  ]
 }

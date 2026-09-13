@@ -171,6 +171,14 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   commit `77f0ad7`); the expensive rollout reruns only if fresh A==B bitwise.
   Evidence: [`docs/artifacts/state-cache-c1r-20260912/`](../artifacts/state-cache-c1r-20260912/README.md).
 
+  Discriminator result (2026-09-12): `BASELINE_NONDETERMINISM_OR_STRICT_HASH`
+  — A/B fresh bootstraps differ with no rollout between (condition 0.159,
+  x0 0.167, K 0.156, V 1.478; noise/plucker/text stable), so the rollout was
+  skipped and no leak is claimed. A matches the first-execution chunk 0
+  bitwise; a third prepare matched B. VAE feature-cache staleness eliminated
+  by inspection; first-encode warmup effect is the follow-up hypothesis.
+  Next: minimal first-encode determinism probe, then a valid reset criterion.
+
 ### Blocked
 
 C2 through C7 remain blocked in the chain shown above; C8 remains deferred.
@@ -277,13 +285,13 @@ forward:
 
 ```text
 RUNNING
-C1R — first execution recorded; reset discriminator queued (gpu-exclusive)
+C1R — discriminator classified; first-encode probe queued (gpu-exclusive)
 
 READY
-C1R reset-discriminator execution
+C1R first-encode determinism probe (several fresh prepares, condition-hash comparison)
 
 BLOCKED
-C2 — quality causality, waiting on reset-discriminator classification
+C2 — quality causality, waiting on a valid reset criterion
 C3, C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
 
 DEFERRED
