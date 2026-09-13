@@ -47,7 +47,7 @@ Human visual gate: **A5 VISUAL_PASS (scoped)** — 3-step acceptable on tested
 mature rollouts (2 scenes + 2 reseed realizations); universal superiority not
 established. Evidence: `experiment/a5-visual-3v4:docs/artifacts/a5-visual-3v4-20260912/VERDICT.md`.
 
-## Known product limitations (accepted, not bugs in the runtime)
+## Known product limitations and open investigations
 
 1. **Long-horizon causal drift.** Quality degrades from ~15–30 actions and can
    collapse structurally by ~45–60 actions on tested trajectories, far beyond
