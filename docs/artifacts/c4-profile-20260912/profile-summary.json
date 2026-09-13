@@ -1,0 +1,45 @@
+{
+  "warning": "Intrusive CUDA-event/module-hook run; use only for attribution, not acceptance latency.",
+  "profiled_chunk": 13,
+  "rolled": true,
+  "phases": {
+    "denoise": {
+      "intrusive_wall_ms": 961.928220000118,
+      "module_exclusive_total_ms": 948.6521161943674,
+      "module_class_exclusive_ms": {
+        "CausalWanSelfAttention": 457.951144605875,
+        "Linear": 330.48701567202806,
+        "CausalWanAttentionBlock": 88.19634827785194,
+        "WanRMSNorm": 36.318161845207214,
+        "WanCrossAttention": 21.11458195745945,
+        "WanLayerNorm": 12.089848911389709,
+        "Conv3d": 1.352959007024765,
+        "CausalHead": 0.4996259771287441,
+        "Sequential": 0.4441549414768815,
+        "SiLU": 0.1559549979865551,
+        "GELU": 0.04232000093907118
+      },
+      "self_sdpa_ms": 379.432421207428,
+      "cross_sdpa_ms": 19.211350917816162
+    },
+    "clean": {
+      "intrusive_wall_ms": 323.07262206450105,
+      "module_exclusive_total_ms": 320.57292176783085,
+      "module_class_exclusive_ms": {
+        "CausalWanSelfAttention": 150.91814936697483,
+        "Linear": 115.91558748483658,
+        "CausalWanAttentionBlock": 29.31148903630674,
+        "WanRMSNorm": 12.196478977799416,
+        "WanCrossAttention": 7.0713899582624435,
+        "WanLayerNorm": 4.122917981818318,
+        "Conv3d": 0.7752770185470581,
+        "CausalHead": 0.16991499066352844,
+        "SiLU": 0.04783899895846844,
+        "Sequential": 0.031918954104185104,
+        "GELU": 0.011958999559283257
+      },
+      "self_sdpa_ms": 127.06336498260498,
+      "cross_sdpa_ms": 6.441050976514816
+    }
+  }
+}

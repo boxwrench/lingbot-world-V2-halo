@@ -1,0 +1,42 @@
+{
+  "selection": {
+    "action_id": 14,
+    "rule": "rolled action nearest base-RGB and next-ready medians",
+    "source": "2 run(s): benchmark-run1.json, benchmark-run2.json"
+  },
+  "medians_ms": {
+    "action_to_base_rgb_ms": {
+      "median": 969.8561864788644,
+      "min": 960.8129790285602,
+      "max": 976.9305819645524
+    },
+    "action_to_next_ready_ms": {
+      "median": 1297.136504552327,
+      "min": 1289.6665550069883,
+      "max": 1308.5342469858006
+    },
+    "denoise_ms": {
+      "median": 940.3894775314257,
+      "min": 931.6103409510106,
+      "max": 943.9953360706568
+    },
+    "transformer_ms": {
+      "median": 945.0036565540358,
+      "min": 935.3687310358509,
+      "max": 948.0954440077767
+    },
+    "clean_kv_ms": {
+      "median": 307.9653884633444,
+      "min": 305.1730659790337,
+      "max": 310.64778403379023
+    }
+  },
+  "rolled_actions": 8,
+  "gpu_synchronized_forwards_ms": {
+    "denoise_1_t999": 327.74165901355445,
+    "denoise_2_t899": 308.6676530074328,
+    "denoise_3_t702": 304.57630299497396,
+    "clean_kv_t0": 305.1730659790337
+  },
+  "finite": true
+}

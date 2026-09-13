@@ -1,0 +1,26 @@
+{
+  "rule": "intrusive module-exclusive attribution on rolled chunk 13; raw-ms order only, not optimizability",
+  "hotspots": [
+    {
+      "rank": 1,
+      "area": "denoise non-SDPA (Linears, norms, blocks)",
+      "ms": 582.49579879269
+    },
+    {
+      "rank": 2,
+      "area": "denoise self-SDPA (rolled rectangular)",
+      "ms": 379.432421207428
+    },
+    {
+      "rank": 3,
+      "area": "clean-KV non-SDPA recomputation",
+      "ms": 196.00925708189607
+    },
+    {
+      "rank": 4,
+      "area": "clean-KV self-SDPA",
+      "ms": 127.06336498260498
+    }
+  ],
+  "note": "Raw ms does not equal opportunity (denoise Linears are GEMM/TunableOp-covered). C5 research decides what is actionable; PF1/PF2 are now active inputs since C3/C4 confirm the hotspots they describe."
+}
