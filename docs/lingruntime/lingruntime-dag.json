@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-12",
- "updatedBy": "top-level orchestrator (orchestration/reconcile-c1)",
+ "updatedBy": "orchestrator (external review response)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -367,7 +367,7 @@
     "C2 screen verdict (docs/artifacts/c2-screen-20260912/README.md)",
     "C0B latency envelope (docs/artifacts/phase0-20260912/)"
    ],
-   "result": "DONE (2026-09-12). Contract frozen at the RC1 point: chunk 1, local 12, sink 6, 3-drop-957, 384x672, TAEHV taew2_1.pth FP16, no-regression responsiveness envelope (next-ready P50 ~1259 ms), 16-action quality horizon. 18+6 and 4-step rejected on C2 evidence (divergence without benefit; softer).",
+   "result": "DONE (2026-09-12). Contract frozen at the RC1 point: chunk 1, local 12, sink 6, 3-drop-957, 384x672, TAEHV taew2_1.pth FP16, no-regression responsiveness envelope (next-ready P50 ~1259 ms), 16-action quality horizon. 18+6 and 4-step rejected on C2 evidence (divergence without benefit; softer). Scope note (external review 2026-09-12): 3-step is the accepted operating point, quality-supported on the tested warmed-Y scene/configuration; universal 3-over-4 direction awaits A5.",
    "notes": "Decision/documentation step; consumed C2 + C0B only, no new GPU work."
   },
   {
@@ -435,7 +435,10 @@
    "nextIf": [
     "candidate accepted for a trial -> C6A"
    ],
-   "evidence": [],
+   "evidence": [
+    "docs/lingruntime/c5a-deliberation-report-20260912.md (verbatim worker report, preserved in-repo B001 A6)",
+    "docs/lingruntime/c5-deliberation-notes.md (adjudication trail)"
+   ],
    "result": "DONE (2026-09-12, parallel source research). Mechanism: healthy K-linear flash SDPA (~30 ms per 1024 K per phase) + TunableOp-covered GEMMs at floor; uncovered remainder ~190-215 ms (attn body, block dispatch, 48 ms eager norms). ACCEPTED for C6A: modulation-split hoist (5-12 ms) + compiled norm islands (12-22 ms), both inside the accepted pure-helper envelope, cache untouched. DECLINED for C6: 12->10 K-reduction (breaks the frozen C3 contract; recorded as a future C2-branch screen candidate). Structural claims verified in-repo.",
    "notes": "Research complete; implementation moves to C6A."
   },
@@ -467,7 +470,9 @@
    "nextIf": [
     "candidate accepted for a trial -> C6B"
    ],
-   "evidence": [],
+   "evidence": [
+    "docs/lingruntime/c5-deliberation-notes.md (C5B reconstructed-from-record; verbatim report lost, see A6)"
+   ],
    "result": "DONE (2026-09-12, parallel source research). Mechanism: clean-KV is a full fourth DiT forward; ~85%+ of non-SDPA is load-bearing projections/norms/FFN (downstream K/V dependency), already-tuned GEMMs; one true waste: post-store tail of block 29 + head/unpatchify feeding the discarded return (early-exit point verified on pinned upstream 45fa406: stores precede the SDPA read). ACCEPTED for C6B: dead-tail skip (6-12 ms) + host-KV-cursor adder (measured -10 ms). Declined: conditioning hoist (invasive, 2-6 ms). PF2 corrected to partially actionable (~16-28 ms package); the report's stale gate section (C1R FAIL/queued) is refuted by the committed C1R closure (f6ec5a0, rollout 16/16 PASS).",
    "notes": "Research complete; implementation moves to C6B. Both C5 reports' stale C1R-gate passages are superseded."
   },
@@ -501,8 +506,11 @@
     "measured improvement and correctness/quality preserved -> feed into C7",
     "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"
    ],
-   "evidence": [],
-   "result": "REJECTED (2026-09-12, negative result preserved). Fused norm-affine + compiled qk-rmsnorm islands implemented (branch experiment/c6a-helper-islands, unmerged): CPU parity held, but Inductor-CUDA codegen diverges ~0.06/0.01 from eager on gfx1151 while every norm path feeds the bitwise-0.0 K/V cache gates. C5A modulation-hoist also refuted (per-block modulation). No acceptable denoise-phase candidate remains.",
+   "evidence": [
+    "branch experiment/c6a-helper-islands @0a57f97: docs/artifacts/c6a-20260912/{VERDICT.md, norm_check.json}",
+    "tests/test_pure_islands_c6a.py CPU 2/2 (branch)"
+   ],
+   "result": "REJECTED (2026-09-12, negative result preserved). Fused norm-affine + compiled qk-rmsnorm islands implemented (branch experiment/c6a-helper-islands, unmerged): CPU parity held, but Inductor-CUDA codegen diverges ~0.06/0.01 from eager on gfx1151 while every norm path feeds the bitwise-0.0 K/V cache gates. C5A modulation-hoist also refuted (per-block modulation). No acceptable denoise-phase candidate remains. B001 A2: probe norm_check.json preserved in-repo (@0a57f97); 0.057/0.0328 reconciled as comparison-scope difference (live max-over-states vs one saved config), verdict unchanged.",
    "notes": "Failed with evidence; do not merge. Verdict: docs/artifacts/c6a-20260912/VERDICT.md on the branch."
   },
   {
@@ -535,9 +543,13 @@
     "measured improvement and correctness/quality preserved -> feed into C7",
     "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"
    ],
-   "evidence": [],
-   "result": "ACCEPTED (2026-09-12). kv_write_only dead-tail skip: C1-equiv latents bitwise 0.0 vs committed main-path A1 (16/16 chunks); clean-forward beats in-run denoise-3 in 15/15 actions (-4..-8 ms rolled, mean ~-6 ms off next-ready). Absolute medians drift-confounded across the day; within-run split is the robust metric. Evidence: docs/artifacts/c6b-20260912/ (branch experiment/c6b-clean-tail).",
-   "notes": "Accepted into the C7 set. Host-cursor adder noted for later, not combined."
+   "evidence": [
+    "branch experiment/c6b-clean-tail @1ec5f78: docs/artifacts/c6b-20260912/{benchmark.json, latents_compare.json, screen-A1-accepted_latents.pt, README.md}",
+    "external review 2026-09-12: accepted claim ~6 ms off clean-KV/next-ready path, bitwise-identical accepted latents; no base-RGB claim",
+    "batch audit docs/audits/B001-c1r-through-c7-20260912/AUDIT.md (AUDIT_PASS_WITH_ACTIONS)"
+   ],
+   "result": "ACCEPTED (2026-09-12). kv_write_only dead-tail skip: C1-equiv latents bitwise 0.0 vs committed main-path A1 (16/16 chunks); clean-forward beats in-run denoise-3 in 14/15 actions (action 7 forward-tied; corrected 2026-09-12 B001 A1; immutable evidence commit 50dc857 message preserved as-is) (-4..-8 ms rolled, mean ~-6 ms off next-ready). Absolute medians drift-confounded across the day; within-run split is the robust metric. Evidence: docs/artifacts/c6b-20260912/ (branch experiment/c6b-clean-tail).",
+   "notes": "Accepted into the C7 set. Host-cursor adder noted for later, not combined. Scope: next-ready path only, no base-RGB claim (external review 2026-09-12)."
   },
   {
    "id": "C7",
@@ -565,10 +577,11 @@
     "new bottleneck identified -> spawn new C5x node(s) against the updated ranking; the DAG is iterative, not a one-shot pipeline"
    ],
    "evidence": [
-    "C6B eval capture (cited: bitwise 0.0, consistent -6 ms)",
-    "integration-tree tests 3/3 + prepare_upstream green"
+    "branch experiment/c7-integration @914c783: docs/artifacts/c7-20260912/VERDICT.md",
+    "integration-tree tests 3/3 + prepare_upstream green",
+    "C6B evidence per C6B node (branch experiment/c6b-clean-tail @1ec5f78)"
    ],
-   "result": "DONE (2026-09-12). Integrated {C6B} on experiment/c7-integration; ranking unchanged by construction; no new C5x (no new information). Incidental whitespace-drift hygiene in shared upstream copies recorded.",
+   "result": "DONE (2026-09-12). Integrated {C6B} on experiment/c7-integration; ranking unchanged by construction; no new C5x (no new information). Incidental whitespace-drift hygiene in shared upstream copies recorded. B001 A1: 14/15 correction applied to branch verdict (action 7 tied); integration set @914c783 includes C6B audit corrections (14/15, preserved latents, scope note).",
    "notes": "Loop complete: no valid work remains; C8 stays deferred (no qualifying residual)."
   },
   {
@@ -630,16 +643,14 @@
  "recommendedQueue": {
   "running": [],
   "readyNow": [],
-  "blocked": [
-   "C6A",
-   "C6B",
-   "C7"
-  ],
+  "blocked": [],
   "deferred": [
-   "C8"
+   "C8",
+   "A5 scheduled quality follow-up (blinded second-rater on committed PNGs + one second-scene matched-state warmed-Y 3v4 screen; needs external rater)"
   ],
   "independentWorkAvailableNow": [
-   "repository/DAG integration and review"
+   "main integration review (C6B set pending external review of B001 corrections)",
+   "A5 blinded-protocol design on committed PNGs"
   ],
   "notYetValid": [
    "performance optimization",
@@ -732,6 +743,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C7 cycle)",
    "change": "C7 done: C6B integrated and verified in-tree; ranking confirmed unchanged; no new C5x; C8 remains deferred \u2014 no residual meets its entry bar. All nodes terminal. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "orchestrator (external review response)",
+   "change": "Accept B001 AUDIT_PASS_WITH_ACTIONS. Resolve A1 (14/15 corrections: c6b@1ec5f78, c7@914c783; 50dc857 immutable), A2 (C6B latents preserved; C6A probe JSON preserved @0a57f97 with 0.057/0.0328 scope reconciliation), A3 (branch-qualified evidence paths; C5/C6 evidence arrays filled), A4 (queue blocked[] cleared; md synced), A6 (C5A verbatim report + deliberation notes preserved). Field 4 amended to operating-point scope. A5 scheduled (blinded second-rater + second scene; external rater needed). C8 stays deferred. C6B main integration pending external review of these corrections; baseline tag follows integration."
   }
  ]
 }

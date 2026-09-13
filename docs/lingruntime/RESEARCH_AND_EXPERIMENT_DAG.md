@@ -157,7 +157,7 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   [`docs/artifacts/state-cache-validation-20260912/README.md`](../artifacts/state-cache-validation-20260912/README.md),
   `summary.json`, `fixtures.json`, and `gfx1151-validation.json`.
 
-### Running
+### Ran to closure (no running nodes; history preserved below)
 
 - **C1R** — exact-RC1 state/cache confirmation. First execution (2026-09-12)
   recorded validator FAIL driven solely by `fresh_reset`: 15 of 16 assertions
@@ -215,7 +215,9 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
 
 C2 is DONE (PASS 2026-09-12): A/A bitwise zero floor; window divergence
 onset exactly at smaller-window first eviction with no viewed
-degradation; 3-step over 4-step on viewed frames; decoder MAD 0.0237.
+degradation; 3-step over 4-step on viewed frames (tested warmed-Y
+scene/configuration — accepted operating point, universal direction pending
+A5 per external review 2026-09-12); decoder MAD 0.0237.
 Evidence: `docs/artifacts/c2-screen-20260912/` (branch
 `experiment/c2-quality-screen`, commit `889500f`).
 
@@ -339,9 +341,12 @@ BLOCKED
 
 DEFERRED
 C8 — deferred: no residual meets its entry bar
+A5 — scheduled quality follow-up (blinded second-rater on committed PNGs +
+one second-scene matched-state warmed-Y 3v4 screen; needs external rater)
 
 INDEPENDENT WORK AVAILABLE NOW
-repository/DAG integration and review
+main integration review (C6B set pending external review of B001 corrections)
+A5 blinded-protocol design on committed PNGs
 
 NOT YET VALID
 performance optimization
