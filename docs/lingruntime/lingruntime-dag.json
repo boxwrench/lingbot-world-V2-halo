@@ -636,7 +636,7 @@
    "id": "P2.1",
    "name": "Plan 2 \u2014 Fresh quiet denoise profile",
    "type": "measurement",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -655,15 +655,17 @@
    "nextIf": [
     "done -> P2.2"
    ],
-   "evidence": [],
-   "result": "RUNNING (2026-09-13): quiet intrusive denoise profile on P2.0 baseline state.",
+   "evidence": [
+    "experiment/p2-baseline: docs/artifacts/p21-profile-20260913/{live-metrics.json, module-metrics.json, README.md}"
+   ],
+   "result": "DONE (2026-09-13). Intrusive steady-state profile on main: baseRGB~=denoise(816)+decode(38)+host(10); clean-KV irrelevant to base-RGB. Re-rank: SDPA kernel ~44% (~360ms, kernel not dispatch), tuned GEMMs ~38% (~310ms), block remainder ~10% (~85ms, needs NEW mechanism), norms 4.5% (rejected), rest <3%. Evidence: experiment/p2-baseline docs/artifacts/p21-profile-20260913/.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.2",
    "name": "Plan 2 \u2014 Mechanism research",
    "type": "research",
-   "status": "blocked",
+   "status": "running",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -683,7 +685,7 @@
     "done -> P2.3"
    ],
    "evidence": [],
-   "result": "",
+   "result": "RUNNING (2026-09-13): mechanism research on P2.1 residuals (GEMM gaps, block-remainder split, SDPA alternatives).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -911,7 +913,7 @@
  "recommendedQueue": {
   "running": [],
   "readyNow": [
-   "P2.1 quiet denoise profile"
+   "P2.2 mechanism research (source-only; GPU free)"
   ],
   "blocked": [],
   "deferred": [
@@ -1042,6 +1044,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (P2.0 done)",
    "change": "P2.0 DONE: accepted baseline on main 9cc986c (baseRGB 847.4/963.9, nextReady 1136.5/1280.3, denoise 816.4, n=45). C6B next-ready-only verified by code identity + reproduced effect. P2.1 profiling started."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.1 done)",
+   "change": "P2.1 DONE with re-rank (SDPA kernel/GEMMs/block-remainder). P2.2 running."
   }
  ]
 }
