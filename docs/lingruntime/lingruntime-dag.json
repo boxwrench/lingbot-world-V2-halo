@@ -609,7 +609,7 @@
    "id": "P2.0",
    "name": "Plan 2 \u2014 Establish accepted baseline",
    "type": "measurement",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [],
@@ -627,17 +627,16 @@
     "done -> P2.1"
    ],
    "evidence": [
-    "docs/lingruntime/p2-baseline-static-20260912.md",
-    "main 9cc986c tag lingruntime-gfx1151-b001"
+    "experiment/p2-baseline: docs/artifacts/p20-baseline-20260913/{waterfall,aa-run-1,aa-run-2}-benchmark.json, summary.json, environment/, README.md"
    ],
-   "result": "RUNNING (2026-09-12): static reconstruction committed (docs/lingruntime/p2-baseline-static-20260912.md); GPU measurement queued, serialized. C6B confirmed next-ready-only.",
+   "result": "DONE (2026-09-13). 3x15 rolled on tagged main (n=45): baseRGB P50 847.4/P95 963.9; nextReady P50 1136.5/P95 1280.3; denoise P50 816.4 (forwards even ~274/271/273); clean-vs-d3 44/45 mean -5.4. C6B verified next-ready-only (model code byte-identical to verified tip; no presentation/math changes). Evidence: experiment/p2-baseline docs/artifacts/p20-baseline-20260913/. C0B absolutes retired.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.1",
    "name": "Plan 2 \u2014 Fresh quiet denoise profile",
    "type": "measurement",
-   "status": "blocked",
+   "status": "running",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -657,7 +656,7 @@
     "done -> P2.2"
    ],
    "evidence": [],
-   "result": "",
+   "result": "RUNNING (2026-09-13): quiet intrusive denoise profile on P2.0 baseline state.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -912,7 +911,7 @@
  "recommendedQueue": {
   "running": [],
   "readyNow": [
-   "P2.0 GPU baseline measurement"
+   "P2.1 quiet denoise profile"
   ],
   "blocked": [],
   "deferred": [
@@ -1038,6 +1037,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (A5 closure)",
    "change": "A5 CLOSED with scoped human VISUAL_PASS (rater: owner): 3-step acceptable on tested mature rollouts (2 scenes + 2 reseed realizations), no consistent advantage either way, universal superiority not established. Seed-42 scene-2 transient did not recur. Verdict on experiment/a5-visual-3v4. Field-4 scope stands as written."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.0 done)",
+   "change": "P2.0 DONE: accepted baseline on main 9cc986c (baseRGB 847.4/963.9, nextReady 1136.5/1280.3, denoise 816.4, n=45). C6B next-ready-only verified by code identity + reproduced effect. P2.1 profiling started."
   }
  ]
 }
