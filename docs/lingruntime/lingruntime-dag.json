@@ -374,7 +374,7 @@
    "id": "C4",
    "name": "Profile the quality-approved runtime",
    "type": "profile",
-   "status": "running",
+   "status": "done",
    "priority": 40,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -399,15 +399,19 @@
    "nextIf": [
     "ranked hotspot list feeds C5A/C5B naming and count"
    ],
-   "evidence": [],
-   "result": null,
-   "notes": "Capture mirrors the C0B apparatus on the frozen point (== RC1 config): browser waterfall run (port 8781, 15 actions) + intrusive action-13 profile via the pure-compile wrapper. Tooling committed on experiment/c4-profile (24a860f)."
+   "evidence": [
+    "docs/artifacts/c4-profile-20260912/README.md",
+    "docs/artifacts/c4-profile-20260912/ranking.json",
+    "commit 549a3d0"
+   ],
+   "result": "DONE (2026-09-12). Frozen-point capture: pooled browser waterfall x2 (n=8 rolled, base 969.9 / ready 1297.1) + intrusive chunk-13 attribution. Attribution shape reproduces C0B; +30 ms level shift vs C0B flagged as environmental (busy host), C0B envelope stands as acceptance reference. Measured ranking: denoise non-SDPA 582.5, denoise self-SDPA 379.4, clean-KV non-SDPA 196.0, clean-KV self-SDPA 127.1 (raw-ms order).",
+   "notes": "C5A takes the denoise phase, C5B the clean-KV transaction (phase-level assignment from the measured split)."
   },
   {
    "id": "C5A",
-   "name": "Measured hotspot #1 research",
+   "name": "Denoise-phase hotspot research (self-SDPA PF1 + non-SDPA audit)",
    "type": "research",
-   "status": "blocked",
+   "status": "ready",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -419,7 +423,7 @@
    "canRunParallelWith": [
     "C5B"
    ],
-   "question": "(set by C4's ranking) What mechanism actually explains measured hotspot #1, and what candidate interventions are supported by source/trace evidence rather than assumption?",
+   "question": "What mechanism actually explains the denoise-phase cost (self-SDPA 379 ms rolled-rectangular, non-SDPA 582 ms incl. TunableOp-covered Linears), and what concrete evidence-supported candidate interventions exist?",
    "entryCriteria": [
     "C4 done"
    ],
@@ -433,13 +437,13 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "Deliberately unlabeled (not pre-named attention/KV/graph-capture/decoder/fusion/PM4/etc.) until C4 says what it is. Independent of C5B; both are normally source/API-research and safely parallelizable."
+   "notes": "PF1 active input. C4 raw-ms #1 is denoise non-SDPA but those are GEMM-covered; research must audit before proposing. Parallelizable with C5B."
   },
   {
    "id": "C5B",
-   "name": "Measured hotspot #2 research",
+   "name": "Clean-KV transaction research (PF2)",
    "type": "research",
-   "status": "blocked",
+   "status": "ready",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -451,7 +455,7 @@
    "canRunParallelWith": [
     "C5A"
    ],
-   "question": "(set by C4's ranking) What mechanism actually explains measured hotspot #2, and what candidate interventions are supported by source/trace evidence rather than assumption?",
+   "question": "What mechanism actually explains the clean-KV non-SDPA recomputation (~196 ms of the ~308 ms exact t=0 forward), and what concrete evidence-supported candidate interventions exist?",
    "entryCriteria": [
     "C4 done"
    ],
@@ -465,7 +469,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "The DAG shows exactly two hotspot-research nodes as an illustrative minimum; C4 may justify more or fewer. Do not manufacture a fixed count."
+   "notes": "PF2 active input. C1/C1R correctness gates constrain every candidate (exact clean-KV transaction). Parallelizable with C5A."
   },
   {
    "id": "C6A",
@@ -619,13 +623,10 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C4 \u2014 frozen-point profile capture (gpu-exclusive)"
+   "C5A + C5B mechanism research (source-cpu, parallel)"
   ],
   "readyNow": [],
   "blocked": [
-   "C4",
-   "C5A",
-   "C5B",
    "C6A",
    "C6B",
    "C7"
@@ -707,6 +708,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C4 cycle)",
    "change": "C4 design: mirror C0B apparatus (waterfall browser run + intrusive action-13 profile) on the frozen point. C4 running."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C4 cycle)",
+   "change": "Recorded C4 done: attribution reproduces C0B, environmental level shift flagged, C0B envelope stands. Named C5A (denoise phase) and C5B (clean-KV transaction) from the measured phase split; both ready. Main untouched."
   }
  ]
 }
