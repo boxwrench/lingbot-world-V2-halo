@@ -100,21 +100,21 @@ C2 quality causality                             DONE (PASS 2026-09-12)
        precision / recurrence-stress / deeper-limitation branches
         |
         v
-C3 freeze quality-approved semantic contract     READY
+C3 freeze quality-approved semantic contract     DONE (contract frozen 2026-09-12)
         |
         v
-C4 profile the quality-approved runtime          BLOCKED  (distinct from C0B)
+C4 profile the quality-approved runtime          DONE (ranking produced 2026-09-12)
         |
      +--+--+
      |     |
     C5A   C5B
- hotspot#1 hotspot#2 research (unlabeled until C4 ranks them)  BLOCKED, parallelizable
+ denoise-phase / clean-KV research                  DONE (candidates adjudicated)
      |     |
     C6A   C6B
- candidate implementations (isolated worktrees; GPU eval serialized)  BLOCKED
+ C6A REJECTED (failed) / C6B ACCEPTED (done)
      \     /
       \   /
-       C7  integration + reprofile                BLOCKED
+       C7  integration + reprofile                DONE (C6B integrated)
         |
         +----> new bottleneck -> spawns new C5x node(s); the DAG iterates
 
@@ -221,11 +221,11 @@ Evidence: `docs/artifacts/c2-screen-20260912/` (branch
 
 ### Ready
 
-C3 is READY to freeze the contract on the C2/C0B evidence.
+C3 froze the contract (docs/lingruntime/SEMANTIC_CONTRACT.md; 2026-09-12).
 
 ### Blocked
 
-C4 through C7 remain blocked in the chain shown above; C8 remains deferred.
+C4 through C7 are done; C8 remains deferred (no qualifying residual).
 C1's inconclusive result is preserved rather than treated as
 completion-by-assertion.
 
@@ -329,16 +329,16 @@ forward:
 
 ```text
 RUNNING
-C3 — freeze quality-approved semantic contract (source-cpu, decision step)
+all nodes terminal (loop closed 2026-09-12)
 
 READY
-(none — C3 is the active node)
+(none)
 
 BLOCKED
-C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
+(none)
 
 DEFERRED
-C8 — pending a measured residual opportunity from the C4-C7 loop
+C8 — deferred: no residual meets its entry bar
 
 INDEPENDENT WORK AVAILABLE NOW
 repository/DAG integration and review
