@@ -548,7 +548,7 @@
     "external review 2026-09-12: accepted claim ~6 ms off clean-KV/next-ready path, bitwise-identical accepted latents; no base-RGB claim",
     "batch audit docs/audits/B001-c1r-through-c7-20260912/AUDIT.md (AUDIT_PASS_WITH_ACTIONS)"
    ],
-   "result": "ACCEPTED (2026-09-12). kv_write_only dead-tail skip: C1-equiv latents bitwise 0.0 vs committed main-path A1 (16/16 chunks); clean-forward beats in-run denoise-3 in 14/15 actions (action 7 forward-tied; corrected 2026-09-12 B001 A1; immutable evidence commit 50dc857 message preserved as-is) (-4..-8 ms rolled, mean ~-6 ms off next-ready). Absolute medians drift-confounded across the day; within-run split is the robust metric. Evidence: docs/artifacts/c6b-20260912/ (branch experiment/c6b-clean-tail).",
+   "result": "ACCEPTED (2026-09-12). kv_write_only dead-tail skip: C1-equiv latents bitwise 0.0 vs committed main-path A1 (16/16 chunks); clean-forward beats in-run denoise-3 in 14/15 actions (action 5 loses by +0.63 ms; corrected 2026-09-12 external review (interim action-7 text refuted by re-derivation); immutable evidence commit 50dc857 message preserved as-is) (-4..-8 ms rolled, mean ~-6 ms off next-ready). Absolute medians drift-confounded across the day; within-run split is the robust metric. Evidence: docs/artifacts/c6b-20260912/ (branch experiment/c6b-clean-tail).",
    "notes": "Accepted into the C7 set. Host-cursor adder noted for later, not combined. Scope: next-ready path only, no base-RGB claim (external review 2026-09-12)."
   },
   {
