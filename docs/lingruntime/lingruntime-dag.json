@@ -280,7 +280,7 @@
    "id": "C2",
    "name": "Quality causality investigation",
    "type": "experiment",
-   "status": "running",
+   "status": "done",
    "priority": 20,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -329,15 +329,19 @@
      "branch": "deeper model/checkpoint limitation review (not yet instantiated)"
     }
    ],
-   "evidence": [],
-   "result": null,
-   "notes": "Entry evaluation (2026-09-12): first-encode probe confirms the prepare effect (X,Y,Y,Y / X,Y, universal Y); strict post-warmup reset criterion passes (gate 7/7 bitwise + in-rollout fresh_reset strict PASS on the exact RC1 point); blanket unwarmed PASS superseded per the corrected entryCriteria. Mandatory first branch: bounded chunk/context screen. Follow-up branches instantiate only on its evidence. Warmed-Y baseline note carries forward: post-warmup steady state is the valid comparison baseline; single-prepare post-rollout reversion is characterized first-encode behavior, not a quality signal. Screen design committed (8f6ef1a): headless live-path harness modeled on action_response_probe.py; configs A1/A2 (RC1 A/A pair), B (18+6), C (4-step), D (offline canonical-vs-TAEHV on A1 latents); first-encode guards (score chunks 2..17); A/A noise-floor ruler. GPU execution started 2026-09-12."
+   "evidence": [
+    "docs/artifacts/c2-screen-20260912/README.md (verdict PASS)",
+    "docs/artifacts/c2-screen-20260912/analysis/c2_screen_analysis.json",
+    "commit 889500f (screen evidence, branch experiment/c2-quality-screen)"
+   ],
+   "result": "PASS (2026-09-12). Bounded chunk/context screen complete: A1/A2 bitwise identical across processes (zero noise floor); window 18 vs 12 identical until chunk 12 then diverges (smaller-window first eviction; RGB MAD to 0.030, no viewed degradation); denoise 4-step materially different everywhere and visibly softer than 3-step (RC1 choice quality-supported); decoder MAD 0.0237, TAEHV stands. Context-sensitive branch triggered-bounded then resolved on saved frames; all other follow-ups explicitly not triggered with reasons. All runs finite, temporal stats stable, no drift.",
+   "notes": "Closed by screen verdict. C3 consumes this as the quality basis for the contract freeze."
   },
   {
    "id": "C3",
    "name": "Freeze quality-approved semantic contract",
    "type": "decision",
-   "status": "blocked",
+   "status": "ready",
    "priority": 30,
    "resource": "source-cpu",
    "dependsOn": [
@@ -367,7 +371,7 @@
    "nextIf": [],
    "evidence": [],
    "result": null,
-   "notes": "This is a decision/documentation step, not a new GPU experiment; it consumes C2's evidence. The frozen point may or may not equal the RC1 configuration measured in C0B."
+   "notes": "C2 evidence consumed: RC1 point (chunk 1, 12+6, 3-drop-957, 384x672, TAEHV) holds quality vs tested alternatives; 18+6 and 4-step differ without showing superiority (4-step softer on the tested scene). Freeze the eight contract fields traceable to C2/C0B evidence."
   },
   {
    "id": "C4",
@@ -616,11 +620,10 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C2 \u2014 screen GPU execution (gpu-exclusive, ~6-12 min)"
+   "C3 \u2014 freeze quality-approved semantic contract (source-cpu, decision step)"
   ],
   "readyNow": [],
   "blocked": [
-   "C3",
    "C4",
    "C5A",
    "C5B",
@@ -690,6 +693,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C2 cycle)",
    "change": "Designed the bounded chunk/context screen from two read-only surveys (quality signals, screen axes): all knobs are CLI flags except live chunk size (fixed 1); harness exists (scripted actions, save-latents, save-video, offline decoder compare) so no production change was needed. Committed harness+plan (8f6ef1a) on a new branch off main. C2 set running; GPU screen started."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C2 cycle)",
+   "change": "Ingested C2 screen (889500f, pushed): A/A bitwise zero floor, eviction-onset window divergence without degradation, 3-step over 4-step on viewed frames, decoder MAD 0.0237. Recorded C2 done (PASS) with branch dispositions; C3 set ready. Main untouched."
   }
  ]
 }
