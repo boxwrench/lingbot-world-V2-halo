@@ -1,0 +1,434 @@
+{
+  "kind": "gfx1151_encode_determinism_probe",
+  "configuration": {
+    "seed": 42,
+    "chunks": 16,
+    "local_attn_size_frames_total_including_sink": 12,
+    "sink_size_frames": 6,
+    "denoise_schedule": "3-drop-957",
+    "prepares_pipe1": 4,
+    "prepares_pipe2": 2
+  },
+  "provenance": {
+    "base_commit": "e5730db4a2476537a23f0787852c3a13f8c700db",
+    "upstream_commit": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+    "model_dir": "/home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast",
+    "image": "/home/keith/Desktop/github/lingbot-world-V2-halo-wt-c1r/.upstream/lingbot-world-v2/examples/03/image.jpg",
+    "action_path": "/home/keith/Desktop/github/lingbot-world-V2-halo-wt-c1r/.upstream/lingbot-world-v2/examples/03"
+  },
+  "pipe1": {
+    "captures": [
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "10888b9b145608d6fa1a8ac95c13f3e4c5485230d0c80b69e4445c751db4785a",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "condition_pattern": [
+      "X",
+      "Y",
+      "Y",
+      "Y"
+    ],
+    "diffs_vs_first": {
+      "0": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.0,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      },
+      "1": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.15896141529083252,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      },
+      "2": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.15896141529083252,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      },
+      "3": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.15896141529083252,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      }
+    }
+  },
+  "pipe2": {
+    "captures": [
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "e50d85e82144083778ec3e19326b67d97470d9d0c226e304a8eb689708b3aa7a",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+        "timestep_values": [
+          999,
+          899,
+          702
+        ],
+        "frozen": {
+          "noise_chunk_0": {
+            "kind": "tensor",
+            "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+            "shape": [
+              16,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "condition_chunk_0": {
+            "kind": "tensor",
+            "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+            "shape": [
+              20,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.float32"
+          },
+          "plucker_chunk_0": {
+            "kind": "tensor",
+            "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+            "shape": [
+              1,
+              384,
+              1,
+              48,
+              84
+            ],
+            "dtype": "torch.bfloat16"
+          },
+          "text_context": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "tensor",
+                "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+                "shape": [
+                  38,
+                  4096
+                ],
+                "dtype": "torch.bfloat16"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "condition_pattern": [
+      "X",
+      "Y"
+    ],
+    "diffs_vs_first": {
+      "0": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.0,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      },
+      "1": {
+        "noise_chunk_0": 0.0,
+        "condition_chunk_0": 0.40841296315193176,
+        "plucker_chunk_0": 0.0,
+        "text_context": null
+      }
+    }
+  },
+  "cross_pipe": {
+    "first_condition_equal": false,
+    "second_condition_equal": true,
+    "other_inputs_stable": true
+  },
+  "verdict": {
+    "classification": "FIRST_ENCODE_EFFECT_NOT_CONFIRMED",
+    "detail": "Observed patterns do not match X,Y,Y,Y / X,Y with cross-pipe agreement; inspect pipe1/pipe2 condition_pattern and diffs_vs_first before claiming a warmup effect."
+  }
+}
