@@ -475,7 +475,7 @@
    "id": "C6A",
    "name": "Candidate implementation #1",
    "type": "implementation",
-   "status": "ready",
+   "status": "failed",
    "priority": 60,
    "resource": "implementation",
    "dependsOn": [
@@ -502,14 +502,14 @@
     "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"
    ],
    "evidence": [],
-   "result": null,
-   "notes": "Accepted package: modulation hoist + norm islands in scripts/pure_compile_helpers.py (in-repo only). Isolated worktree; GPU eval serialized."
+   "result": "REJECTED (2026-09-12, negative result preserved). Fused norm-affine + compiled qk-rmsnorm islands implemented (branch experiment/c6a-helper-islands, unmerged): CPU parity held, but Inductor-CUDA codegen diverges ~0.06/0.01 from eager on gfx1151 while every norm path feeds the bitwise-0.0 K/V cache gates. C5A modulation-hoist also refuted (per-block modulation). No acceptable denoise-phase candidate remains.",
+   "notes": "Failed with evidence; do not merge. Verdict: docs/artifacts/c6a-20260912/VERDICT.md on the branch."
   },
   {
    "id": "C6B",
    "name": "Candidate implementation #2",
    "type": "implementation",
-   "status": "ready",
+   "status": "done",
    "priority": 60,
    "resource": "implementation",
    "dependsOn": [
@@ -536,14 +536,14 @@
     "no improvement or a correctness/quality regression -> reject, record as failed/inconclusive, do not merge"
    ],
    "evidence": [],
-   "result": null,
-   "notes": "Accepted package: kv_write_only dead-tail skip (upstream-divergent patch pattern) + --host-kv-cursor. Isolated worktree; GPU eval serialized after C6A."
+   "result": "ACCEPTED (2026-09-12). kv_write_only dead-tail skip: C1-equiv latents bitwise 0.0 vs committed main-path A1 (16/16 chunks); clean-forward beats in-run denoise-3 in 15/15 actions (-4..-8 ms rolled, mean ~-6 ms off next-ready). Absolute medians drift-confounded across the day; within-run split is the robust metric. Evidence: docs/artifacts/c6b-20260912/ (branch experiment/c6b-clean-tail).",
+   "notes": "Accepted into the C7 set. Host-cursor adder noted for later, not combined."
   },
   {
    "id": "C7",
    "name": "Integration and reprofile",
    "type": "integration",
-   "status": "blocked",
+   "status": "running",
    "priority": 70,
    "resource": "gpu-exclusive",
    "dependsOn": [],
@@ -563,7 +563,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "Condition-gated rather than AND-dependent: instantiate/run C7 when at least one C6x candidate is accepted, using the complete accepted set. A rejected or absent candidate does not deadlock integration. Only accepted candidates are integrated; rejected results remain in history."
+   "notes": "Accepted set: {C6B} (C6A rejected). Integration branch experiment/c7-integration merges the C6B branch; reprofile cites the C6B-eval combined capture."
   },
   {
    "id": "C8",
@@ -623,11 +623,9 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C6A implementation (isolated worktree), then serialized GPU eval"
+   "C7 \u2014 integrate C6B, confirm ranking"
   ],
-  "readyNow": [
-   "C6B implementation (isolated worktree; GPU eval after C6A)"
-  ],
+  "readyNow": [],
   "blocked": [
    "C6A",
    "C6B",
@@ -720,6 +718,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C5 cycle)",
    "change": "Closed C5A/C5B as done: mechanisms grounded, candidates accepted (C6A: modulation+norms; C6B: dead-tail skip+cursor adder), 12->10 and conditioning-hoist declined with reasons, PF2 corrected to partial, stale C1R-gate passages in both reports refuted on record. C6A/C6B ready. Structural claims verified against pinned upstream. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C6 cycle)",
+   "change": "C6A recorded failed (norm codegen divergence, unmerged negative result). C6B accepted (bitwise 0.0, consistent -6 ms within-run). C7 running with accepted set {C6B}. Main untouched."
   }
  ]
 }
