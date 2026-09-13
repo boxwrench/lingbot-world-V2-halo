@@ -478,12 +478,13 @@ def run_bootstrap_capture(pipe: Any, session_args: argparse.Namespace, device: t
         name: value.detach().float().cpu().clone()
         for name, value in tensors.items() if torch.is_tensor(value)
     }
+    timestep_values = [int(timestep) for timestep in state["timesteps"]]
     del state, generated, tensors, layer0
     torch.cuda.empty_cache()
     return {
         "position": position,
         "prompt_sha256": hashlib.sha256(session_args.prompt.encode("utf-8")).hexdigest(),
-        "timestep_values": [int(timestep) for timestep in state["timesteps"]],
+        "timestep_values": timestep_values,
         "frozen": frozen,
         "tensors": kept,
     }

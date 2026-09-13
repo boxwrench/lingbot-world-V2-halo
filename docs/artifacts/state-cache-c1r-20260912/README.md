@@ -35,3 +35,35 @@ The reset FAIL is unresolved between a real rollout-dependent
 persistent-state leak and an invalid bitwise-hash reset criterion.
 A minimal A/B/C tensor discriminator (`--mode reset-discriminator`,
 same script) is queued to decide; C2 stays blocked until it reports.
+
+## Reset discriminator result (2026-09-12): BASELINE_NONDETERMINISM_OR_STRICT_HASH
+
+Raw evidence: [`reset-discriminator.json`](reset-discriminator.json).
+
+Fresh bootstraps A and B on one loaded pipe were NOT bitwise equal, with
+no rollout between them, so the expensive rollout was correctly skipped
+and no persistent-state leakage is claimed. Per-tensor A-vs-B:
+
+| diagnostic      | bitwise | max_abs_diff | note                          |
+| --------------- | ------- | ------------ | ----------------------------- |
+| noise chunk 0   | equal   | 0.0          | seeded RNG reproduces         |
+| plucker chunk 0 | equal   | 0.0          | pose path deterministic       |
+| text context    | equal   | n/a (list)   | T5 pipe cache hit; see quirk  |
+| condition ch. 0 | differs | 0.159        | VAE recompute through live pipe |
+| bootstrap x0    | differs | 0.167        | exceeds 0.02 consumer tolerance |
+| layer-0 clean K | differs | 0.156        | exceeds 0.0 cache tolerance   |
+| layer-0 clean V | differs | 1.478        | exceeds 0.0 cache tolerance   |
+
+Sharpening samples: capture A is bitwise identical to the first-execution
+rollout's chunk 0 (x0 `087807ff…`, K `bba30e…`, V `235b7b…`), so the
+first prepare on a pipe reproduces across processes; a third prepare
+(state probe) matched B, not A (pattern X, Y, Y). Eliminated by code
+inspection: VAE feature-cache staleness (`encode` brackets with
+`clear_cache`), T5/context drift (identical), seed/plucker drift
+(identical). Leading hypothesis for follow-up, not a conclusion:
+first-encode kernel selection/warmup effect on the long-lived pipe.
+
+Comparator quirk: `comparison_ab.text_context` reads `sha_equal: false`
+because list-kind frozen values carry no top-level sha; the nested item
+`text_context[0]` ([38,4096] bf16) is bitwise identical. Check
+`capture_a/b.frozen.text_context.items`, not the top-level flag.
