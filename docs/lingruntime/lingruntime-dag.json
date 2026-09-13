@@ -543,7 +543,7 @@
    "id": "C7",
    "name": "Integration and reprofile",
    "type": "integration",
-   "status": "running",
+   "status": "done",
    "priority": 70,
    "resource": "gpu-exclusive",
    "dependsOn": [],
@@ -553,7 +553,10 @@
    "entryCriteria": [
     "at least one of C6A/C6B accepted (a candidate rejected in C6 is simply not combined here)"
    ],
-   "outputs": [],
+   "outputs": [
+    "experiment/c7-integration (merge ae5ce1a + VERDICT.md)",
+    "docs/artifacts/c7-20260912/VERDICT.md (in the integration branch)"
+   ],
    "exitCriteria": [
     "combined workload reprofiled",
     "new bottleneck ranking produced"
@@ -561,9 +564,12 @@
    "nextIf": [
     "new bottleneck identified -> spawn new C5x node(s) against the updated ranking; the DAG is iterative, not a one-shot pipeline"
    ],
-   "evidence": [],
-   "result": null,
-   "notes": "Accepted set: {C6B} (C6A rejected). Integration branch experiment/c7-integration merges the C6B branch; reprofile cites the C6B-eval combined capture."
+   "evidence": [
+    "C6B eval capture (cited: bitwise 0.0, consistent -6 ms)",
+    "integration-tree tests 3/3 + prepare_upstream green"
+   ],
+   "result": "DONE (2026-09-12). Integrated {C6B} on experiment/c7-integration; ranking unchanged by construction; no new C5x (no new information). Incidental whitespace-drift hygiene in shared upstream copies recorded.",
+   "notes": "Loop complete: no valid work remains; C8 stays deferred (no qualifying residual)."
   },
   {
    "id": "C8",
@@ -622,9 +628,7 @@
   }
  ],
  "recommendedQueue": {
-  "running": [
-   "C7 \u2014 integrate C6B, confirm ranking"
-  ],
+  "running": [],
   "readyNow": [],
   "blocked": [
    "C6A",
@@ -723,6 +727,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C6 cycle)",
    "change": "C6A recorded failed (norm codegen divergence, unmerged negative result). C6B accepted (bitwise 0.0, consistent -6 ms within-run). C7 running with accepted set {C6B}. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C7 cycle)",
+   "change": "C7 done: C6B integrated and verified in-tree; ranking confirmed unchanged; no new C5x; C8 remains deferred \u2014 no residual meets its entry bar. All nodes terminal. Main untouched."
   }
  ]
 }
