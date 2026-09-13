@@ -67,3 +67,29 @@ Comparator quirk: `comparison_ab.text_context` reads `sha_equal: false`
 because list-kind frozen values carry no top-level sha; the nested item
 `text_context[0]` ([38,4096] bf16) is bitwise identical. Check
 `capture_a/b.frozen.text_context.items`, not the top-level flag.
+
+## First-encode probe result (2026-09-12): pattern within pipes, first-sample differs across pipes
+
+Raw evidence: [`encode-probe.json`](encode-probe.json) (`--mode encode-probe`:
+4 fresh prepares on pipe 1, 2 on a newly built pipe 2; prepare-only, no DiT,
+no rollout).
+
+- Condition patterns: pipe 1 `[X,Y,Y,Y]`, pipe 2 `[X,Y]` — the within-pipe
+  pattern test passed.
+- Strict gate verdict `FIRST_ENCODE_EFFECT_NOT_CONFIRMED`, solely because
+  the first samples differ across pipes: pipe 1 X = `10888b…` (identical to
+  the discriminator's capture A and the first execution's chunk 0),
+  pipe 2 X' = `e50d85…`.
+- Steady-state Y (`b3aee5…`, full SHA) is identical across 5 samples in
+  2 processes plus the earlier discriminator run: every prepare after the
+  first, on any pipe, yields Y. Transition magnitude X->Y reproduces exactly
+  (0.15896); X'->Y differs (0.40841).
+- Noise, plucker, text context bitwise identical across all 6 samples.
+
+Reading: only the first encode on a fresh pipe is unstable; the post-first
+steady state is deterministic and universal. This explains the original
+`fresh_reset` FAIL (initial bootstrap on X vs reset check on Y) with no
+rollout-dependent leak, and motivates a one-time throwaway conditioning
+warmup before measured sessions, retaining a strict bitwise reset criterion.
+Warmup validation in the validator is the next step; production
+`run_browser.py` is untouched.

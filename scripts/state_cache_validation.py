@@ -605,6 +605,147 @@ def prepare_session_probe(pipe: Any, session_args: argparse.Namespace, device: t
     }
 
 
+PROBE_INPUT_ORDER = ("noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context")
+
+
+def provenance_block(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "base_commit": command_output(["git", "rev-parse", "HEAD"]),
+        "upstream_commit": command_output(["git", "-C", ".upstream/lingbot-world-v2", "rev-parse", "HEAD"]),
+        "model_dir": str(Path(args.model_dir).resolve()),
+        "image": str(Path(args.image).resolve()),
+        "action_path": str(Path(args.action_path).resolve()),
+    }
+
+
+def run_prepare_capture(pipe: Any, session_args: argparse.Namespace, device: torch.device) -> dict[str, Any]:
+    """One fresh prepare_session; input hashes only, no DiT execution."""
+    from run_interactive import prepare_session
+    state = prepare_session(pipe, session_args, device)
+    timestep_values = [int(timestep) for timestep in state["timesteps"]]
+    tensors = {
+        "noise_chunk_0": state["noise_chunks"][0],
+        "condition_chunk_0": state["condition_chunks"][0],
+        "plucker_chunk_0": state["plucker_chunks"][0],
+        "text_context": state["context"],
+    }
+    frozen = {name: freeze_value(value) for name, value in tensors.items()}
+    kept = {
+        name: value.detach().float().cpu().clone()
+        for name, value in tensors.items() if torch.is_tensor(value)
+    }
+    del state, tensors
+    torch.cuda.empty_cache()
+    return {
+        "prompt_sha256": hashlib.sha256(session_args.prompt.encode("utf-8")).hexdigest(),
+        "timestep_values": timestep_values,
+        "frozen": frozen,
+        "tensors": kept,
+    }
+
+
+def pattern_labels(samples: list[dict[str, Any]]) -> list[str]:
+    """Label distinct condition hashes X, Y, Z... in order of appearance."""
+    table: dict[str | None, str] = {}
+    pattern = []
+    for sample in samples:
+        sha = sample["frozen"]["condition_chunk_0"].get("sha256")
+        if sha not in table:
+            table[sha] = chr(ord("X") + len(table))
+        pattern.append(table[sha])
+    return pattern
+
+
+def diffs_vs_first(samples: list[dict[str, Any]]) -> dict[str, Any]:
+    base = samples[0]["tensors"]
+    return {
+        str(index): {
+            name: (max_abs_diff(base[name], sample["tensors"][name])
+                   if name in base and name in sample["tensors"] else None)
+            for name in PROBE_INPUT_ORDER
+        }
+        for index, sample in enumerate(samples)
+    }
+
+
+def condition_sha(sample: dict[str, Any]) -> str | None:
+    return sample["frozen"]["condition_chunk_0"].get("sha256")
+
+
+def run_encode_probe(args: argparse.Namespace) -> dict[str, Any]:
+    device = torch.device("cuda:0")
+    session_args = make_session_args(args)
+    pipe1 = build_pipe(args, device)
+    samples1 = [run_prepare_capture(pipe1, session_args, device) for _ in range(4)]
+    del pipe1
+    torch.cuda.empty_cache()
+    pipe2 = build_pipe(args, device)
+    samples2 = [run_prepare_capture(pipe2, session_args, device) for _ in range(2)]
+    del pipe2
+    torch.cuda.empty_cache()
+    pattern1 = pattern_labels(samples1)
+    pattern2 = pattern_labels(samples2)
+    first_equal = condition_sha(samples1[0]) is not None and condition_sha(samples1[0]) == condition_sha(samples2[0])
+    second_equal = condition_sha(samples1[1]) is not None and condition_sha(samples1[1]) == condition_sha(samples2[1])
+    others_stable = all(
+        sample["frozen"][name].get("sha256") is not None
+        and sample["frozen"][name].get("sha256") == samples1[0]["frozen"][name].get("sha256")
+        for sample in samples1[1:] + samples2
+        for name in ("noise_chunk_0", "plucker_chunk_0")
+    ) and all(
+        item_a.get("sha256") == item_b.get("sha256")
+        for sample in samples1[1:] + samples2
+        for item_a, item_b in zip(
+            samples1[0]["frozen"]["text_context"].get("items", []),
+            sample["frozen"]["text_context"].get("items", []),
+        )
+    )
+    confirmed = (
+        pattern1 == ["X", "Y", "Y", "Y"]
+        and pattern2 == ["X", "Y"]
+        and bool(first_equal)
+        and bool(second_equal)
+        and bool(others_stable)
+    )
+    return {
+        "configuration": {
+            "seed": args.seed,
+            "chunks": args.chunks,
+            "local_attn_size_frames_total_including_sink": args.local_attn_size,
+            "sink_size_frames": args.sink_size,
+            "denoise_schedule": args.denoise_schedule,
+            "prepares_pipe1": 4,
+            "prepares_pipe2": 2,
+        },
+        "provenance": provenance_block(args),
+        "pipe1": {
+            "captures": [strip_tensors(sample) for sample in samples1],
+            "condition_pattern": pattern1,
+            "diffs_vs_first": diffs_vs_first(samples1),
+        },
+        "pipe2": {
+            "captures": [strip_tensors(sample) for sample in samples2],
+            "condition_pattern": pattern2,
+            "diffs_vs_first": diffs_vs_first(samples2),
+        },
+        "cross_pipe": {
+            "first_condition_equal": bool(first_equal),
+            "second_condition_equal": bool(second_equal),
+            "other_inputs_stable": bool(others_stable),
+        },
+        "verdict": {
+            "classification": "FIRST_ENCODE_EFFECT_CONFIRMED" if confirmed else "FIRST_ENCODE_EFFECT_NOT_CONFIRMED",
+            "detail": (
+                "Condition pattern X,Y,Y,Y on pipe 1 and X,Y on pipe 2 with matching first/second "
+                "samples across pipes; all other inputs stable."
+                if confirmed else
+                "Observed patterns do not match X,Y,Y,Y / X,Y with cross-pipe agreement; inspect "
+                "pipe1/pipe2 condition_pattern and diffs_vs_first before claiming a warmup effect."
+            ),
+        },
+    }
+
+
 def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
     from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
     from run_live import action_from_key, make_plucker
@@ -832,7 +973,7 @@ def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("fixture", "gpu", "reset-discriminator"), required=True)
+    parser.add_argument("--mode", choices=("fixture", "gpu", "reset-discriminator", "encode-probe"), required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-dir")
     parser.add_argument("--image")
@@ -867,8 +1008,10 @@ def main() -> int:
             parser.error("--scripted-actions must contain exactly --chunks minus one keys (bootstrap is implicit)")
         if args.mode == "gpu":
             payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
-        else:
+        elif args.mode == "reset-discriminator":
             payload = {"kind": "gfx1151_reset_discriminator", **run_reset_discriminator(args)}
+        else:
+            payload = {"kind": "gfx1151_encode_determinism_probe", **run_encode_probe(args)}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
