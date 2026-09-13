@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-13",
- "updatedBy": "orchestrator (C8 probe 0/1)",
+ "updatedBy": "orchestrator (C8 stage 2)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -916,9 +916,10 @@
    ],
    "evidence": [
     "frozen contract verified 2026-09-13 from accepted runtime (see notes)",
-    "experiment/c8-attention: docs/artifacts/c8-probe01-20260913/ (Probe 0/1/1b/3 evidence + README)"
+    "experiment/c8-attention: docs/artifacts/c8-probe01-20260913/ (Probe 0/1/1b/3 evidence + README)",
+    "experiment/c8-attention: docs/artifacts/c8-stage2-20260913/ (tuning-DB decode, rocprofv3 geometry, isolation sweep)"
    ],
-   "result": "Probe 0/1/1b/3 DONE 2026-09-13 @d46b12a. Executing kernel attn_fwd.kd (AOTriton via torch SDPA; FA2-varlen premise falsified by missing compiled ext). Single-call bakeoff: control 4.22 / flash 4.48 / mem-efficient 4.00 (separate-proc) -> alternating A/B shows SAME kernel both arms, means interleave, no difference; Triton-AMD launches + numerics pass but p50 4.33 (no win); math 90.2 reference-only; AITER absent in prod venv. Probe 4 skipped as non-discriminating (identical kernels). This is the stop-condition state all-available-backends-equal-or-slower; custom-kernel escalation requires a plausible mechanism + strategic call. C8 HELD for human direction: STOP-negative vs custom-kernel escalation.",
+   "result": "Stage 2 DONE 2026-09-13. Exactly ONE runnable shipped config (0_0) for this workload; 0_1/3_0 fail at launch. Grid 2048x12x1, LDS 16KB/WG, ~18 TFLOPS effective at ~19GB/s (occupancy/latency regime, no knob). No evidenced mechanism at any bar. RECOMMENDATION: close C8 as clean negative. Awaiting human confirm.",
    "notes": "Frozen production attention contract: Q=[1,12,1008,128] K=V=[1,12,12096,128] BF16, mask none, causal false, gfx1151. Verified: num_heads=12 dim=1536 (transformers/config.json); head_dim=128; call site model_fast.py:198 attention(roped_query,k_cache,v_cache) no mask args (defaults causal=False); DiT params 100% BF16 (P2.1 module-metrics); Lq/Lk corroborated by P2.1 module-metrics hit counts; torch 2.13+rocm7.15; flash_attn pkg present WITHOUT compiled ext (import fails: no flash_attn_2_cuda in either venv) so upstream wrapper falls back to torch SDPA; preferred_rocm_fa_library()=AOTriton, CK unavailable (unsupported-arch warning); FA3 absent. First-hand probe 2026-09-13 in production venv. Thresholds: 5%=marginal 10%=interesting 20%=strong 30%=very strong (end-to-end decides). NEXT_PLAN B1-B5 from P2.9 enter here (B3=SDPA probe first)."
   }
  ],
@@ -1135,6 +1136,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (C8 probe 0/1)",
    "change": "Probe 0/1/1b/3 done: attn_fwd.kd executes; no backend wins; C8 held for human direction (STOP-negative vs custom-kernel escalation)."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (C8 stage 2)",
+   "change": "Stage 2 done: single viable config, geometry characterized, isolation sweep negative. C8 close-as-negative recommended; held for human confirm."
   }
  ]
 }
