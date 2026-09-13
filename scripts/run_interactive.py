@@ -42,6 +42,7 @@ from run_experiment import (
     rss_bytes,
     write_video,
 )
+from timeproj_memo import install_timeproj_memo, memo_stats, set_current_timestep
 from wan.configs import MAX_AREA_CONFIGS, WAN_CONFIGS
 from wan.image2video import (
     WanI2VCausal,
@@ -709,6 +710,9 @@ def prepare_session(pipe: WanI2VCausal, args: argparse.Namespace, device: torch.
         device=device,
     )
     pipe._cross_attn_initialized = False
+    if os.environ.get("LINGBOT_TIMEPROJ_MEMO") == "1":
+        install_timeproj_memo(pipe.model)
+        print(json.dumps({"timeproj_memo": "installed"}), flush=True)
     return {
         "image": image,
         "noise_chunks": noise.split(1, dim=1),
@@ -772,6 +776,7 @@ def generate_chunk(
         forward_t0 = time.perf_counter()
         cache_before = cache_positions(state["self_kv_cache"])
         memory_before = cuda_memory(device)
+        set_current_timestep(float(current_timestep))
         noise_pred = pipe.model(
             x=[current_latent],
             t=torch.stack([current_timestep]).to(device),
@@ -845,6 +850,7 @@ def commit_clean_kv(
     zero_timestep = state["timesteps"][-1] * 0.0
     cache_before = cache_positions(state["self_kv_cache"])
     memory_before = cuda_memory(device)
+    set_current_timestep(float(zero_timestep))
     pipe.model(
         x=[generated["x0"]],
         t=torch.stack([zero_timestep]).to(device),
@@ -1398,6 +1404,7 @@ def main() -> int:
             write_video(output, path)
             report["video_path"] = str(path)
         report["status"] = "success"
+        report["timeproj_memo"] = memo_stats(pipe.model)
     except Exception as exc:
         report["status"] = "failure"
         report["error"] = f"{type(exc).__name__}: {exc}"
@@ -1408,6 +1415,7 @@ def main() -> int:
     (result_dir / "metrics.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({
         "status": report["status"],
+        "timeproj_memo": report.get("timeproj_memo"),
         "frames": report.get("frames"),
         "first_visible_ms": report.get("action_latency_ms", {}).get("first_visible_first_action"),
         "action_median_ms": report.get("action_latency_ms", {}).get("median"),
