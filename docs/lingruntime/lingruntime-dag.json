@@ -411,7 +411,7 @@
    "id": "C5A",
    "name": "Denoise-phase hotspot research (self-SDPA PF1 + non-SDPA audit)",
    "type": "research",
-   "status": "ready",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -436,14 +436,14 @@
     "candidate accepted for a trial -> C6A"
    ],
    "evidence": [],
-   "result": null,
-   "notes": "PF1 active input. C4 raw-ms #1 is denoise non-SDPA but those are GEMM-covered; research must audit before proposing. Parallelizable with C5B."
+   "result": "DONE (2026-09-12, parallel source research). Mechanism: healthy K-linear flash SDPA (~30 ms per 1024 K per phase) + TunableOp-covered GEMMs at floor; uncovered remainder ~190-215 ms (attn body, block dispatch, 48 ms eager norms). ACCEPTED for C6A: modulation-split hoist (5-12 ms) + compiled norm islands (12-22 ms), both inside the accepted pure-helper envelope, cache untouched. DECLINED for C6: 12->10 K-reduction (breaks the frozen C3 contract; recorded as a future C2-branch screen candidate). Structural claims verified in-repo.",
+   "notes": "Research complete; implementation moves to C6A."
   },
   {
    "id": "C5B",
    "name": "Clean-KV transaction research (PF2)",
    "type": "research",
-   "status": "ready",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -468,14 +468,14 @@
     "candidate accepted for a trial -> C6B"
    ],
    "evidence": [],
-   "result": null,
-   "notes": "PF2 active input. C1/C1R correctness gates constrain every candidate (exact clean-KV transaction). Parallelizable with C5A."
+   "result": "DONE (2026-09-12, parallel source research). Mechanism: clean-KV is a full fourth DiT forward; ~85%+ of non-SDPA is load-bearing projections/norms/FFN (downstream K/V dependency), already-tuned GEMMs; one true waste: post-store tail of block 29 + head/unpatchify feeding the discarded return (early-exit point verified on pinned upstream 45fa406: stores precede the SDPA read). ACCEPTED for C6B: dead-tail skip (6-12 ms) + host-KV-cursor adder (measured -10 ms). Declined: conditioning hoist (invasive, 2-6 ms). PF2 corrected to partially actionable (~16-28 ms package); the report's stale gate section (C1R FAIL/queued) is refuted by the committed C1R closure (f6ec5a0, rollout 16/16 PASS).",
+   "notes": "Research complete; implementation moves to C6B. Both C5 reports' stale C1R-gate passages are superseded."
   },
   {
    "id": "C6A",
    "name": "Candidate implementation #1",
    "type": "implementation",
-   "status": "blocked",
+   "status": "ready",
    "priority": 60,
    "resource": "implementation",
    "dependsOn": [
@@ -503,13 +503,13 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "The coding step is parallelizable with C6B in a separate isolated worktree. Its GPU evaluation step is gpu-exclusive and must not run at the same time as C6B's GPU evaluation, C1, C2, C4, or any other gpu-exclusive node."
+   "notes": "Accepted package: modulation hoist + norm islands in scripts/pure_compile_helpers.py (in-repo only). Isolated worktree; GPU eval serialized."
   },
   {
    "id": "C6B",
    "name": "Candidate implementation #2",
    "type": "implementation",
-   "status": "blocked",
+   "status": "ready",
    "priority": 60,
    "resource": "implementation",
    "dependsOn": [
@@ -537,7 +537,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "The coding step is parallelizable with C6A in a separate isolated worktree. Its GPU evaluation step is gpu-exclusive and must not run at the same time as C6A's GPU evaluation, C1, C2, C4, or any other gpu-exclusive node."
+   "notes": "Accepted package: kv_write_only dead-tail skip (upstream-divergent patch pattern) + --host-kv-cursor. Isolated worktree; GPU eval serialized after C6A."
   },
   {
    "id": "C7",
@@ -623,9 +623,11 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C5A + C5B mechanism research (source-cpu, parallel)"
+   "C6A implementation (isolated worktree), then serialized GPU eval"
   ],
-  "readyNow": [],
+  "readyNow": [
+   "C6B implementation (isolated worktree; GPU eval after C6A)"
+  ],
   "blocked": [
    "C6A",
    "C6B",
@@ -713,6 +715,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C4 cycle)",
    "change": "Recorded C4 done: attribution reproduces C0B, environmental level shift flagged, C0B envelope stands. Named C5A (denoise phase) and C5B (clean-KV transaction) from the measured phase split; both ready. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C5 cycle)",
+   "change": "Closed C5A/C5B as done: mechanisms grounded, candidates accepted (C6A: modulation+norms; C6B: dead-tail skip+cursor adder), 12->10 and conditioning-hoist declined with reasons, PF2 corrected to partial, stale C1R-gate passages in both reports refuted on record. C6A/C6B ready. Structural claims verified against pinned upstream. Main untouched."
   }
  ]
 }
