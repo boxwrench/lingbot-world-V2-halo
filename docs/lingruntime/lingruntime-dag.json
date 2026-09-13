@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-12",
- "updatedBy": "orchestrator (external review response)",
+ "updatedBy": "orchestrator (B001 closure)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -582,7 +582,7 @@
     "C6B evidence per C6B node (branch experiment/c6b-clean-tail @1ec5f78)"
    ],
    "result": "DONE (2026-09-12). Integrated {C6B} on experiment/c7-integration; ranking unchanged by construction; no new C5x (no new information). Incidental whitespace-drift hygiene in shared upstream copies recorded. B001 A1: 14/15 correction applied to branch verdict (action 7 tied); integration set @914c783 includes C6B audit corrections (14/15, preserved latents, scope note).",
-   "notes": "Loop complete: no valid work remains; C8 stays deferred (no qualifying residual)."
+   "notes": "Loop complete: B001 CLOSED. C6B merged to main (9cc986c, tag lingruntime-gfx1151-b001); baseline record docs/artifacts/baseline-b001-20260912/README.md on main. C8 stays deferred."
   },
   {
    "id": "C8",
@@ -748,6 +748,11 @@
    "date": "2026-09-12",
    "by": "orchestrator (external review response)",
    "change": "Accept B001 AUDIT_PASS_WITH_ACTIONS. Resolve A1 (14/15 corrections: c6b@1ec5f78, c7@914c783; 50dc857 immutable), A2 (C6B latents preserved; C6A probe JSON preserved @0a57f97 with 0.057/0.0328 scope reconciliation), A3 (branch-qualified evidence paths; C5/C6 evidence arrays filled), A4 (queue blocked[] cleared; md synced), A6 (C5A verbatim report + deliberation notes preserved). Field 4 amended to operating-point scope. A5 scheduled (blinded second-rater + second scene; external rater needed). C8 stays deferred. C6B main integration pending external review of these corrections; baseline tag follows integration."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "orchestrator (B001 closure)",
+   "change": "B001 CLOSED: action-5 correction committed (c6b@2de3fee, c7@f476440); main fast-forwarded add8a69..9cc986c (C6B set only, no C6A code); pytest 11 passed on merged state; baseline record committed; annotated tag lingruntime-gfx1151-b001 pushed; origin/main verified at 9cc986c. HUMAN_VISUAL_GATE=NOT REQUIRED for this merge. A5 (user-rater blinded 3v4 + second scene) scheduled alongside Plan 2; blocks only broader visual claims."
   }
  ]
 }
