@@ -779,7 +779,7 @@
    "id": "P2.6",
    "name": "Plan 2 \u2014 GPU adjudication",
    "type": "measurement",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -798,15 +798,17 @@
    "nextIf": [
     "done -> P2.7"
    ],
-   "evidence": [],
-   "result": "RUNNING (2026-09-13): memo-ON browser adjudication.",
+   "evidence": [
+    "experiment/p24-timeproj-memo: docs/artifacts/p26-20260913/{on,off,timelog}-benchmark.json, README.md"
+   ],
+   "result": "DONE (2026-09-13). REJECTED: production effect ~12-14ms (in run noise +-12), not the predicted 66. Root cause of prediction error: microbench/profile ran untuned (22ms/call) while production runs the pinned-TunableOp bf16 kernel (3.5-4.9ms/call, 60 hits/4 misses instrumented). Mechanism real + bitwise-exact, value sub-threshold. Evidence: experiment/p24-timeproj-memo docs/artifacts/p26-20260913/. Mainline untouched.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.7",
    "name": "Plan 2 \u2014 Integration and reprofile",
    "type": "integration",
-   "status": "blocked",
+   "status": "done",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -826,14 +828,14 @@
     "done -> P2.8"
    ],
    "evidence": [],
-   "result": "",
+   "result": "DONE (2026-09-13). Nothing to integrate: sole P2.4 candidate rejected at P2.6. No integration branch created (correct per spec: below decision value, stop).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.8",
    "name": "Plan 2 \u2014 Stopping decision",
    "type": "decision",
-   "status": "blocked",
+   "status": "done",
    "priority": 50,
    "resource": "source-cpu",
    "dependsOn": [
@@ -853,7 +855,7 @@
     "done -> P2.9"
    ],
    "evidence": [],
-   "result": "",
+   "result": "DONE (2026-09-13). STOP: plausible low/medium-complexity candidates exhausted (GEMM floor, camera dead, norms dead, memo sub-threshold, SDPA C8-class). Residual: SDPA kernel ~360ms/phase requires explicit advanced-runtime strategic decision. Practical local floor evidenced.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -878,7 +880,7 @@
     "verdict + corrections + approval -> PLAN DONE"
    ],
    "evidence": [],
-   "result": "",
+   "result": "BLOCKED_EXTERNAL (2026-09-13): no DSH API credentials in environment; live audit campaign cannot run. Not a harness failure. Packet materials ready (P2 evidence on experiment/p2-baseline + experiment/p24-timeproj-memo).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   }
  ],
@@ -918,16 +920,16 @@
  ],
  "recommendedQueue": {
   "running": [],
-  "readyNow": [
-   "P2.6 memo-ON browser adjudication"
+  "readyNow": [],
+  "blocked": [
+   "P2.9"
   ],
-  "blocked": [],
   "deferred": [
    "C8",
    "A5 scheduled quality follow-up (blinded second-rater on committed PNGs + one second-scene matched-state warmed-Y 3v4 screen; needs external rater)"
   ],
   "independentWorkAvailableNow": [
-   "P2.0 GPU baseline measurement (serialized GPU)"
+   "P2.9 terminal audit (needs DSH credentials)"
   ],
   "notYetValid": [
    "performance optimization",
@@ -1065,6 +1067,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (P2.4/P2.5 done)",
    "change": "P2.4/P2.5 DONE: memo bitwise-exact, -70.4ms/chunk. P2.6 running."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (Plan 2 technical close)",
+   "change": "P2.6 REJECT (memo sub-threshold on production path; prediction error root-caused to untuned measurement context). P2.7 no-op. P2.8 STOP (low/medium candidates exhausted; SDPA residual is C8-class). P2.9 BLOCKED_EXTERNAL (no DSH keys). Plan 2 technical work complete; audit + mainline decisions are human boundaries."
   }
  ]
 }
