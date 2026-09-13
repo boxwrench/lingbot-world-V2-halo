@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-12",
- "updatedBy": "orchestrator (B001 closure)",
+ "updatedBy": "orchestrator (Plan 2 open)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -604,6 +604,275 @@
    "evidence": [],
    "result": null,
    "notes": "Condition-gated and deferred by default, not hard-dependent on C7 and not an inevitable phase. It may be activated by a specific residual opportunity measured at C4 or any later reprofile. Do not begin any item in this category without an explicit, evidence-based entry decision recorded against this node."
+  },
+  {
+   "id": "P2.0",
+   "name": "Plan 2 \u2014 Establish accepted baseline",
+   "type": "measurement",
+   "status": "running",
+   "priority": 50,
+   "resource": "gpu-exclusive",
+   "dependsOn": [],
+   "blocks": [
+    "P2.1"
+   ],
+   "canRunParallelWith": [],
+   "question": "Reconstruct from tagged main 9cc986c (static config + fresh GPU measurement of rolled base-RGB/next-ready/denoise/A-A).",
+   "entryCriteria": [
+    "B001 closed, baseline tagged"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.1"
+   ],
+   "evidence": [
+    "docs/lingruntime/p2-baseline-static-20260912.md",
+    "main 9cc986c tag lingruntime-gfx1151-b001"
+   ],
+   "result": "RUNNING (2026-09-12): static reconstruction committed (docs/lingruntime/p2-baseline-static-20260912.md); GPU measurement queued, serialized. C6B confirmed next-ready-only.",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.1",
+   "name": "Plan 2 \u2014 Fresh quiet denoise profile",
+   "type": "measurement",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "gpu-exclusive",
+   "dependsOn": [
+    "P2.0"
+   ],
+   "blocks": [
+    "P2.2"
+   ],
+   "canRunParallelWith": [],
+   "question": "Warmed accepted-contract profile of the three-forward denoise critical path; GPU vs host/dispatch split; re-rank opportunities. C4 historical only.",
+   "entryCriteria": [
+    "P2.0 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.2"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.2",
+   "name": "Plan 2 \u2014 Mechanism research",
+   "type": "research",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "source-cpu",
+   "dependsOn": [
+    "P2.1"
+   ],
+   "blocks": [
+    "P2.3"
+   ],
+   "canRunParallelWith": [],
+   "question": "Source research only for profile-supported questions capable of changing candidate selection. C6A norm islands stay rejected without new evidence.",
+   "entryCriteria": [
+    "P2.1 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.3"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.3",
+   "name": "Plan 2 \u2014 Candidate ranking",
+   "type": "research",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "source-cpu",
+   "dependsOn": [
+    "P2.2"
+   ],
+   "blocks": [
+    "P2.4"
+   ],
+   "canRunParallelWith": [],
+   "question": "Per-candidate target/mechanism/bound/expected/confidence/risk/complexity/correctness/micro/full-runtime/stop-rule; rank by recoverable-ms x confidence / complexity-risk.",
+   "entryCriteria": [
+    "P2.2 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.4"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.4",
+   "name": "Plan 2 \u2014 Implementation",
+   "type": "implementation",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "implementation",
+   "dependsOn": [
+    "P2.3"
+   ],
+   "blocks": [
+    "P2.5"
+   ],
+   "canRunParallelWith": [],
+   "question": "Isolated worktrees (one writer each), serialized GPU eval; branches name baseline SHA, diff, slice, prediction, semantics.",
+   "entryCriteria": [
+    "P2.3 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.5"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.5",
+   "name": "Plan 2 \u2014 Correctness funnel",
+   "type": "implementation",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "implementation",
+   "dependsOn": [
+    "P2.4"
+   ],
+   "blocks": [
+    "P2.6"
+   ],
+   "canRunParallelWith": [],
+   "question": "Unit -> isolated numeric -> subsystem -> forward equiv -> state/cache -> full interactive; bitwise where contracted; semantic changes raise HUMAN_VISUAL_GATE question.",
+   "entryCriteria": [
+    "P2.4 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.6"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.6",
+   "name": "Plan 2 \u2014 GPU adjudication",
+   "type": "measurement",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "gpu-exclusive",
+   "dependsOn": [
+    "P2.5"
+   ],
+   "blocks": [
+    "P2.7"
+   ],
+   "canRunParallelWith": [],
+   "question": "Accepted rolled protocol per surviving candidate; full-runtime benefit beyond noise required; preserve failures.",
+   "entryCriteria": [
+    "P2.5 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.7"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.7",
+   "name": "Plan 2 \u2014 Integration and reprofile",
+   "type": "integration",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "gpu-exclusive",
+   "dependsOn": [
+    "P2.6"
+   ],
+   "blocks": [
+    "P2.8"
+   ],
+   "canRunParallelWith": [],
+   "question": "Integrate accepted candidates, reprofile from scratch, re-rank; new nodes for new bottlenecks; stop below decision value (P2.8 rule).",
+   "entryCriteria": [
+    "P2.6 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.8"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.8",
+   "name": "Plan 2 \u2014 Stopping decision",
+   "type": "decision",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "source-cpu",
+   "dependsOn": [
+    "P2.7"
+   ],
+   "blocks": [
+    "P2.9"
+   ],
+   "canRunParallelWith": [],
+   "question": "Stop when: useful improvement landed + rest low-value; low/medium candidates exhausted; advanced-runtime decision needed; semantic/quality dominant; local floor evidenced.",
+   "entryCriteria": [
+    "P2.7 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "done -> P2.9"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
+  },
+  {
+   "id": "P2.9",
+   "name": "Plan 2 \u2014 Terminal independent audit",
+   "type": "integration",
+   "status": "blocked",
+   "priority": 50,
+   "resource": "implementation",
+   "dependsOn": [
+    "P2.8"
+   ],
+   "blocks": [],
+   "canRunParallelWith": [],
+   "question": "Fresh DSH audit-team campaign, neutral handoff, Harness v1 verdicts/actions; CLOSURE_REQUIRED resolved pre-DONE; visual reopen respected; mainline mutation human-authorized.",
+   "entryCriteria": [
+    "P2.8 done"
+   ],
+   "outputs": [],
+   "exitCriteria": [],
+   "nextIf": [
+    "verdict + corrections + approval -> PLAN DONE"
+   ],
+   "evidence": [],
+   "result": "",
+   "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   }
  ],
  "parkedFindings": [
@@ -642,15 +911,18 @@
  ],
  "recommendedQueue": {
   "running": [],
-  "readyNow": [],
+  "readyNow": [
+   "P2.0 GPU baseline measurement"
+  ],
   "blocked": [],
   "deferred": [
    "C8",
    "A5 scheduled quality follow-up (blinded second-rater on committed PNGs + one second-scene matched-state warmed-Y 3v4 screen; needs external rater)"
   ],
   "independentWorkAvailableNow": [
-   "main integration review (C6B set pending external review of B001 corrections)",
-   "A5 blinded-protocol design on committed PNGs"
+   "P2.0 GPU baseline measurement (serialized GPU)",
+   "A5 second-scene matched 3v4 screen (serialized GPU; blinded package already committed)",
+   "A5 human rating of committed blinded pairs (user)"
   ],
   "notYetValid": [
    "performance optimization",
@@ -753,6 +1025,11 @@
    "date": "2026-09-12",
    "by": "orchestrator (B001 closure)",
    "change": "B001 CLOSED: action-5 correction committed (c6b@2de3fee, c7@f476440); main fast-forwarded add8a69..9cc986c (C6B set only, no C6A code); pytest 11 passed on merged state; baseline record committed; annotated tag lingruntime-gfx1151-b001 pushed; origin/main verified at 9cc986c. HUMAN_VISUAL_GATE=NOT REQUIRED for this merge. A5 (user-rater blinded 3v4 + second scene) scheduled alongside Plan 2; blocks only broader visual claims."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "orchestrator (Plan 2 open)",
+   "change": "Plan 2 authorized on B001 closure (main 9cc986c, tag lingruntime-gfx1151-b001). Nodes P2.0-P2.9 opened; P2.0 running (static done, GPU measurement queued); P2.1+ blocked. A5 blinded pairs committed on experiment/a5-visual-3v4 (9d692a0); second scene + human rating pending. GPU idle at open."
   }
  ]
 }
