@@ -64,6 +64,11 @@ established. Evidence: `experiment/a5-visual-3v4:docs/artifacts/a5-visual-3v4-20
    (~2.1 s observed) and drop intermediate presses. Dropped tails stay 0.
 4. **Startup latency.** ~5 min dominated by session preparation, scaling
    linearly with camera-path length. Identified target, not yet optimized.
+5. **External runtime dependency.** `.venv` is a thin layer; torch/ROCm
+   resolve via `strix_halo_rocm_base.pth` into
+   `/home/keith/ciru-ling-runtime/.venv` (outside this repo), and
+   `models/` (84 GB) plus `.upstream/` (1.2 GB) are unversioned. Reproduction
+   requires that host state, not just this checkout.
 
 ## Campaign dispositions
 
