@@ -93,14 +93,14 @@ C1 state/cache correctness                       INCONCLUSIVE  (commit 2bf97c3)
 C1R exact-RC1 state/cache confirmation            DONE (qualified PASS)
         |
         v
-C2 quality causality                             READY (bounded chunk/context screen first)
+C2 quality causality                             DONE (PASS 2026-09-12)
    |-- bounded chunk/context screen (first, mandatory branch)
    +-- conditional, evidence-triggered only:
        context-sensitive / chunk-boundary-sensitive / decoder-specific /
        precision / recurrence-stress / deeper-limitation branches
         |
         v
-C3 freeze quality-approved semantic contract     BLOCKED
+C3 freeze quality-approved semantic contract     READY
         |
         v
 C4 profile the quality-approved runtime          BLOCKED  (distinct from C0B)
@@ -211,16 +211,21 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   C2 entry criteria satisfied → C2 READY, mandatory first branch the
   bounded chunk/context screen, warmed-Y baseline note carried forward.
 
+### Done
+
+C2 is DONE (PASS 2026-09-12): A/A bitwise zero floor; window divergence
+onset exactly at smaller-window first eviction with no viewed
+degradation; 3-step over 4-step on viewed frames; decoder MAD 0.0237.
+Evidence: `docs/artifacts/c2-screen-20260912/` (branch
+`experiment/c2-quality-screen`, commit `889500f`).
+
 ### Ready
 
-C2 is READY: its entry criteria (first-encode probe confirms the prepare
-effect; strict post-warmup reset criterion passes via gate 7/7 and
-in-rollout `fresh_reset`) are satisfied by the C1R closure evidence.
-Its mandatory first branch is the bounded chunk/context screen.
+C3 is READY to freeze the contract on the C2/C0B evidence.
 
 ### Blocked
 
-C3 through C7 remain blocked in the chain shown above; C8 remains deferred.
+C4 through C7 remain blocked in the chain shown above; C8 remains deferred.
 C1's inconclusive result is preserved rather than treated as
 completion-by-assertion.
 
@@ -324,13 +329,13 @@ forward:
 
 ```text
 RUNNING
-C2 — bounded chunk/context screen design (source-cpu), then GPU execution
+C3 — freeze quality-approved semantic contract (source-cpu, decision step)
 
 READY
-(none — C2 is the active node)
+(none — C3 is the active node)
 
 BLOCKED
-C3, C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
+C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
 
 DEFERRED
 C8 — pending a measured residual opportunity from the C4-C7 loop
