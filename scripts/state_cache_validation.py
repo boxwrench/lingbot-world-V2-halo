@@ -746,6 +746,151 @@ def run_encode_probe(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+WARMED_CANONICAL_ORDER = (
+    "noise_chunk_0", "condition_chunk_0", "plucker_chunk_0", "text_context",
+    "bootstrap_x0", "layer0_clean_k", "layer0_clean_v",
+)
+
+
+def frozen_strict_equal(left: Any, right: Any) -> bool:
+    """Strict bitwise equality over frozen values, recursing into lists/dicts."""
+    if not isinstance(left, dict) or not isinstance(right, dict):
+        return False
+    if left.get("kind") != right.get("kind"):
+        return False
+    if left.get("kind") == "tensor":
+        return left.get("sha256") is not None and left.get("sha256") == right.get("sha256")
+    if "items" in left or "items" in right:
+        left_items, right_items = left.get("items"), right.get("items")
+        if isinstance(left_items, dict) or isinstance(right_items, dict):
+            if (
+                not isinstance(left_items, dict)
+                or not isinstance(right_items, dict)
+                or set(left_items) != set(right_items)
+            ):
+                return False
+            return all(frozen_strict_equal(left_items[key], right_items[key]) for key in left_items)
+        if not isinstance(left_items, list) or not isinstance(right_items, list):
+            return False
+        if len(left_items) != len(right_items):
+            return False
+        return all(frozen_strict_equal(a, b) for a, b in zip(left_items, right_items))
+    return True
+
+
+def warmed_strict_equal(capture_a: dict[str, Any], capture_b: dict[str, Any]) -> tuple[bool, dict[str, bool]]:
+    detail = {
+        name: frozen_strict_equal(capture_a["frozen"][name], capture_b["frozen"][name])
+        for name in WARMED_CANONICAL_ORDER
+    }
+    return all(detail.values()), detail
+
+
+def reset_cursors_at_bootstrap(reset_pos: dict[str, Any], frame_seqlen: int) -> bool:
+    """Fresh-bootstrap cursor check: compare the two cursor keys only.
+
+    cache_positions() also reports cache_capacity_tokens, so a whole-dict
+    comparison against a two-key literal is always False.
+    """
+    return (
+        reset_pos.get("global_end_index") == frame_seqlen
+        and reset_pos.get("local_end_index") == frame_seqlen
+    )
+
+
+def run_warmed_reset(args: argparse.Namespace) -> dict[str, Any]:
+    """One throwaway prepare, then strict A/B gate, conditional rollout, strict C."""
+    device = torch.device("cuda:0")
+    pipe = build_pipe(args, device)
+    session_args = make_session_args(args)
+    warmup = run_prepare_capture(pipe, session_args, device)
+    warmup_condition = warmup["frozen"]["condition_chunk_0"]
+    warmup_stripped = strip_tensors(warmup)
+    del warmup
+    torch.cuda.empty_cache()
+    capture_a = run_bootstrap_capture(pipe, session_args, device)
+    capture_b = run_bootstrap_capture(pipe, session_args, device)
+    gate_pass, gate_detail = warmed_strict_equal(capture_a, capture_b)
+    rollout = None
+    rollout_verdict = None
+    capture_c = None
+    check_pass: bool | None = None
+    check_detail = None
+    capture_c1 = None
+    capture_c2 = None
+    c1_detail = None
+    c2_detail = None
+    recovery: str | None = None
+    if gate_pass:
+        rollout = run_gpu(args, pipe=pipe)
+        rollout_verdict = (rollout.get("verdict") or {}).get("classification")
+        capture_c = run_bootstrap_capture(pipe, session_args, device)
+        check_pass, check_detail = warmed_strict_equal(capture_a, capture_c)
+        # Recovery probe: two further prepare-only captures. C1==X,C2==Y means
+        # transient single-prepare reversion (re-warmup need); C1==C2==X means
+        # persistent shift (deeper work). X is the warmup capture, Y is A.
+        capture_c1 = run_bootstrap_capture(pipe, session_args, device)
+        capture_c2 = run_bootstrap_capture(pipe, session_args, device)
+        c1_vs_a, c1_detail = warmed_strict_equal(capture_a, capture_c1)
+        c2_vs_a, c2_detail = warmed_strict_equal(capture_a, capture_c2)
+        c1_vs_warmup, _ = warmed_strict_equal(warmup_stripped, capture_c1)
+        c2_vs_warmup, _ = warmed_strict_equal(warmup_stripped, capture_c2)
+        if c1_vs_a and c2_vs_a:
+            recovery = "RECOVERED_IMMEDIATELY"
+        elif c1_vs_warmup and c2_vs_a:
+            recovery = "TRANSIENT_SINGLE_PREPARE_REVERSION"
+        elif c1_vs_warmup and c2_vs_warmup:
+            recovery = "PERSISTENT_SHIFT"
+        else:
+            recovery = "MIXED_UNCLASSIFIED"
+    if not gate_pass:
+        classification = "WARMED_AB_MISMATCH"
+    elif rollout_verdict != "PASS":
+        classification = "WARMED_ROLLOUT_NOT_PASS"
+    elif not check_pass:
+        classification = "WARMED_C_MISMATCH"
+    else:
+        classification = "WARMED_RESET_PASS"
+    return {
+        "configuration": {
+            "seed": args.seed,
+            "chunks": args.chunks,
+            "local_attn_size_frames_total_including_sink": args.local_attn_size,
+            "sink_size_frames": args.sink_size,
+            "denoise_schedule": args.denoise_schedule,
+            "scripted_actions": args.scripted_actions,
+            "warmup": "exactly one throwaway prepare_session before measured session A (stripped hashes retained for recovery comparison)",
+        },
+        "provenance": provenance_block(args),
+        "warmup": warmup_stripped,
+        "warmup_condition": warmup_condition,
+        "capture_a": strip_tensors(capture_a),
+        "capture_b": strip_tensors(capture_b),
+        "gate_ab_strict": gate_detail,
+        "gate_pass_ab_bitwise": gate_pass,
+        "rollout": rollout,
+        "rollout_verdict": rollout_verdict,
+        "capture_c": strip_tensors(capture_c) if capture_c is not None else None,
+        "check_ac_strict": check_detail,
+        "check_pass_ac_bitwise": check_pass,
+        "capture_c1": strip_tensors(capture_c1) if capture_c1 is not None else None,
+        "capture_c2": strip_tensors(capture_c2) if capture_c2 is not None else None,
+        "recovery_c1_vs_a_strict": c1_detail,
+        "recovery_c2_vs_a_strict": c2_detail,
+        "recovery": recovery,
+        "verdict": {
+            "classification": classification,
+            "detail": (
+                "Throwaway warmup, strict A==B, exact-RC1 rollout with its own PASS verdict, "
+                "and strict C==A: post-warmup reset reproduces bitwise."
+                if classification == "WARMED_RESET_PASS" else
+                "See gate_ab_strict / rollout_verdict / check_ac_strict for the failing stage; "
+                "no tolerance was applied anywhere."
+            ),
+        },
+    }
+
+
 def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
     from run_interactive import cache_positions, commit_clean_kv, generate_chunk, prepare_session, sync
     from run_live import action_from_key, make_plucker
@@ -900,7 +1045,7 @@ def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
         reset_result["fresh_layer0_cache_matches_initial"],
         reset_result["fresh_layer0_v_matches_initial"],
         reset_result["all_layer_cursors_equal"],
-        reset_pos == {"global_end_index": frame_seqlen, "local_end_index": frame_seqlen},
+        reset_cursors_at_bootstrap(reset_pos, frame_seqlen),
     ))
     coverage = {label for row in chunks for label in row["scenario_labels"]}
     assertions = [
@@ -973,7 +1118,11 @@ def run_gpu(args: argparse.Namespace, pipe: Any = None) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("fixture", "gpu", "reset-discriminator", "encode-probe"), required=True)
+    parser.add_argument(
+        "--mode",
+        choices=("fixture", "gpu", "reset-discriminator", "encode-probe", "warmed-reset"),
+        required=True,
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--model-dir")
     parser.add_argument("--image")
@@ -1010,8 +1159,10 @@ def main() -> int:
             payload = {"kind": "gfx1151_real_lingbot_boundary_validation", **run_gpu(args)}
         elif args.mode == "reset-discriminator":
             payload = {"kind": "gfx1151_reset_discriminator", **run_reset_discriminator(args)}
-        else:
+        elif args.mode == "encode-probe":
             payload = {"kind": "gfx1151_encode_determinism_probe", **run_encode_probe(args)}
+        else:
+            payload = {"kind": "gfx1151_warmed_reset", **run_warmed_reset(args)}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
