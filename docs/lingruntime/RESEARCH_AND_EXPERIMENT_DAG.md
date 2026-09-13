@@ -285,10 +285,10 @@ forward:
 
 ```text
 RUNNING
-C1R — discriminator classified; first-encode probe queued (gpu-exclusive)
+C1R — probe evidence committed; warmed reset test in progress (gpu-exclusive)
 
 READY
-C1R first-encode determinism probe (several fresh prepares, condition-hash comparison)
+warmed validator reset test (throwaway prepare + strict A/B gate + conditional rollout + strict C)
 
 BLOCKED
 C2 — quality causality, waiting on a valid reset criterion
