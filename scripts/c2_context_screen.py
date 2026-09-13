@@ -195,7 +195,7 @@ def main() -> int:
                 "x0_sha256": tensor_sha(generated["x0"]),
                 "x0_stats": measured["x0_stats"],
                 "rgb_frames": measured["rgb_frames"],
-                "denoise_ms": measured["denoise_ms"],
+                "denoise_ms": generated["transformer_ms"],
                 "clean_commit_ms": measured["clean_commit_ms"],
                 "output_finite": measured["output_finite"],
                 "cache_after": {k: (int(v) if not hasattr(v, "item") else int(v.item())) for k, v in measured["cache_after"].items()},
