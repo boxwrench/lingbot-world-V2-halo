@@ -1072,6 +1072,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (Plan 2 technical close)",
    "change": "P2.6 REJECT (memo sub-threshold on production path; prediction error root-caused to untuned measurement context). P2.7 no-op. P2.8 STOP (low/medium candidates exhausted; SDPA residual is C8-class). P2.9 BLOCKED_EXTERNAL (no DSH keys). Plan 2 technical work complete; audit + mainline decisions are human boundaries."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.9 recheck)",
+   "change": "External review accepted Plan 2 STOP/NO-CHANGE and requires P2.9 before DONE/C8. Credentials rechecked: still absent. P2.9 remains BLOCKED_EXTERNAL; Plan 2 stays open; C8 not started (gated on audit closure)."
   }
  ]
 }
