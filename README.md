@@ -1,5 +1,9 @@
 # StrixHalo-LingBot
 
+> **Start here:** [`docs/STATUS.md`](docs/STATUS.md) is the canonical project
+> status (accepted state, campaign dispositions, known limitations, open
+> items). The dated bring-up narrative below is preserved history.
+
 Reproducible bring-up and characterization of **LingBot World v2
 `robbyant/lingbot-world-v2-1.3b-causal-fast`** on an AMD Ryzen AI MAX+ 395
 Strix Halo APU with Radeon 8060S (`gfx1151`).
