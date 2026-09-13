@@ -341,7 +341,7 @@
    "id": "C3",
    "name": "Freeze quality-approved semantic contract",
    "type": "decision",
-   "status": "ready",
+   "status": "done",
    "priority": 30,
    "resource": "source-cpu",
    "dependsOn": [
@@ -356,28 +356,25 @@
     "C2 exit criteria satisfied (bounded screen plus any triggered branches resolved or deferred)"
    ],
    "outputs": [
-    "chunk size",
-    "local attention size",
-    "sink size",
-    "denoise schedule",
-    "resolution",
-    "decoder contract",
-    "responsiveness requirement",
-    "quality horizon"
+    "docs/lingruntime/SEMANTIC_CONTRACT.md (eight fields, all traceable)"
    ],
    "exitCriteria": [
     "all eight contract fields above recorded and traceable to C2 evidence"
    ],
    "nextIf": [],
-   "evidence": [],
-   "result": null,
-   "notes": "C2 evidence consumed: RC1 point (chunk 1, 12+6, 3-drop-957, 384x672, TAEHV) holds quality vs tested alternatives; 18+6 and 4-step differ without showing superiority (4-step softer on the tested scene). Freeze the eight contract fields traceable to C2/C0B evidence."
+   "evidence": [
+    "docs/lingruntime/SEMANTIC_CONTRACT.md",
+    "C2 screen verdict (docs/artifacts/c2-screen-20260912/README.md)",
+    "C0B latency envelope (docs/artifacts/phase0-20260912/)"
+   ],
+   "result": "DONE (2026-09-12). Contract frozen at the RC1 point: chunk 1, local 12, sink 6, 3-drop-957, 384x672, TAEHV taew2_1.pth FP16, no-regression responsiveness envelope (next-ready P50 ~1259 ms), 16-action quality horizon. 18+6 and 4-step rejected on C2 evidence (divergence without benefit; softer).",
+   "notes": "Decision/documentation step; consumed C2 + C0B only, no new GPU work."
   },
   {
    "id": "C4",
    "name": "Profile the quality-approved runtime",
    "type": "profile",
-   "status": "blocked",
+   "status": "ready",
    "priority": 40,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -402,7 +399,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "Distinct from C0B. Do not assume C0B's hotspot ranking (rolled self-SDPA, non-SDPA clean-KV recomputation) still applies if C3's frozen point differs from RC1's 12+6/3-step/TAEHV configuration."
+   "notes": "Frozen point equals the RC1 configuration C0B measured, so C0B's ranking is admissible context, but C4 still requires its own waterfall+attribution capture for the frozen point. Design: one representative rolled waterfall action with per-forward GPU-synchronized boundaries plus A/A repeats, same RC1 command as C0B."
   },
   {
    "id": "C5A",
@@ -620,7 +617,7 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C3 \u2014 freeze quality-approved semantic contract (source-cpu, decision step)"
+   "C4 \u2014 profile the frozen runtime (gpu-exclusive)"
   ],
   "readyNow": [],
   "blocked": [
@@ -698,6 +695,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C2 cycle)",
    "change": "Ingested C2 screen (889500f, pushed): A/A bitwise zero floor, eviction-onset window divergence without degradation, 3-step over 4-step on viewed frames, decoder MAD 0.0237. Recorded C2 done (PASS) with branch dispositions; C3 set ready. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C3 cycle)",
+   "change": "Froze the eight-field semantic contract at the RC1 point (SEMANTIC_CONTRACT.md), all fields traceable to C2/C0B. C3 done; C4 ready. Main untouched."
   }
  ]
 }
