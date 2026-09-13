@@ -178,6 +178,18 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   bitwise; a third prepare matched B. VAE feature-cache staleness eliminated
   by inspection; first-encode warmup effect is the follow-up hypothesis.
   Next: minimal first-encode determinism probe, then a valid reset criterion.
+  Probe evidence committed (within-pipe X,Y,Y,Y / X,Y, universal
+  steady-state Y).
+
+  Warmed-reset first execution (2026-09-12,
+  `state-cache-warmed-reset.json`, run from the uncommitted tree on
+  `123db37` — see the dirt record in commit `dd0e4da`): gate A==B strict
+  PASS 7/7; rollout 15/16 with `fresh_reset` FAIL caused solely by a
+  validator dict bug (`reset_pos` carries `cache_capacity_tokens`, all
+  semantic sub-checks true in data); C==A FAIL with C.condition == warmup
+  X. Fixed in `ec3b4f1` (two-key cursor check `reset_cursors_at_bootstrap`
+  plus C1/C2 recovery classification in `--mode warmed-reset`); rerun
+  pending. C1R stays running, C2 stays blocked.
 
 ### Blocked
 
@@ -285,7 +297,7 @@ forward:
 
 ```text
 RUNNING
-C1R — probe evidence committed; warmed reset test in progress (gpu-exclusive)
+C1R — dict bug fixed, recovery probe added; warmed-reset rerun pending (gpu-exclusive)
 
 READY
 warmed validator reset test (throwaway prepare + strict A/B gate + conditional rollout + strict C)
