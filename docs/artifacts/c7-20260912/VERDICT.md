@@ -9,8 +9,10 @@ Integration: `experiment/c7-integration` = `main` + merge of accepted
 
 - C1-equiv: bitwise 0.0 vs committed main-path latents (16/16).
 - Improvement: clean-forward beats in-run denoise-3 in 14/15 actions
-  (action 7 forward-tied; correction 2026-09-12, B001 A1 — original text
-  said 15/15; immutable evidence commit 50dc857 message preserved as-is)
+  (action 5 loses by +0.63 ms; correction 2026-09-12, external review —
+  an interim "action 7 tied" correction is refuted by re-derivation from
+  benchmark.json; original text said 15/15; immutable evidence commit
+  50dc857 message preserved as-is)
   (−4..−8 ms rolled, mean ≈ −6 ms 1:1 off next-ready).
 - Combined medians from that capture: base 989.6 / ready 1315.4, with
   the recorded cross-day drift caveat (busy host; C0B envelope stands).
