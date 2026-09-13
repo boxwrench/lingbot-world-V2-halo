@@ -1,0 +1,3 @@
+[W913 10:22:44.377929831 Context.cpp:568] Warning: Attempting to use CK on an unsupported architecture! Cannot set backend to CK (function operator())
+USDT:2026-09-13 10:22:44 1189080:1189080 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-09-13 10:22:44 1189080:1189080 SyncActivityProfilerHandler.cpp:59] profiler_stop
