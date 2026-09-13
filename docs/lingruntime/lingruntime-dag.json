@@ -1,8 +1,8 @@
 {
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
- "lastUpdated": "2026-09-12",
- "updatedBy": "orchestrator (Plan 2 open)",
+ "lastUpdated": "2026-09-13",
+ "updatedBy": "orchestrator (P2.9 closure)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -627,7 +627,7 @@
     "done -> P2.1"
    ],
    "evidence": [
-    "experiment/p2-baseline: docs/artifacts/p20-baseline-20260913/{waterfall,aa-run-1,aa-run-2}-benchmark.json, summary.json, environment/, README.md"
+    "experiment/p2-baseline: docs/artifacts/p20-baseline-20260913/waterfall-benchmark.json, aa-run-1-benchmark.json, aa-run-2-benchmark.json, summary.json, environment/, README.md, procedures/run-p20-baseline.sh, procedures/p20-analyze.py, *-server.log (recovered from /tmp per P2.9-A1)"
    ],
    "result": "DONE (2026-09-13). 3x15 rolled on tagged main (n=45): baseRGB P50 847.4/P95 963.9; nextReady P50 1136.5/P95 1280.3; denoise P50 816.4 (forwards even ~274/271/273); clean-vs-d3 44/45 mean -5.4. C6B verified next-ready-only (model code byte-identical to verified tip; no presentation/math changes). Evidence: experiment/p2-baseline docs/artifacts/p20-baseline-20260913/. C0B absolutes retired.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
@@ -656,7 +656,7 @@
     "done -> P2.2"
    ],
    "evidence": [
-    "experiment/p2-baseline: docs/artifacts/p21-profile-20260913/{live-metrics.json, module-metrics.json, README.md}"
+    "experiment/p2-baseline: docs/artifacts/p21-profile-20260913/live-metrics.json, module-metrics.json, README.md, PROVENANCE-ADDENDUM.md, procedures/run-p21-profile.sh, procedures/run-p21-module.sh (recovered from /tmp per P2.9-A1)"
    ],
    "result": "DONE (2026-09-13). Intrusive steady-state profile on main: baseRGB~=denoise(816)+decode(38)+host(10); clean-KV irrelevant to base-RGB. Re-rank: SDPA kernel ~44% (~360ms, kernel not dispatch), tuned GEMMs ~38% (~310ms), block remainder ~10% (~85ms, needs NEW mechanism), norms 4.5% (rejected), rest <3%. Evidence: experiment/p2-baseline docs/artifacts/p21-profile-20260913/.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
@@ -713,7 +713,9 @@
    "nextIf": [
     "done -> P2.4"
    ],
-   "evidence": [],
+   "evidence": [
+    "experiment/p2-baseline: docs/artifacts/p22-p23-research-20260913.md (ranking + <10 ms stop rule)"
+   ],
    "result": "DONE (2026-09-13). Ranked: time-projection memo ACCEPTED (~66ms/phase, microbench 22.2ms/call, high confidence, low complexity).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
@@ -741,7 +743,7 @@
     "done -> P2.5"
    ],
    "evidence": [
-    "experiment/p24-timeproj-memo: scripts/timeproj_memo.py, tests/test_timeproj_memo.py"
+    "experiment/p24-timeproj-memo: scripts/timeproj_memo.py, tests/test_timeproj_memo.py, docs/artifacts/p24-timeproj-memo-20260913/procedures/run-p24-onoff.sh, docs/artifacts/p24-timeproj-memo-20260913/procedures/run-p24-eval.sh (recovered from /tmp per P2.9-A1)"
    ],
    "result": "DONE (2026-09-13). timeproj memo implemented (module wrapper, env-gated, upstream untouched) on experiment/p24-timeproj-memo. Unit 3/3.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
@@ -770,9 +772,9 @@
     "done -> P2.6"
    ],
    "evidence": [
-    "experiment/p24-timeproj-memo: docs/artifacts/p24-timeproj-memo-20260913/"
+    "experiment/p24-timeproj-memo: docs/artifacts/p24-timeproj-memo-20260913/ (trajectories, README with P2.9-A5 screen-scope correction), docs/artifacts/p25c-order-20260913/ (OFF/ON/OFF screen order-swap control, committed per P2.9-A4), docs/artifacts/provenance-addendum-20260913.json (upstream SHA, model dir, seeds, TunableOp context per P2.9-A1)"
    ],
-   "result": "DONE (2026-09-13). Gates PASS: ON-vs-OFF bitwise 0.0 (16/16); per-chunk denoise -56..-84ms, mean -70.4. One vacated pair recorded (stale-code root cause, redone correctly). No visual gate (bitwise + untouched presentation).",
+   "result": "DONE (2026-09-13). Gates PASS in screen-harness scope (P2.9-A5 correction): ON-vs-OFF bitwise 0.0 (16/16); per-chunk denoise -56..-84ms, mean -70.4 (untuned screen context, not production). Screen order-swap control P2.5c: ON -70.1 vs OFF1, OFF3 -3.3 vs OFF1 (not drift). One vacated pair recorded (stale-code root cause, redone correctly). No visual gate (bitwise + untouched presentation).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -799,9 +801,9 @@
     "done -> P2.7"
    ],
    "evidence": [
-    "experiment/p24-timeproj-memo: docs/artifacts/p26-20260913/{on,off,timelog}-benchmark.json, README.md"
+    "experiment/p24-timeproj-memo: docs/artifacts/p26-20260913/on-benchmark.json, off-benchmark.json, timelog-benchmark.json (memo-stats null-note per P2.9-A2), paired-analysis.py, paired-analysis.json (committed per P2.9-A4), README.md (A2/A3/A4 corrections), procedures/run-p26-browser.sh (recovered from /tmp per P2.9-A1)"
    ],
-   "result": "DONE (2026-09-13). REJECTED: production effect ~12-14ms (in run noise +-12), not the predicted 66. Root cause of prediction error: microbench/profile ran untuned (22ms/call) while production runs the pinned-TunableOp bf16 kernel (3.5-4.9ms/call, 60 hits/4 misses instrumented). Mechanism real + bitwise-exact, value sub-threshold. Evidence: experiment/p24-timeproj-memo docs/artifacts/p26-20260913/. Mainline untouched.",
+   "result": "DONE (2026-09-13). REJECTED: paired per-action denoise -7.33 ms (t~-5.8), below the P2.3 <10 ms stop rule; between-run medians -13.8/-14.8/-14.0 do not carry the verdict (P2.9-A4). Root cause of prediction error: microbench/profile ran untuned (22ms/call) while production runs the pinned-TunableOp f32 kernel GemmAndBiasTunableOp_float_TN tn_9216_1008_1536 @3.80812ms (P2.9-A3 dtype correction; prose memo counters retracted per P2.9-A2). Mechanism real + bitwise-exact, value sub-threshold. Mainline untouched.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -827,7 +829,9 @@
    "nextIf": [
     "done -> P2.8"
    ],
-   "evidence": [],
+   "evidence": [
+    "record-based decision, see result; no integration branch exists (verified: git branch shows none; main == origin/main == 9cc986c)"
+   ],
    "result": "DONE (2026-09-13). Nothing to integrate: sole P2.4 candidate rejected at P2.6. No integration branch created (correct per spec: below decision value, stop).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
@@ -854,7 +858,9 @@
    "nextIf": [
     "done -> P2.9"
    ],
-   "evidence": [],
+   "evidence": [
+    "record-based decision, see result; STOP rationale cites P2.1 re-rank + P2.6 reject + parked C8-class SDPA residual"
+   ],
    "result": "DONE (2026-09-13). STOP: plausible low/medium-complexity candidates exhausted (GEMM floor, camera dead, norms dead, memo sub-threshold, SDPA C8-class). Residual: SDPA kernel ~360ms/phase requires explicit advanced-runtime strategic decision. Practical local floor evidenced.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
@@ -862,7 +868,7 @@
    "id": "P2.9",
    "name": "Plan 2 \u2014 Terminal independent audit",
    "type": "integration",
-   "status": "blocked",
+   "status": "done",
    "priority": 50,
    "resource": "implementation",
    "dependsOn": [
@@ -879,8 +885,10 @@
    "nextIf": [
     "verdict + corrections + approval -> PLAN DONE"
    ],
-   "evidence": [],
-   "result": "BLOCKED_EXTERNAL (2026-09-13): no DSH API credentials in environment; live audit campaign cannot run. Not a harness failure. Packet materials ready (P2 evidence on experiment/p2-baseline + experiment/p24-timeproj-memo).",
+   "evidence": [
+    "dsh-research-team/campaigns/20260913T165425Z-audit-plan-2-denoise-critical-path/lead-final.md (verdict AUDIT_PASS_WITH_ACTIONS, DeepSeek-Flash lead + muse-spark-1.3 workers)"
+   ],
+   "result": "DONE (2026-09-13). Terminal audit verdict AUDIT_PASS_WITH_ACTIONS: primary conclusion stands (sole surviving candidate real, bitwise-exact, sub-threshold; no candidate clears the bar; P2.7 integrated nothing correctly; P2.8 STOP justified; main unchanged at 9cc986c). All CLOSURE_REQUIRED items resolved: A1 procedures/logs committed + provenance addenda; A2 prose counters retracted with timelog null-note; A3 f32 dtype correction; A4 paired analysis committed (-7.33ms) + order-swap wording scoped to screen P2.5c; A5 P2.5 screen-scope qualification as new record; A6 this DAG update. Handoff refs: start lingruntime-gfx1151-b001 and end 9cc986c both resolve to 9cc986c (tag peels to it); batch terminals experiment/p2-baseline@782cfc0 pre-audit evidence, @6f899a2 with closure; experiment/p24-timeproj-memo@b665df1 pre-audit evidence, @9a32016 with closure, orchestration/reconcile-c1@6ff5f75 (+ closure). NEXT_PLAN B1-B5 transferred to C8 entry; PARKED C1/C2 retained; memo D1 REJECTED branch-only.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   }
  ],
@@ -1077,6 +1085,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (P2.9 recheck)",
    "change": "External review accepted Plan 2 STOP/NO-CHANGE and requires P2.9 before DONE/C8. Credentials rechecked: still absent. P2.9 remains BLOCKED_EXTERNAL; Plan 2 stays open; C8 not started (gated on audit closure)."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.9 closure)",
+   "change": "Terminal audit AUDIT_PASS_WITH_ACTIONS; A1-A6 resolved; P2.9 done; Plan 2 DONE; main unchanged at 9cc986c; C8 authorized by audit closure, to be opened as next plan."
   }
  ]
 }
