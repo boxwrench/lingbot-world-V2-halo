@@ -44,6 +44,8 @@ class MemoTimeProjection(torch.nn.Module):
         self.misses = 0
 
     def forward(self, e: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
+        import os
+        import time
         t = _current_timestep[0]
         if t is None:
             return self.wrapped(e)
@@ -52,9 +54,27 @@ class MemoTimeProjection(torch.nn.Module):
         if hit is not None:
             self.hits += 1
             return hit.clone()
+        ev0 = torch.cuda.Event(enable_timing=True) if e.is_cuda else None
+        t0 = time.perf_counter()
+        if ev0 is not None:
+            ev0.record()
         out = self.wrapped(e)
+        if ev0 is not None:
+            ev1 = torch.cuda.Event(enable_timing=True)
+            ev1.record()
+            torch.cuda.synchronize(e.device)
+            ms = ev0.elapsed_time(ev1)
+        else:
+            ms = (time.perf_counter() - t0) * 1000.0
         self.cache[key] = out.detach().clone()
         self.misses += 1
+        if os.environ.get("LINGBOT_TIMEPROJ_TIMELOG") == "1":
+            import json
+            import sys
+            sys.stderr.write(json.dumps(
+                {"timeproj_call": {"t": t, "key_shape": list(e.shape),
+                                   "dtype": str(e.dtype), "ms": round(ms, 2)}}) + "\n")
+            sys.stderr.flush()
         return out
 
 
@@ -66,6 +86,18 @@ def install_timeproj_memo(model: torch.nn.Module) -> MemoTimeProjection:
         raise AttributeError("model has no time_projection to memoize")
     memo = MemoTimeProjection(existing)
     model.time_projection = memo
+    import atexit
+    import json
+    import sys
+
+    def _report() -> None:
+        try:
+            sys.stderr.write(json.dumps({"timeproj_memo_final": memo_stats(model)}) + "\n")
+            sys.stderr.flush()
+        except Exception:
+            pass
+
+    atexit.register(_report)
     return memo
 
 
