@@ -24,8 +24,14 @@ assessment is not the final verdict.
   (48 frames @ 8 fps, side-by-side, same duration/rate/crop, no config
   labels); A/B randomized per scene, key sealed in `scene-KEY.json`.
   The builder refuses mismatched pairs (seed/actions/geometry/chunks).
-- S1-3step doubles as a reproduction control: chunks 2..17 latents must
-  match committed C2 A1 `accepted_latents.pt` bitwise.
+- Correction 2026-09-13: a planned bitwise control (S1-3step chunks
+  2..17 vs committed C2 A1 latents) FAILS by mechanism, not by
+  regression — `prepare_session` draws `randn(16, lat_f)` with the session
+  seed, so the 20-action runs use different noise than C2's 16-action
+  runs (conditions match, x0 differs from bootstrap). Cross-length
+  bitwise comparison is invalid. The valid match is within-pair:
+  S1-3step vs S1-4step share identical conditions on all 20 chunks
+  (verified) with only the schedule differing, and likewise S2.
 
 ## How to judge (after clips land)
 

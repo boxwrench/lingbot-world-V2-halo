@@ -1,0 +1,29 @@
+{
+  "key": "DO NOT OPEN until scene judgments are recorded",
+  "seed": 20260912,
+  "chunks": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+  ],
+  "fps": 8,
+  "scene1": {
+    "clip-left": "4-step",
+    "clip-right": "3-step",
+    "frames": 48
+  },
+  "scene2": {
+    "clip-left": "3-step",
+    "clip-right": "4-step",
+    "frames": 48
+  }
+}
