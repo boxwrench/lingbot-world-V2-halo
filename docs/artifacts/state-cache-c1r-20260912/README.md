@@ -116,3 +116,24 @@ conditional 16-chunk rollout, strict C==A).
 - Provenance note: this file was produced by the uncommitted warmed-mode
   tree on top of `123db37` (pre dict-fix, pre C1/C2); see the committing
   commit message for the dirt record.
+
+## Warmed-reset rerun on fixed code (2026-09-12): rollout 16/16 PASS, transient single-prepare reversion, immediate recovery
+
+Raw evidence: [`state-cache-warmed-reset-rerun.json`](state-cache-warmed-reset-rerun.json)
+(provenance base `06ba33c`, clean tree — no dirt).
+
+- Gate A==B strict PASS 7/7 (steady-state Y).
+- Rollout verdict PASS, all 16 assertions green, failed list empty: with
+  the cursor fix, `fresh_reset` passes on the exact RC1 point. Both
+  original FAIL causes are now closed as measurement artifacts: (i) the
+  dict bug (fixed), (ii) the X-vs-Y first-encode effect (characterized).
+- Check C==A FAIL (`WARMED_C_MISMATCH`): C.condition == warmup X
+  (`10888b…`) — the first prepare after the rollout reverts to
+  first-encode-like output once.
+- Recovery `RECOVERED_IMMEDIATELY`: C1==A and C2==A bitwise on all 7
+  tensors; C1/C2 vs warmup differ only on condition (expected: A is Y,
+  warmup is X). The reversion lasts exactly one prepare (C itself) and
+  self-heals on the next prepare with no re-warmup procedure.
+- No leak signature anywhere: noise/plucker/text identical across all
+  captures; only the first-encode-sensitive condition path moves, and it
+  returns on its own.
