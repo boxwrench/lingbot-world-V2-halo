@@ -1,0 +1,2665 @@
+{
+  "url": "http://127.0.0.1:8781/ws",
+  "actions": [
+    "w",
+    "w",
+    "j",
+    "w",
+    "l",
+    "l",
+    "s",
+    "s",
+    "j",
+    "w",
+    "d",
+    "d",
+    "w",
+    "l",
+    "a"
+  ],
+  "startup": {
+    "process_start_ms": 0.0,
+    "tunableop_loaded_ms": 30.979480012319982,
+    "model_initialization_start_ms": 31.05344797950238,
+    "model_initialization_end_ms": 38715.09178506676,
+    "prewarm_start_ms": 38920.138737070374,
+    "prewarm_end_ms": 40920.02179007977,
+    "session_preparation_start_ms": 40920.0575890718,
+    "session_preparation_end_ms": 100933.82618599571,
+    "runtime_ready_ms": 101477.17019403353,
+    "interactive_ready_ms": 102615.5342280399
+  },
+  "records": [
+    {
+      "action_id": 1,
+      "action": "w",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 102615.7675520517,
+        "input_selected_ms": 102615.81793008372,
+        "generation_start_ms": 102623.47274308559,
+        "accepted_x0_ms": 103245.36127306055,
+        "base_rgb_ready_ms": 103266.67367201298,
+        "clean_kv_start_ms": 103266.98854402639,
+        "clean_kv_complete_ms": 103468.91349297948,
+        "all_rgb_ready_ms": 103489.03354199138,
+        "next_ready_ms": 103489.03354199138
+      },
+      "browser": {
+        "keydown_ms": 101482.07956796978,
+        "frame_received_ms": 102143.19749397691,
+        "frame_decoded_ms": 102169.0515660448,
+        "frame_presented_ms": 102169.1060840385
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 617.5897029461339,
+      "transformer_ms": 621.7441540211439,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 204.46048397570848,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 1008,
+          "kv_length_after": 2016,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 1008,
+            "local_end_index": 1008,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910473216,
+          "allocated_after_bytes": 17910731264,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 207.31626998167485,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 2016,
+          "kv_length_after": 2016,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911247360,
+          "allocated_after_bytes": 17911247360,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 205.81294898875058,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 2016,
+          "kv_length_after": 2016,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911247360,
+          "allocated_after_bytes": 17911247360,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 201.86108106281608,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 2016,
+          "kv_length_after": 2016,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18011836928,
+          "allocated_after_bytes": 18011836928,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.050268019549548626,
+      "latent_postprocess_ms": 3.000483033247292,
+      "clean_kv_ms": 201.86108106281608,
+      "tae_first_rgb_gpu_ms": 20.4206119524315,
+      "tae_remaining_rgb_gpu_ms": 18.06656294502318,
+      "derived": {
+        "action_to_base_rgb_ms": 650.9061199612916,
+        "action_to_next_ready_ms": 873.2659899396822,
+        "generation_to_x0_ms": 621.8885299749672,
+        "generation_to_clean_kv_ms": 845.4407498938963
+      },
+      "cache": {
+        "global_end_index": 2016,
+        "local_end_index": 2016,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 2,
+      "action": "w",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 103490.58403202798,
+        "input_selected_ms": 103490.6952000456,
+        "generation_start_ms": 103494.1259410698,
+        "accepted_x0_ms": 104142.96371105593,
+        "base_rgb_ready_ms": 104164.09156506415,
+        "clean_kv_start_ms": 104164.30318902712,
+        "clean_kv_complete_ms": 104370.30836101621,
+        "all_rgb_ready_ms": 104389.88602499012,
+        "next_ready_ms": 104389.88602499012
+      },
+      "browser": {
+        "keydown_ms": 102356.79426195566,
+        "frame_received_ms": 103037.34997205902,
+        "frame_decoded_ms": 103039.85994704999,
+        "frame_presented_ms": 103039.88576598931
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 644.1249421332031,
+      "transformer_ms": 648.5915570519865,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 220.16595699824393,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 2016,
+          "kv_length_after": 3024,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 2016,
+            "local_end_index": 2016,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910456832,
+          "allocated_after_bytes": 17910714880,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 212.74242806248367,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 3024,
+          "kv_length_after": 3024,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 211.21655707247555,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 3024,
+          "kv_length_after": 3024,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 205.84746601525694,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 3024,
+          "kv_length_after": 3024,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18011951616,
+          "allocated_after_bytes": 18011951616,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.07873796857893467,
+      "latent_postprocess_ms": 3.2919938676059246,
+      "clean_kv_ms": 205.84746601525694,
+      "tae_first_rgb_gpu_ms": 19.951784051954746,
+      "tae_remaining_rgb_gpu_ms": 18.0280739441514,
+      "derived": {
+        "action_to_base_rgb_ms": 673.5075330361724,
+        "action_to_next_ready_ms": 899.3019929621369,
+        "generation_to_x0_ms": 648.8377699861303,
+        "generation_to_clean_kv_ms": 876.1824199464172
+      },
+      "cache": {
+        "global_end_index": 3024,
+        "local_end_index": 3024,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 3,
+      "action": "j",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 104391.36954699643,
+        "input_selected_ms": 104391.52053301223,
+        "generation_start_ms": 104398.52335199248,
+        "accepted_x0_ms": 105069.201784092,
+        "base_rgb_ready_ms": 105090.45224403962,
+        "clean_kv_start_ms": 105090.65625898074,
+        "clean_kv_complete_ms": 105310.74572505895,
+        "all_rgb_ready_ms": 105330.70744900033,
+        "next_ready_ms": 105330.70744900033
+      },
+      "browser": {
+        "keydown_ms": 103257.62278505135,
+        "frame_received_ms": 103966.92513802554,
+        "frame_decoded_ms": 103969.56875897013,
+        "frame_presented_ms": 103969.60543806199
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 666.442860965617,
+      "transformer_ms": 670.3500599833205,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 224.40326598007232,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 3024,
+          "kv_length_after": 4032,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 3024,
+            "local_end_index": 3024,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911489024,
+          "allocated_after_bytes": 17911747072,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 221.7371939914301,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 4032,
+          "kv_length_after": 4032,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 220.30240099411458,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 4032,
+          "kv_length_after": 4032,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 220.0059889582917,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 4032,
+          "kv_length_after": 4032,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012934656,
+          "allocated_after_bytes": 18012934656,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.15929609071463346,
+      "latent_postprocess_ms": 2.9653231613337994,
+      "clean_kv_ms": 220.0059889582917,
+      "tae_first_rgb_gpu_ms": 20.420202054083347,
+      "tae_remaining_rgb_gpu_ms": 18.11742107383907,
+      "derived": {
+        "action_to_base_rgb_ms": 699.0826970431954,
+        "action_to_next_ready_ms": 939.3379020038992,
+        "generation_to_x0_ms": 670.6784320995212,
+        "generation_to_clean_kv_ms": 912.22237306647
+      },
+      "cache": {
+        "global_end_index": 4032,
+        "local_end_index": 4032,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 4,
+      "action": "w",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 105332.63651898596,
+        "input_selected_ms": 105332.7365370933,
+        "generation_start_ms": 105338.21926498786,
+        "accepted_x0_ms": 106042.95280203223,
+        "base_rgb_ready_ms": 106064.1257140087,
+        "clean_kv_start_ms": 106064.31384908501,
+        "clean_kv_complete_ms": 106287.75889798999,
+        "all_rgb_ready_ms": 106306.97965004947,
+        "next_ready_ms": 106306.97965004947
+      },
+      "browser": {
+        "keydown_ms": 104198.76979000401,
+        "frame_received_ms": 104939.32604102883,
+        "frame_decoded_ms": 104941.74169795588,
+        "frame_presented_ms": 104941.77335698623
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 700.6848829332739,
+      "transformer_ms": 704.5108230086043,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 235.75883207377046,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 4032,
+          "kv_length_after": 5040,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 4032,
+            "local_end_index": 4032,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910505984,
+          "allocated_after_bytes": 17910764032,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 234.6048499457538,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 5040,
+          "kv_length_after": 5040,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911280128,
+          "allocated_after_bytes": 17911280128,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 230.32120091374964,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 5040,
+          "kv_length_after": 5040,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911280128,
+          "allocated_after_bytes": 17911280128,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 223.40285999234766,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 5040,
+          "kv_length_after": 5040,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012033536,
+          "allocated_after_bytes": 18012033536,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.08170690853148699,
+      "latent_postprocess_ms": 2.772016916424036,
+      "clean_kv_ms": 223.40285999234766,
+      "tae_first_rgb_gpu_ms": 20.508258952759206,
+      "tae_remaining_rgb_gpu_ms": 17.729450948536396,
+      "derived": {
+        "action_to_base_rgb_ms": 731.489195022732,
+        "action_to_next_ready_ms": 974.343131063506,
+        "generation_to_x0_ms": 704.7335370443761,
+        "generation_to_clean_kv_ms": 949.5396330021322
+      },
+      "cache": {
+        "global_end_index": 5040,
+        "local_end_index": 5040,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 5,
+      "action": "l",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 106308.68466605898,
+        "input_selected_ms": 106308.8161930209,
+        "generation_start_ms": 106314.09652600996,
+        "accepted_x0_ms": 107042.58162504993,
+        "base_rgb_ready_ms": 107063.74507700093,
+        "clean_kv_start_ms": 107063.96887102164,
+        "clean_kv_complete_ms": 107300.10146007407,
+        "all_rgb_ready_ms": 107319.61065507494,
+        "next_ready_ms": 107319.61065507494
+      },
+      "browser": {
+        "keydown_ms": 105174.90500502754,
+        "frame_received_ms": 105937.39840295166,
+        "frame_decoded_ms": 105939.37836203258,
+        "frame_presented_ms": 105939.41660097335
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 724.111131974496,
+      "transformer_ms": 728.1456070486456,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 242.1293150400743,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 5040,
+          "kv_length_after": 6048,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 5040,
+            "local_end_index": 5040,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911570944,
+          "allocated_after_bytes": 17911828992,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 243.28114395029843,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 6048,
+          "kv_length_after": 6048,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 238.70067298412323,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 6048,
+          "kv_length_after": 6048,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 236.07967991847545,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 6048,
+          "kv_length_after": 6048,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.19763503223657608,
+      "latent_postprocess_ms": 2.956871991045773,
+      "clean_kv_ms": 236.07967991847545,
+      "tae_first_rgb_gpu_ms": 20.511750015430152,
+      "tae_remaining_rgb_gpu_ms": 17.897467012517154,
+      "derived": {
+        "action_to_base_rgb_ms": 755.060410941951,
+        "action_to_next_ready_ms": 1010.9259890159592,
+        "generation_to_x0_ms": 728.4850990399718,
+        "generation_to_clean_kv_ms": 986.0049340641126
+      },
+      "cache": {
+        "global_end_index": 6048,
+        "local_end_index": 6048,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 6,
+      "action": "l",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 107321.08034705743,
+        "input_selected_ms": 107321.18065503892,
+        "generation_start_ms": 107325.88045299053,
+        "accepted_x0_ms": 108090.8170529874,
+        "base_rgb_ready_ms": 108111.91442701966,
+        "clean_kv_start_ms": 108112.13231098372,
+        "clean_kv_complete_ms": 108357.33335406985,
+        "all_rgb_ready_ms": 108377.76051508263,
+        "next_ready_ms": 108377.76051508263
+      },
+      "browser": {
+        "keydown_ms": 106187.29113601148,
+        "frame_received_ms": 106986.95966799278,
+        "frame_decoded_ms": 106989.25165797118,
+        "frame_presented_ms": 106989.28094701841
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 760.4634459130466,
+      "transformer_ms": 764.6843469701707,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 255.9243260184303,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 6048,
+          "kv_length_after": 7056,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 6048,
+            "local_end_index": 6048,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910456832,
+          "allocated_after_bytes": 17910714880,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 253.3470819471404,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 7056,
+          "kv_length_after": 7056,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 251.1920379474759,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 7056,
+          "kv_length_after": 7056,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 245.158514007926,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 7056,
+          "kv_length_after": 7056,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18011951616,
+          "allocated_after_bytes": 18011951616,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.11139700654894114,
+      "latent_postprocess_ms": 3.154168021865189,
+      "clean_kv_ms": 245.158514007926,
+      "tae_first_rgb_gpu_ms": 20.041740965098143,
+      "tae_remaining_rgb_gpu_ms": 18.30117602366954,
+      "derived": {
+        "action_to_base_rgb_ms": 790.8340799622238,
+        "action_to_next_ready_ms": 1056.6801680251956,
+        "generation_to_x0_ms": 764.9365999968722,
+        "generation_to_clean_kv_ms": 1031.4529010793194
+      },
+      "cache": {
+        "global_end_index": 7056,
+        "local_end_index": 7056,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 7,
+      "action": "s",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 108379.27116604988,
+        "input_selected_ms": 108379.36827400699,
+        "generation_start_ms": 108387.08532403689,
+        "accepted_x0_ms": 109182.29626608081,
+        "base_rgb_ready_ms": 109204.44219198544,
+        "clean_kv_start_ms": 109204.65276704635,
+        "clean_kv_complete_ms": 109463.81476602983,
+        "all_rgb_ready_ms": 109482.82262403518,
+        "next_ready_ms": 109482.82262403518
+      },
+      "browser": {
+        "keydown_ms": 107245.48386503011,
+        "frame_received_ms": 108081.20222797152,
+        "frame_decoded_ms": 108083.73101300094,
+        "frame_presented_ms": 108083.76811200287
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 790.6213511014357,
+      "transformer_ms": 794.833631021902,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 269.32829804718494,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 7056,
+          "kv_length_after": 8064,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 7056,
+            "local_end_index": 7056,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911489024,
+          "allocated_after_bytes": 17911747072,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 263.21896503213793,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 8064,
+          "kv_length_after": 8064,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 258.07408802211285,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 8064,
+          "kv_length_after": 8064,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 259.1160910669714,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 8064,
+          "kv_length_after": 8064,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.2253541024401784,
+      "latent_postprocess_ms": 3.089920966885984,
+      "clean_kv_ms": 259.1160910669714,
+      "tae_first_rgb_gpu_ms": 20.485318964347243,
+      "tae_remaining_rgb_gpu_ms": 17.36481999978423,
+      "derived": {
+        "action_to_base_rgb_ms": 825.1710259355605,
+        "action_to_next_ready_ms": 1103.5514579853043,
+        "generation_to_x0_ms": 795.2109420439228,
+        "generation_to_clean_kv_ms": 1076.7294419929385
+      },
+      "cache": {
+        "global_end_index": 8064,
+        "local_end_index": 8064,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 8,
+      "action": "s",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 109484.35546504334,
+        "input_selected_ms": 109484.46737206541,
+        "generation_start_ms": 109489.72417600453,
+        "accepted_x0_ms": 110310.53177907597,
+        "base_rgb_ready_ms": 110331.77805901505,
+        "clean_kv_start_ms": 110331.97220403235,
+        "clean_kv_complete_ms": 110601.46149399225,
+        "all_rgb_ready_ms": 110620.86327199358,
+        "next_ready_ms": 110620.86327199358
+      },
+      "browser": {
+        "keydown_ms": 108350.59837298468,
+        "frame_received_ms": 109206.22108504176,
+        "frame_decoded_ms": 109209.33652401436,
+        "frame_presented_ms": 109209.37427296303
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 816.3505780976266,
+      "transformer_ms": 820.5274400534108,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 274.2083790944889,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 8064,
+          "kv_length_after": 9072,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 8064,
+            "local_end_index": 8064,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910440448,
+          "allocated_after_bytes": 17910698496,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 271.181307034567,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 9072,
+          "kv_length_after": 9072,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911214592,
+          "allocated_after_bytes": 17911214592,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 270.96089196857065,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 9072,
+          "kv_length_after": 9072,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911214592,
+          "allocated_after_bytes": 17911214592,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 269.44374199956656,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 9072,
+          "kv_length_after": 9072,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012033536,
+          "allocated_after_bytes": 18012033536,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.1279069110751152,
+      "latent_postprocess_ms": 3.170276992022991,
+      "clean_kv_ms": 269.44374199956656,
+      "tae_first_rgb_gpu_ms": 20.240916055627167,
+      "tae_remaining_rgb_gpu_ms": 17.912706010974944,
+      "derived": {
+        "action_to_base_rgb_ms": 847.4225939717144,
+        "action_to_next_ready_ms": 1136.5078069502488,
+        "generation_to_x0_ms": 820.8076030714437,
+        "generation_to_clean_kv_ms": 1111.7373179877177
+      },
+      "cache": {
+        "global_end_index": 9072,
+        "local_end_index": 9072,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 9,
+      "action": "j",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 110622.35128309112,
+        "input_selected_ms": 110622.49504006468,
+        "generation_start_ms": 110625.26386801619,
+        "accepted_x0_ms": 111474.16550805792,
+        "base_rgb_ready_ms": 111495.136225014,
+        "clean_kv_start_ms": 111495.3055200167,
+        "clean_kv_complete_ms": 111774.52371607069,
+        "all_rgb_ready_ms": 111793.70488901623,
+        "next_ready_ms": 111793.70488901623
+      },
+      "browser": {
+        "keydown_ms": 109488.55355300475,
+        "frame_received_ms": 110371.93794897757,
+        "frame_decoded_ms": 110374.7311270563,
+        "frame_presented_ms": 110374.78163605556
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 844.380866852589,
+      "transformer_ms": 848.6731159500778,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 285.6367399217561,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 9072,
+          "kv_length_after": 10080,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 9072,
+            "local_end_index": 9072,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911570944,
+          "allocated_after_bytes": 17911828992,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 278.00276898778975,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 10080,
+          "kv_length_after": 10080,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 280.7413579430431,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 10080,
+          "kv_length_after": 10080,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 279.17523693758994,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 10080,
+          "kv_length_after": 10080,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.0763479620218277,
+      "latent_postprocess_ms": 3.1779969576746225,
+      "clean_kv_ms": 279.17523693758994,
+      "tae_first_rgb_gpu_ms": 20.175498095341027,
+      "tae_remaining_rgb_gpu_ms": 17.612733994610608,
+      "derived": {
+        "action_to_base_rgb_ms": 872.7849419228733,
+        "action_to_next_ready_ms": 1171.3536059251055,
+        "generation_to_x0_ms": 848.9016400417313,
+        "generation_to_clean_kv_ms": 1149.2598480544984
+      },
+      "cache": {
+        "global_end_index": 10080,
+        "local_end_index": 10080,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 10,
+      "action": "w",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 111795.17931106966,
+        "input_selected_ms": 111795.30825803522,
+        "generation_start_ms": 111798.21720300242,
+        "accepted_x0_ms": 112681.53093499132,
+        "base_rgb_ready_ms": 112703.46504705958,
+        "clean_kv_start_ms": 112703.67818104569,
+        "clean_kv_complete_ms": 112990.297993063,
+        "all_rgb_ready_ms": 113009.37382900156,
+        "next_ready_ms": 113009.37382900156
+      },
+      "browser": {
+        "keydown_ms": 110661.39289003331,
+        "frame_received_ms": 111578.90040695202,
+        "frame_decoded_ms": 111581.23934594914,
+        "frame_presented_ms": 111581.27373503521
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 878.8947579450905,
+      "transformer_ms": 883.0443299375474,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 296.2817329680547,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 10080,
+          "kv_length_after": 11088,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 10080,
+            "local_end_index": 10080,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910456832,
+          "allocated_after_bytes": 17910714880,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 292.12999099399894,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 11088,
+          "kv_length_after": 11088,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 290.4830339830369,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 11088,
+          "kv_length_after": 11088,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 286.5752630168572,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 11088,
+          "kv_length_after": 11088,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18011951616,
+          "allocated_after_bytes": 18011951616,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.1270771026611328,
+      "latent_postprocess_ms": 2.937584067694843,
+      "clean_kv_ms": 286.5752630168572,
+      "tae_first_rgb_gpu_ms": 20.886478014290333,
+      "tae_remaining_rgb_gpu_ms": 17.644173000007868,
+      "derived": {
+        "action_to_base_rgb_ms": 908.2857359899208,
+        "action_to_next_ready_ms": 1214.194517931901,
+        "generation_to_x0_ms": 883.313731988892,
+        "generation_to_clean_kv_ms": 1192.0807900605723
+      },
+      "cache": {
+        "global_end_index": 11088,
+        "local_end_index": 11088,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 11,
+      "action": "d",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 113011.09346398152,
+        "input_selected_ms": 113011.33797806688,
+        "generation_start_ms": 113015.3442940209,
+        "accepted_x0_ms": 113941.32144504692,
+        "base_rgb_ready_ms": 113962.4486170942,
+        "clean_kv_start_ms": 113962.6796010416,
+        "clean_kv_complete_ms": 114260.63947705552,
+        "all_rgb_ready_ms": 114280.23957903497,
+        "next_ready_ms": 114280.23957903497
+      },
+      "browser": {
+        "keydown_ms": 111877.25282495376,
+        "frame_received_ms": 112839.44017696194,
+        "frame_decoded_ms": 112841.7696460383,
+        "frame_presented_ms": 112841.80165501311
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 921.9465140486136,
+      "transformer_ms": 925.7135870866477,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 311.71386095229536,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 11088,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 11088,
+            "local_end_index": 11088,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911489024,
+          "allocated_after_bytes": 17911747072,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 307.68933601211756,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 302.5433170842007,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 297.6058549247682,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.1052970765158534,
+      "latent_postprocess_ms": 2.8015979332849383,
+      "clean_kv_ms": 297.6058549247682,
+      "tae_first_rgb_gpu_ms": 20.349232014268637,
+      "tae_remaining_rgb_gpu_ms": 18.06459203362465,
+      "derived": {
+        "action_to_base_rgb_ms": 951.3551531126723,
+        "action_to_next_ready_ms": 1269.146115053445,
+        "generation_to_x0_ms": 925.977151026018,
+        "generation_to_clean_kv_ms": 1245.2951830346137
+      },
+      "cache": {
+        "global_end_index": 12096,
+        "local_end_index": 12096,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 12,
+      "action": "d",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 114282.11229108274,
+        "input_selected_ms": 114282.26458700374,
+        "generation_start_ms": 114285.4104450671,
+        "accepted_x0_ms": 115213.90157309361,
+        "base_rgb_ready_ms": 115234.62089605164,
+        "clean_kv_start_ms": 115234.81466108933,
+        "clean_kv_complete_ms": 115531.09105909243,
+        "all_rgb_ready_ms": 115551.301885047,
+        "next_ready_ms": 115551.301885047
+      },
+      "browser": {
+        "keydown_ms": 113148.29480100889,
+        "frame_received_ms": 114108.74882002827,
+        "frame_decoded_ms": 114110.89731403627,
+        "frame_presented_ms": 114110.92013400048
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 924.0065539488569,
+      "transformer_ms": 928.1140880193561,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 321.7928080121055,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 12096,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910440448,
+          "allocated_after_bytes": 17910698496,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 302.4177789920941,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911214592,
+          "allocated_after_bytes": 17911214592,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 299.79596694465727,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911214592,
+          "allocated_after_bytes": 17911214592,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 296.21873004361987,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012033536,
+          "allocated_after_bytes": 18012033536,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.21793402265757322,
+      "latent_postprocess_ms": 3.130538039840758,
+      "clean_kv_ms": 296.21873004361987,
+      "tae_first_rgb_gpu_ms": 19.936074037104845,
+      "tae_remaining_rgb_gpu_ms": 18.18991790059954,
+      "derived": {
+        "action_to_base_rgb_ms": 952.508604968898,
+        "action_to_next_ready_ms": 1269.1895939642563,
+        "generation_to_x0_ms": 928.4911280265078,
+        "generation_to_clean_kv_ms": 1245.680614025332
+      },
+      "cache": {
+        "global_end_index": 13104,
+        "local_end_index": 12096,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 13,
+      "action": "w",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 115553.07096999604,
+        "input_selected_ms": 115553.2001759857,
+        "generation_start_ms": 115558.07410005946,
+        "accepted_x0_ms": 116487.96478507575,
+        "base_rgb_ready_ms": 116509.25406301394,
+        "clean_kv_start_ms": 116509.81091801077,
+        "clean_kv_complete_ms": 116806.29390804097,
+        "all_rgb_ready_ms": 116825.80164202955,
+        "next_ready_ms": 116825.80164202955
+      },
+      "browser": {
+        "keydown_ms": 114419.30553806014,
+        "frame_received_ms": 115384.2339940602,
+        "frame_decoded_ms": 115386.77517801989,
+        "frame_presented_ms": 115386.80950703565
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 924.7575079789385,
+      "transformer_ms": 929.5429739868268,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 317.57655506953597,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 13104,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911570944,
+          "allocated_after_bytes": 17911828992,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 302.87980497814715,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 304.3011479312554,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912345088,
+          "allocated_after_bytes": 17912345088,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 296.37678305152804,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.20296499133110046,
+      "latent_postprocess_ms": 3.7857419811189175,
+      "clean_kv_ms": 296.37678305152804,
+      "tae_first_rgb_gpu_ms": 20.11530799791217,
+      "tae_remaining_rgb_gpu_ms": 17.66367198433727,
+      "derived": {
+        "action_to_base_rgb_ms": 956.1830930178985,
+        "action_to_next_ready_ms": 1272.7306720335037,
+        "generation_to_x0_ms": 929.8906850162894,
+        "generation_to_clean_kv_ms": 1248.2198079815134
+      },
+      "cache": {
+        "global_end_index": 14112,
+        "local_end_index": 12096,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 14,
+      "action": "l",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 116827.36692100298,
+        "input_selected_ms": 116827.49736797996,
+        "generation_start_ms": 116834.0305890888,
+        "accepted_x0_ms": 117772.27873005904,
+        "base_rgb_ready_ms": 117793.55271800887,
+        "clean_kv_start_ms": 117793.80522097927,
+        "clean_kv_complete_ms": 118088.11443508603,
+        "all_rgb_ready_ms": 118107.69467707723,
+        "next_ready_ms": 118107.69467707723
+      },
+      "browser": {
+        "keydown_ms": 115693.59218003228,
+        "frame_received_ms": 116669.13358401507,
+        "frame_decoded_ms": 116671.48359306157,
+        "frame_presented_ms": 116671.5119619621
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 932.7519941143692,
+      "transformer_ms": 937.8218720667064,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 321.52117008809,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 14112,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17910456832,
+          "allocated_after_bytes": 17910714880,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 307.738327072002,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 303.49249695427716,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911230976,
+          "allocated_after_bytes": 17911230976,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 294.26564497407526,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18011951616,
+          "allocated_after_bytes": 18011951616,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.26621297001838684,
+      "latent_postprocess_ms": 4.100042977370322,
+      "clean_kv_ms": 294.26564497407526,
+      "tae_first_rgb_gpu_ms": 20.15038696117699,
+      "tae_remaining_rgb_gpu_ms": 17.785519012250006,
+      "derived": {
+        "action_to_base_rgb_ms": 966.1857970058918,
+        "action_to_next_ready_ms": 1280.3277560742572,
+        "generation_to_x0_ms": 938.248140970245,
+        "generation_to_clean_kv_ms": 1254.0838459972292
+      },
+      "cache": {
+        "global_end_index": 15120,
+        "local_end_index": 12096,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    },
+    {
+      "action_id": 15,
+      "action": "a",
+      "bootstrap": false,
+      "server": {
+        "input_received_ms": 118109.13207009435,
+        "input_selected_ms": 118109.28473598324,
+        "generation_start_ms": 118116.89092905726,
+        "accepted_x0_ms": 119046.29261302762,
+        "base_rgb_ready_ms": 119067.29525804985,
+        "clean_kv_start_ms": 119067.4826829927,
+        "clean_kv_complete_ms": 119360.71728297975,
+        "all_rgb_ready_ms": 119379.87747602165,
+        "next_ready_ms": 119379.87747602165
+      },
+      "browser": {
+        "keydown_ms": 116975.33845901489,
+        "frame_received_ms": 117941.26091501676,
+        "frame_decoded_ms": 117943.08843801264,
+        "frame_presented_ms": 117943.11724696308
+      },
+      "status": "complete",
+      "denoise_forward_count": 3,
+      "denoise_ms": 925.1006759004667,
+      "transformer_ms": 929.0761520387605,
+      "forward_records": [
+        {
+          "kind": "denoise",
+          "index": 0,
+          "timestep": 999.0,
+          "elapsed_ms": 320.24377095513046,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 15120,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17911489024,
+          "allocated_after_bytes": 17911747072,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 1,
+          "timestep": 899.0,
+          "elapsed_ms": 303.1866039382294,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "denoise",
+          "index": 2,
+          "timestep": 702.0,
+          "elapsed_ms": 301.6703010071069,
+          "purpose": "denoise and clean-latent update",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 17912263168,
+          "allocated_after_bytes": 17912263168,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248,
+          "finite": true
+        },
+        {
+          "kind": "cache_update",
+          "index": 3,
+          "timestep": 0.0,
+          "elapsed_ms": 293.19096205290407,
+          "purpose": "clean-latent self-attention KV-cache write; output discarded",
+          "query_tokens": 1008,
+          "kv_length_before": 12096,
+          "kv_length_after": 12096,
+          "kv_capacity_tokens": 12096,
+          "cache_before": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "cache_after": {
+            "global_end_index": 16128,
+            "local_end_index": 12096,
+            "cache_capacity_tokens": 12096
+          },
+          "allocated_before_bytes": 18012869120,
+          "allocated_after_bytes": 18012869120,
+          "reserved_before_bytes": 20602421248,
+          "reserved_after_bytes": 20602421248
+        }
+      ],
+      "action_prepare_ms": 0.1521660014986992,
+      "latent_postprocess_ms": 2.8934560250490904,
+      "clean_kv_ms": 293.19096205290407,
+      "tae_first_rgb_gpu_ms": 20.1412970200181,
+      "tae_remaining_rgb_gpu_ms": 17.803268041461706,
+      "derived": {
+        "action_to_base_rgb_ms": 958.1631879555061,
+        "action_to_next_ready_ms": 1270.7454059273005,
+        "generation_to_x0_ms": 929.4016839703545,
+        "generation_to_clean_kv_ms": 1243.8263539224863
+      },
+      "cache": {
+        "global_end_index": 16128,
+        "local_end_index": 12096,
+        "capacity_tokens": 12096
+      },
+      "finite": true
+    }
+  ],
+  "frames": [
+    {
+      "action_id": 1,
+      "header": {
+        "action_id": 1,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 69765,
+        "jpeg_encode_ms": 8.708514971658587,
+        "server": {
+          "accepted_x0_ms": 103245.36127306055,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 103266.67367201298,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 102623.47274308559,
+          "input_received_ms": 102615.7675520517,
+          "input_selected_ms": 102615.81793008372,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 2,
+      "header": {
+        "action_id": 2,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 68155,
+        "jpeg_encode_ms": 5.650653969496489,
+        "server": {
+          "accepted_x0_ms": 104142.96371105593,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 104164.09156506415,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 103494.1259410698,
+          "input_received_ms": 103490.58403202798,
+          "input_selected_ms": 103490.6952000456,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 3,
+      "header": {
+        "action_id": 3,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 67023,
+        "jpeg_encode_ms": 8.43735202215612,
+        "server": {
+          "accepted_x0_ms": 105069.201784092,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 105090.45224403962,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 104398.52335199248,
+          "input_received_ms": 104391.36954699643,
+          "input_selected_ms": 104391.52053301223,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 4,
+      "header": {
+        "action_id": 4,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 65974,
+        "jpeg_encode_ms": 7.988313911482692,
+        "server": {
+          "accepted_x0_ms": 106042.95280203223,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 106064.1257140087,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 105338.21926498786,
+          "input_received_ms": 105332.63651898596,
+          "input_selected_ms": 105332.7365370933,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 5,
+      "header": {
+        "action_id": 5,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 64960,
+        "jpeg_encode_ms": 5.860068020410836,
+        "server": {
+          "accepted_x0_ms": 107042.58162504993,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 107063.74507700093,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 106314.09652600996,
+          "input_received_ms": 106308.68466605898,
+          "input_selected_ms": 106308.8161930209,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 6,
+      "header": {
+        "action_id": 6,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 62130,
+        "jpeg_encode_ms": 7.2171828942373395,
+        "server": {
+          "accepted_x0_ms": 108090.8170529874,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 108111.91442701966,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 107325.88045299053,
+          "input_received_ms": 107321.08034705743,
+          "input_selected_ms": 107321.18065503892,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 7,
+      "header": {
+        "action_id": 7,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 61205,
+        "jpeg_encode_ms": 9.353308007121086,
+        "server": {
+          "accepted_x0_ms": 109182.29626608081,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 109204.44219198544,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 108387.08532403689,
+          "input_received_ms": 108379.27116604988,
+          "input_selected_ms": 108379.36827400699,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 8,
+      "header": {
+        "action_id": 8,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 62189,
+        "jpeg_encode_ms": 7.219863007776439,
+        "server": {
+          "accepted_x0_ms": 110310.53177907597,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 110331.77805901505,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 109489.72417600453,
+          "input_received_ms": 109484.35546504334,
+          "input_selected_ms": 109484.46737206541,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 9,
+      "header": {
+        "action_id": 9,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 61185,
+        "jpeg_encode_ms": 8.882930036634207,
+        "server": {
+          "accepted_x0_ms": 111474.16550805792,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 111495.136225014,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 110625.26386801619,
+          "input_received_ms": 110622.35128309112,
+          "input_selected_ms": 110622.49504006468,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 10,
+      "header": {
+        "action_id": 10,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 60539,
+        "jpeg_encode_ms": 7.797627942636609,
+        "server": {
+          "accepted_x0_ms": 112681.53093499132,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 112703.46504705958,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 111798.21720300242,
+          "input_received_ms": 111795.17931106966,
+          "input_selected_ms": 111795.30825803522,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 11,
+      "header": {
+        "action_id": 11,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 59712,
+        "jpeg_encode_ms": 9.438974899239838,
+        "server": {
+          "accepted_x0_ms": 113941.32144504692,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 113962.4486170942,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 113015.3442940209,
+          "input_received_ms": 113011.09346398152,
+          "input_selected_ms": 113011.33797806688,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 12,
+      "header": {
+        "action_id": 12,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 59047,
+        "jpeg_encode_ms": 6.313455989584327,
+        "server": {
+          "accepted_x0_ms": 115213.90157309361,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 115234.62089605164,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 114285.4104450671,
+          "input_received_ms": 114282.11229108274,
+          "input_selected_ms": 114282.26458700374,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 13,
+      "header": {
+        "action_id": 13,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 57535,
+        "jpeg_encode_ms": 7.245842018164694,
+        "server": {
+          "accepted_x0_ms": 116487.96478507575,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 116509.25406301394,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 115558.07410005946,
+          "input_received_ms": 115553.07096999604,
+          "input_selected_ms": 115553.2001759857,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 14,
+      "header": {
+        "action_id": 14,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 55210,
+        "jpeg_encode_ms": 8.17878800444305,
+        "server": {
+          "accepted_x0_ms": 117772.27873005904,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 117793.55271800887,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 116834.0305890888,
+          "input_received_ms": 116827.36692100298,
+          "input_selected_ms": 116827.49736797996,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    },
+    {
+      "action_id": 15,
+      "header": {
+        "action_id": 15,
+        "bootstrap": false,
+        "frame_count": 4,
+        "frame_index": 0,
+        "height": 384,
+        "jpeg_bytes": 53888,
+        "jpeg_encode_ms": 6.228409009054303,
+        "server": {
+          "accepted_x0_ms": 119046.29261302762,
+          "all_rgb_ready_ms": null,
+          "base_rgb_ready_ms": 119067.29525804985,
+          "clean_kv_complete_ms": null,
+          "clean_kv_start_ms": null,
+          "generation_start_ms": 118116.89092905726,
+          "input_received_ms": 118109.13207009435,
+          "input_selected_ms": 118109.28473598324,
+          "next_ready_ms": null
+        },
+        "type": "frame",
+        "width": 672
+      }
+    }
+  ],
+  "server_metrics": {
+    "actions": 15,
+    "action_to_rgb_p50_ms": 847.4225939717144,
+    "action_to_rgb_p95_ms": 958.1631879555061,
+    "next_ready_p50_ms": 1136.5078069502488,
+    "next_ready_p95_ms": 1272.7306720335037,
+    "denoise_p50_ms": 816.3505780976266,
+    "clean_kv_p50_ms": 269.44374199956656
+  },
+  "rolled_server_metrics": {
+    "actions": 4,
+    "action_to_rgb_p50_ms": 958.1631879555061,
+    "action_to_rgb_p95_ms": 966.1857970058918,
+    "next_ready_p50_ms": 1272.7306720335037,
+    "next_ready_p95_ms": 1280.3277560742572,
+    "denoise_p50_ms": 925.1006759004667,
+    "clean_kv_p50_ms": 296.21873004361987
+  },
+  "browser_metrics": {
+    "keydown_to_frame_received_p50_ms": 855.6227120570838,
+    "keydown_to_frame_received_p95_ms": 965.9224560018629,
+    "keydown_to_frame_decoded_p50_ms": 858.7381510296836,
+    "keydown_to_frame_decoded_p95_ms": 967.7499789977446,
+    "keydown_to_frame_presented_p50_ms": 858.7758999783546,
+    "keydown_to_frame_presented_p95_ms": 967.7787879481912
+  },
+  "presentation": {
+    "jpeg_encode_p50_ms": 7.797627942636609,
+    "jpeg_encode_p95_ms": 9.353308007121086,
+    "jpeg_bytes_p50": 61205.0,
+    "jpeg_bytes_p95": 68155.0,
+    "tail_frames_received": 0,
+    "tail_frames_dropped": 0
+  }
+}

@@ -1,0 +1,9 @@
+CUDA_VISIBLE_DEVICES=0
+HIP_VISIBLE_DEVICES=0
+LANG=en_US.UTF-8
+LINGBOT_PYTHON=/home/keith/Desktop/github/lingbot-world-V2-halo/.venv/bin/python
+PATH=/home/keith/.local/share/pi-node/current/bin:/home/keith/.bun/bin:/home/keith/.local/bin:/home/keith/.opencode/bin:/home/keith/.npm-global/bin:/opt/rocm-6.4.0/bin:/home/keith/.local/bin:/home/keith/.local/share/pi-node/current/bin:/home/keith/.bun/bin:/home/keith/.local/bin:/home/keith/.opencode/bin:/home/keith/.npm-global/bin:/home/keith/.nvm/versions/node/v20.20.2/bin:/opt/rocm-6.4.0/bin:/home/keith/.local/bin:/home/keith/.local/bin:/home/keith/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/keith/.lmstudio/bin:/home/keith/.lmstudio/bin:/home/keith/.lmstudio/bin
+PWD=/home/keith/Desktop/github/lingbot-world-V2-halo-wt-p20
+PYTORCH_ROCM_ARCH=gfx1151
+SHLVL=1
+_=/usr/bin/env
