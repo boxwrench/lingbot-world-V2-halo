@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "project": "LingRuntime (LingBot World v2 1.3B, Strix Halo / gfx1151)",
  "lastUpdated": "2026-09-13",
- "updatedBy": "orchestrator (C8 stage-1 research)",
+ "updatedBy": "orchestrator (C8 probe 0/1)",
  "sourceOfTruthNote": "This file is the machine-readable DAG state. docs/lingruntime/RESEARCH_AND_EXPERIMENT_DAG.md explains it for humans. Neither file duplicates full evidence contents; both reference existing artifacts by path.",
  "statusesAllowed": [
   "blocked",
@@ -895,7 +895,7 @@
    "id": "C8",
    "name": "C8 - gfx1151 Attention Kernel Feasibility",
    "type": "research",
-   "status": "ready",
+   "status": "running",
    "priority": 50,
    "resource": "source-cpu then gpu-exclusive",
    "dependsOn": [
@@ -915,9 +915,10 @@
     "bakeoff win -> integration candidate + full product-path evidence; all equal/slower or no mechanism -> STOP negative result"
    ],
    "evidence": [
-    "frozen contract verified 2026-09-13 from accepted runtime (see notes)"
+    "frozen contract verified 2026-09-13 from accepted runtime (see notes)",
+    "experiment/c8-attention: docs/artifacts/c8-probe01-20260913/ (Probe 0/1/1b/3 evidence + README)"
    ],
-   "result": "OPEN (2026-09-13). Authorized by P2.9 audit closure. Stage 1 research DONE 2026-09-13 (campaign 20260913T171052Z): FA2-varlen/CK/AITER/FA3/xFormers REJECTED by source proof for pinned stack; Triton-AMD CONDITIONAL (launch+stability only); AOTriton flash SDPA SURVIVOR; SDPA-math reference only. Decisive correction: brief premise FA2-varlen is NOT the executing path. Probe 0/1 (backend identity + production-equivalence microbench) next. NO custom kernel until escalation criteria met. NO mainline merge without full evidence + gates + audit + human approval.",
+   "result": "Probe 0/1/1b/3 DONE 2026-09-13 @d46b12a. Executing kernel attn_fwd.kd (AOTriton via torch SDPA; FA2-varlen premise falsified by missing compiled ext). Single-call bakeoff: control 4.22 / flash 4.48 / mem-efficient 4.00 (separate-proc) -> alternating A/B shows SAME kernel both arms, means interleave, no difference; Triton-AMD launches + numerics pass but p50 4.33 (no win); math 90.2 reference-only; AITER absent in prod venv. Probe 4 skipped as non-discriminating (identical kernels). This is the stop-condition state all-available-backends-equal-or-slower; custom-kernel escalation requires a plausible mechanism + strategic call. C8 HELD for human direction: STOP-negative vs custom-kernel escalation.",
    "notes": "Frozen production attention contract: Q=[1,12,1008,128] K=V=[1,12,12096,128] BF16, mask none, causal false, gfx1151. Verified: num_heads=12 dim=1536 (transformers/config.json); head_dim=128; call site model_fast.py:198 attention(roped_query,k_cache,v_cache) no mask args (defaults causal=False); DiT params 100% BF16 (P2.1 module-metrics); Lq/Lk corroborated by P2.1 module-metrics hit counts; torch 2.13+rocm7.15; flash_attn pkg present WITHOUT compiled ext (import fails: no flash_attn_2_cuda in either venv) so upstream wrapper falls back to torch SDPA; preferred_rocm_fa_library()=AOTriton, CK unavailable (unsupported-arch warning); FA3 absent. First-hand probe 2026-09-13 in production venv. Thresholds: 5%=marginal 10%=interesting 20%=strong 30%=very strong (end-to-end decides). NEXT_PLAN B1-B5 from P2.9 enter here (B3=SDPA probe first)."
   }
  ],
@@ -1129,6 +1130,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (C8 stage-1 research)",
    "change": "Stage-1 research verdict recorded; brief premise corrected by first-hand probe (SDPA/AOTriton executes, not FA2 varlen); CK/AITER/FA3 rejected; AOTriton survivor; Probe 0/1 authorized."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (C8 probe 0/1)",
+   "change": "Probe 0/1/1b/3 done: attn_fwd.kd executes; no backend wins; C8 held for human direction (STOP-negative vs custom-kernel escalation)."
   }
  ]
 }
