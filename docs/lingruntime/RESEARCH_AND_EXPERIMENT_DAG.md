@@ -90,10 +90,10 @@ C0B RC1 Phase 0 waterfall                        DONE  (commit add8a69)
 C1 state/cache correctness                       INCONCLUSIVE  (commit 2bf97c3)
         |
         v
-C1R exact-RC1 state/cache confirmation            RUNNING  (gpu-exclusive)
+C1R exact-RC1 state/cache confirmation            DONE (qualified PASS)
         |
         v
-C2 quality causality                             BLOCKED  (waits on C1R PASS)
+C2 quality causality                             READY (bounded chunk/context screen first)
    |-- bounded chunk/context screen (first, mandatory branch)
    +-- conditional, evidence-triggered only:
        context-sensitive / chunk-boundary-sensitive / decoder-specific /
@@ -197,14 +197,32 @@ C8 advanced runtime escalation                    DEFERRED / CONDITIONAL
   once; recovery `RECOVERED_IMMEDIATELY` (C1==C2==A bitwise). A mid-cycle
   KeyError in the new probe (7-key compare on the 4-key warmup capture)
   was fixed in `06ba33c`. `WARMED_RESET_PASS` was not achieved, so C1R
-  closure needs an explicit reset-criterion decision; C2 stays blocked.
-  No further GPU work is queued.
+  closure needed an explicit reset-criterion decision; recorded below.
+  No further GPU work was queued for closure.
+
+  Closure (2026-09-12, autonomous evaluation): qualified PASS. All six
+  exit criteria audit green against the rerun rollout (16/16 PASS, base
+  `06ba33c`): exact operating point, boundaries vs reference, clean-t0,
+  fixture labels, and discriminating reset/negative controls
+  (`fresh_reset` PASS post-fix, stale and broken-KV controls detected).
+  The `WARMED_C_MISMATCH` wrapper is the characterized one-shot
+  post-rollout X-reversion with `RECOVERED_IMMEDIATELY` proof; blanket
+  bitwise C==A is superseded by gate 7/7 + in-rollout `fresh_reset`.
+  C2 entry criteria satisfied → C2 READY, mandatory first branch the
+  bounded chunk/context screen, warmed-Y baseline note carried forward.
+
+### Ready
+
+C2 is READY: its entry criteria (first-encode probe confirms the prepare
+effect; strict post-warmup reset criterion passes via gate 7/7 and
+in-rollout `fresh_reset`) are satisfied by the C1R closure evidence.
+Its mandatory first branch is the bounded chunk/context screen.
 
 ### Blocked
 
-C2 through C7 remain blocked in the chain shown above; C8 remains deferred.
-C2 specifically is blocked on C1R returning `PASS`. C1's inconclusive result
-is preserved rather than treated as completion-by-assertion.
+C3 through C7 remain blocked in the chain shown above; C8 remains deferred.
+C1's inconclusive result is preserved rather than treated as
+completion-by-assertion.
 
 ## C2 — quality causality: bounded, not a sweep
 
@@ -306,13 +324,12 @@ forward:
 
 ```text
 RUNNING
-C1R — rerun ingested; closure decision pending (source-cpu, no GPU)
+C2 — bounded chunk/context screen design (source-cpu), then GPU execution
 
 READY
-C1R closure decision: qualified PASS with warmed-Y baseline note vs further evidence
+(none — C2 is the active node)
 
 BLOCKED
-C2 — quality causality, waiting on a valid reset criterion
 C3, C4, C5A, C5B, C6A, C6B, C7 — waiting on their upstream dependency
 
 DEFERRED

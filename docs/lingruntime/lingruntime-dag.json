@@ -215,13 +215,13 @@
     "docs/artifacts/state-cache-validation-20260912/commands.md"
    ],
    "result": "INCONCLUSIVE for full C1 closure. PASS for the tested accelerated stress configuration: both device-tensor and host-cursor fixtures matched an independent logical-list reference exactly; the real gfx1151 4-frame/1-sink, four-denoise-step run verified startup, fill, first and repeated compaction, layer-zero K/V and consumer output, clean-t0 overwrite position, reset replay, and invalid controls. The run did not execute the accepted RC1 12-frame/6-sink, three-denoise-step operating point named in the node question, and did not explicitly label direction-change/revisit coverage.",
-   "notes": "Preserved as strong mechanism/stress evidence, not discarded or promoted to PASS. A bounded exact-RC1 confirmation is instantiated as C1R. GPU evidence independently mirrors layer-zero K/V values and checks all-layer cursor agreement; reset hashes x0 and layer-zero K, not every layer/value. C1R first execution (2026-09-12) passed everything except fresh_reset; the reset discriminator is now the active closure path."
+   "notes": "Preserved as strong mechanism/stress evidence, not discarded or promoted to PASS. A bounded exact-RC1 confirmation is instantiated as C1R. GPU evidence independently mirrors layer-zero K/V values and checks all-layer cursor agreement; reset hashes x0 and layer-zero K, not every layer/value. C1R first execution (2026-09-12) passed everything except fresh_reset; the reset discriminator is now the active closure path. C1R closed this gap as qualified PASS (f6ec5a0 rerun: exact-RC1 rollout 16/16 incl. reset replay); C1's own inconclusive status is preserved as the stress-configuration record."
   },
   {
    "id": "C1R",
    "name": "Exact-RC1 state/cache confirmation",
    "type": "experiment",
-   "status": "running",
+   "status": "done",
    "priority": 11,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -273,14 +273,14 @@
     "docs/artifacts/state-cache-c1r-20260912/state-cache-warmed-reset-rerun.json",
     "commit f6ec5a0 (rerun evidence, clean-tree provenance)"
    ],
-   "result": "Reset discriminator executed (2026-09-12, validator base bad1234): classification BASELINE_NONDETERMINISM_OR_STRICT_HASH. Fresh A/B bootstraps differ with no rollout between, so the rollout was skipped and no leak is claimed. Noise/plucker/text-context stable bitwise; condition chunk 0 differs (max-abs 0.159), driving x0 (0.167), clean K (0.156), clean V (1.478) beyond tolerance. A matches the first-execution chunk 0 bitwise (first prepare reproduces across processes); third prepare matches B (X,Y,Y). VAE feature-cache staleness eliminated by inspection; first-encode warmup effect is the follow-up hypothesis, not a conclusion. Warmed-reset first execution (2026-09-12, uncommitted tree on 123db37, see dd0e4da dirt record): gate A==B strict PASS 7/7; rollout 15/16 with fresh_reset FAIL caused solely by the validator dict bug (reset_pos carries cache_capacity_tokens; all semantic sub-checks true in data); C==A FAIL with C.condition==warmup X. Dict bug fixed in ec3b4f1; C1/C2 recovery probe added; rerun pending. Rerun on fixed code (2026-09-12, base 06ba33c clean): gate 7/7 PASS; rollout PASS all 16 assertions including fresh_reset; C==A FAIL (C.condition==warmup X once); recovery RECOVERED_IMMEDIATELY (C1==C2==A bitwise). The post-rollout first-encode reversion lasts exactly one prepare and self-heals. WARMED_RESET_PASS not achieved, so C1R closure needs an explicit reset-criterion decision; C2 stays blocked.",
-   "notes": "No further GPU work queued: the recovery question is answered. Pending decision is interpretive \u2014 whether C1R closes with a qualified post-warmup reset criterion (rollout 16/16 PASS + immediate recovery) or requires more evidence. No optimization, no production change."
+   "result": "Reset discriminator executed (2026-09-12, validator base bad1234): classification BASELINE_NONDETERMINISM_OR_STRICT_HASH. Fresh A/B bootstraps differ with no rollout between, so the rollout was skipped and no leak is claimed. Noise/plucker/text-context stable bitwise; condition chunk 0 differs (max-abs 0.159), driving x0 (0.167), clean K (0.156), clean V (1.478) beyond tolerance. A matches the first-execution chunk 0 bitwise (first prepare reproduces across processes); third prepare matches B (X,Y,Y). VAE feature-cache staleness eliminated by inspection; first-encode warmup effect is the follow-up hypothesis, not a conclusion. Warmed-reset first execution (2026-09-12, uncommitted tree on 123db37, see dd0e4da dirt record): gate A==B strict PASS 7/7; rollout 15/16 with fresh_reset FAIL caused solely by the validator dict bug (reset_pos carries cache_capacity_tokens; all semantic sub-checks true in data); C==A FAIL with C.condition==warmup X. Dict bug fixed in ec3b4f1; C1/C2 recovery probe added; rerun pending. Rerun on fixed code (2026-09-12, base 06ba33c clean): gate 7/7 PASS; rollout PASS all 16 assertions including fresh_reset; C==A FAIL (C.condition==warmup X once); recovery RECOVERED_IMMEDIATELY (C1==C2==A bitwise). The post-rollout first-encode reversion lasts exactly one prepare and self-heals. WARMED_RESET_PASS not achieved, so C1R closure needs an explicit reset-criterion decision; C2 stays blocked. CLOSURE (2026-09-12, autonomous evaluation): qualified PASS. Exit-criteria audit against the rerun rollout verdict (PASS, all 16 true, base 06ba33c): exact operating point (12/6, 999/899/702, chunk 1, 384x672, BF16 DiT, FP16 TAEHV, deferred clean-t0); fill/first-eviction/repeated rolls match the independent reference; clean-t0 overwrites without advancing; fixture labels forward/turn/reversal/revisit; fresh_reset PASSES post-fix with stale and broken-KV controls still detected (controls discriminate). The WARMED_C_MISMATCH wrapper reflects the single-prepare post-rollout X-reversion, fully characterized with RECOVERED_IMMEDIATELY proof; blanket bitwise C==A is superseded as a reset criterion by gate 7/7 + in-rollout fresh_reset strict PASS. Original conclusion stands: first-encode behavior, not leakage.",
+   "notes": "Closed by qualified PASS. Downstream C2 entry criteria evaluated as satisfied; see C2.notes. No optimization, no production change."
   },
   {
    "id": "C2",
    "name": "Quality causality investigation",
    "type": "experiment",
-   "status": "blocked",
+   "status": "ready",
    "priority": 20,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -327,7 +327,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "First branch is the bounded chunk/context screen only. Do not make every diagnostic above mandatory; instantiate a follow-up node only when the chunk/context screen's own evidence points at it. Blind sweeping across all six branches is explicitly discouraged. Current gate (2026-09-12): C1R reset discriminator must classify the fresh_reset FAIL before any C2 work. Discriminator update (2026-09-12): no rollout-dependent leak evidenced; reset closure now waits on the first-encode probe and a valid reset criterion. Still no C2 work."
+   "notes": "Entry evaluation (2026-09-12): first-encode probe confirms the prepare effect (X,Y,Y,Y / X,Y, universal Y); strict post-warmup reset criterion passes (gate 7/7 bitwise + in-rollout fresh_reset strict PASS on the exact RC1 point); blanket unwarmed PASS superseded per the corrected entryCriteria. Mandatory first branch: bounded chunk/context screen. Follow-up branches instantiate only on its evidence. Warmed-Y baseline note carries forward: post-warmup steady state is the valid comparison baseline; single-prepare post-rollout reversion is characterized first-encode behavior, not a quality signal."
   },
   {
    "id": "C3",
@@ -612,13 +612,10 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C1R \u2014 rerun ingested; closure decision pending (source-cpu, no GPU)"
+   "C2 \u2014 bounded chunk/context screen design (source-cpu), then GPU execution"
   ],
-  "readyNow": [
-   "C1R closure decision: qualified PASS with warmed-Y baseline note vs further evidence"
-  ],
+  "readyNow": [],
   "blocked": [
-   "C2 (waiting on reset-discriminator classification)",
    "C3",
    "C4",
    "C5A",
@@ -679,6 +676,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (rerun-ingest cycle)",
    "change": "Ingested warmed-reset rerun (f6ec5a0, clean tree): rollout PASS 16/16 incl. fresh_reset, recovery RECOVERED_IMMEDIATELY, C==warmup X for exactly one post-rollout prepare. Also fixed a KeyError crash in the new recovery probe (06ba33c). C1R stays running pending an explicit reset-criterion/closure decision; C2 stays blocked; main untouched; no push."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous closure cycle)",
+   "change": "Evaluated all six C1R exit criteria against the committed rerun rollout (16/16 PASS): satisfied. Recorded C1R as done (qualified PASS; WARMED_C_MISMATCH explained as characterized one-shot reversion, blanket C==A superseded). C1 preserved as inconclusive. C2 entry criteria satisfied; C2 set ready with the bounded chunk/context screen as the mandatory first branch and the warmed-Y baseline note. Main untouched."
   }
  ]
 }
