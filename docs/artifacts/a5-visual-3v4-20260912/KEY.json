@@ -1,0 +1,6 @@
+{
+  "key": "DO NOT OPEN until verdicts are recorded in REVIEW.md",
+  "pair1-chunk05": {"left": "4-step (C)", "right": "3-step (A1)"},
+  "pair2-chunk17": {"left": "3-step (A1)", "right": "4-step (C)"},
+  "randomization": "seed 20260912, per-pair shuffle of [3-step, 4-step]"
+}
