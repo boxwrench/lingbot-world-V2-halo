@@ -721,7 +721,7 @@
    "id": "P2.4",
    "name": "Plan 2 \u2014 Implementation",
    "type": "implementation",
-   "status": "running",
+   "status": "done",
    "priority": 50,
    "resource": "implementation",
    "dependsOn": [
@@ -740,15 +740,17 @@
    "nextIf": [
     "done -> P2.5"
    ],
-   "evidence": [],
-   "result": "RUNNING (2026-09-13): implementing time-projection memo in isolated worktree.",
+   "evidence": [
+    "experiment/p24-timeproj-memo: scripts/timeproj_memo.py, tests/test_timeproj_memo.py"
+   ],
+   "result": "DONE (2026-09-13). timeproj memo implemented (module wrapper, env-gated, upstream untouched) on experiment/p24-timeproj-memo. Unit 3/3.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.5",
    "name": "Plan 2 \u2014 Correctness funnel",
    "type": "implementation",
-   "status": "blocked",
+   "status": "done",
    "priority": 50,
    "resource": "implementation",
    "dependsOn": [
@@ -767,15 +769,17 @@
    "nextIf": [
     "done -> P2.6"
    ],
-   "evidence": [],
-   "result": "",
+   "evidence": [
+    "experiment/p24-timeproj-memo: docs/artifacts/p24-timeproj-memo-20260913/"
+   ],
+   "result": "DONE (2026-09-13). Gates PASS: ON-vs-OFF bitwise 0.0 (16/16); per-chunk denoise -56..-84ms, mean -70.4. One vacated pair recorded (stale-code root cause, redone correctly). No visual gate (bitwise + untouched presentation).",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
    "id": "P2.6",
    "name": "Plan 2 \u2014 GPU adjudication",
    "type": "measurement",
-   "status": "blocked",
+   "status": "running",
    "priority": 50,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -795,7 +799,7 @@
     "done -> P2.7"
    ],
    "evidence": [],
-   "result": "",
+   "result": "RUNNING (2026-09-13): memo-ON browser adjudication.",
    "notes": "Plan 2 authorized 2026-09-12 on B001 closure; autonomous nodes, serialized GPU."
   },
   {
@@ -915,7 +919,7 @@
  "recommendedQueue": {
   "running": [],
   "readyNow": [
-   "P2.4 time-projection memo implementation"
+   "P2.6 memo-ON browser adjudication"
   ],
   "blocked": [],
   "deferred": [
@@ -1056,6 +1060,11 @@
    "date": "2026-09-13",
    "by": "orchestrator (P2.2/P2.3 done)",
    "change": "P2.2/P2.3 DONE: memo accepted for P2.4; camera rejected; SDPA parked. P2.4 running."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (P2.4/P2.5 done)",
+   "change": "P2.4/P2.5 DONE: memo bitwise-exact, -70.4ms/chunk. P2.6 running."
   }
  ]
 }
