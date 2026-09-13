@@ -17,12 +17,16 @@ Absolute medians are drift-confounded across the day (939.9/1258.9 C0B →
 969.9/1297.1 C4 → 989.6/1315.4 here; busy host, not config effects).
 The robust read is within-run, drift-cancelling: clean-forward vs the
 third denoise forward in the same action (`benchmark.json`
-forward_records). Clean wins in **15/15 actions**; rolled actions
+forward_records). Clean wins in **14/15 actions** (action 7 forward-tied —
+[correction 2026-09-12, B001 A1: original text said 15/15; the immutable
+evidence commit 50dc857 message is preserved as-is and remains the
+authoritative record of that error]; rolled actions
 (12–15): −4.1, −5.9, −8.0, −5.5 ms (mean ≈ −6 ms off next-ready 1:1,
 clean sits fully on the next-ready path).
 
 Estimate was 6–12 ms; observed lands at the low end. Real, consistent,
-zero-risk (bitwise-preserving). The `--host-kv-cursor` adder (measured
+zero-risk (bitwise-preserving). Scope: clean-KV / next-ready path only —
+no claim on base-RGB wall latency (external review 2026-09-12). The `--host-kv-cursor` adder (measured
 −10 ms earlier, still uncombined) is recorded as a future C7 adder,
 not part of this verdict.
 
