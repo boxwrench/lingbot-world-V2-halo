@@ -1,7 +1,21 @@
-# P2.4/P2.5 time-projection memo: ACCEPTED (2026-09-13)
+# P2.4/P2.5 time-projection memo: ACCEPTED **in screen-harness scope** (2026-09-13; scope corrected P2.9-A5)
 
 Branch `experiment/p24-timeproj-memo` (from tagged main `9cc986c`).
-Runner: `/tmp/run-p24-onoff.sh` (back-to-back ON/OFF, same host state).
+Runner: `procedures/run-p24-onoff.sh` (recovered from `/tmp` per P2.9-A1;
+back-to-back ON/OFF, same host state).
+
+## P2.9 correction (2026-09-13, new record — history below preserved)
+
+Gate 2's PASS (−70.4 ms) is **an untuned screen-harness effect, not a
+production effect**, and the title "ACCEPTED" above is qualified to that
+scope. The production adjudication (P2.6, accepted browser path, pinned
+TunableOp CSV) measures a paired per-action denoise effect of **−7.33 ms**
+(`../p26-20260913/paired-analysis.json`), below the P2.3 `<10 ms` stop
+rule — memo REJECTED for mainline. The −70.4 ms figure stands as a
+screen-harness measurement (lead-recomputed −55.9..−83.7, mean −70.43)
+and remains valid evidence that the mechanism is real; it must never be
+cited as expected production gain. Screen order-swap control confirming
+the screen effect is not drift: `../p25c-order-20260913/`.
 
 ## Implementation
 

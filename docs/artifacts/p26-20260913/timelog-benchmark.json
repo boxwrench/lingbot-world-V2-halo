@@ -2661,5 +2661,7 @@
     "jpeg_bytes_p95": 68155.0,
     "tail_frames_received": 0,
     "tail_frames_dropped": 0
-  }
+  },
+  "memo_stats": null,
+  "memo_stats_note": "P2.9-A2: the LINGBOT_TIMEPROJ_TIMELOG stderr per-call series was never committed and is lost; prose memo counters and per-call costs are retracted as unevidenced. See README."
 }
