@@ -93,3 +93,26 @@ rollout-dependent leak, and motivates a one-time throwaway conditioning
 warmup before measured sessions, retaining a strict bitwise reset criterion.
 Warmup validation in the validator is the next step; production
 `run_browser.py` is untouched.
+
+## Warmed-reset run (2026-09-12, /tmp only at commit time of the mode)
+
+Raw evidence: [`state-cache-warmed-reset.json`](state-cache-warmed-reset.json)
+(`--mode warmed-reset`: 1 throwaway prepare, strict bitwise A==B gate,
+conditional 16-chunk rollout, strict C==A).
+
+- Gate A==B STRICT PASS on all 7 tensors: the throwaway warmup works;
+  post-warmup bootstraps are bitwise steady-state Y.
+- Rollout 15/16, FAIL only on `fresh_reset` — and every semantic sub-check
+  inside it is true (x0, layer-0 K, layer-0 V, all-layer cursors all match).
+  The FAIL is a validator dict bug, not a measurement: `reset_pass`
+  compares `reset_pos` (3 keys incl. `cache_capacity_tokens`) against a
+  2-key literal, which is always False. Fixed in the companion code commit
+  (compare the two cursor keys via `reset_cursors_at_bootstrap`).
+- Check C==A FAIL: C.condition == warmup X (`10888b…`), i.e. the
+  post-rollout prepare reverts to first-encode-like output. Recovery probe
+  (C1, C2 captures, `recovery` classification) added to `--mode
+  warmed-reset` in the companion code commit to classify transient vs
+  persistent on rerun.
+- Provenance note: this file was produced by the uncommitted warmed-mode
+  tree on top of `123db37` (pre dict-fix, pre C1/C2); see the committing
+  commit message for the dirt record.
