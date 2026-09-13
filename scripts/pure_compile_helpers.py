@@ -243,6 +243,7 @@ def make_pure_block_forward(islands: PureTensorIslands):
         frame_seqlen=None,
         cross_attn_first_call=None,
         seq_lens_int=None,
+        kv_write_only=False,
     ):
         assert e.dtype == torch.float32
         e = islands.modulation(self.modulation, e)
@@ -264,7 +265,13 @@ def make_pure_block_forward(islands: PureTensorIslands):
             max_attention_size,
             frame_seqlen=frame_seqlen,
             seq_lens_int=seq_lens_int,
+            kv_write_only=kv_write_only,
         )
+        if kv_write_only:
+            # Final block of a clean-KV commit (mirrors the upstream block
+            # early exit): stores are done, the rest is dead. Return x
+            # unchanged; the caller discards it.
+            return x
         x = islands.scaled_residual(x, y, e[2].squeeze(2))
 
         if dit_cond_dict is not None and "c2ws_plucker_emb" in dit_cond_dict:

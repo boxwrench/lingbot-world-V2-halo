@@ -64,6 +64,10 @@ patch_is_present() {
             search_q 'host_cursor = "global_end_index_py" in kv_cache' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
                 search_q 'kv_cache\["local_end_index_py"\] = int\(local_end_index\)' "$UPSTREAM_DIR/wan/modules/model_fast.py"
             ;;
+        0005-kv-write-only-clean-forward.patch)
+            search_q 'kv_write_only=False' "$UPSTREAM_DIR/wan/modules/model_fast.py" &&
+                search_q 'kv_write_only and block_index == len\(self\.blocks\) - 1' "$UPSTREAM_DIR/wan/modules/model_fast.py"
+            ;;
         *)
             return 1
             ;;
@@ -74,6 +78,7 @@ apply_once "$ROOT_DIR/patches/0001-strix-halo-sdpa-cross-attention.patch"
 apply_once "$ROOT_DIR/patches/0002-experiment-metrics.patch"
 apply_once "$ROOT_DIR/patches/0003-per-forward-metrics.patch"
 apply_once "$ROOT_DIR/patches/0004-opt-in-host-kv-cursor.patch"
+apply_once "$ROOT_DIR/patches/0005-kv-write-only-clean-forward.patch"
 
 echo "upstream: $(git -C "$UPSTREAM_DIR" rev-parse HEAD)"
 echo "working tree patches:"
