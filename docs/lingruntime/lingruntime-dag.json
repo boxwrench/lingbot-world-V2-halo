@@ -920,9 +920,7 @@
    "A5 scheduled quality follow-up (blinded second-rater on committed PNGs + one second-scene matched-state warmed-Y 3v4 screen; needs external rater)"
   ],
   "independentWorkAvailableNow": [
-   "P2.0 GPU baseline measurement (serialized GPU)",
-   "A5 clip runs: 4x20-action matched screens + build_a5_clips.py (BLOCKED: no /dev/kfd in current sandbox; run /tmp/run-a5-clips.sh where GPU visible, then build clips)",
-   "A5 human rating of blinded pairs (user; clips primary, stills supporting)"
+   "P2.0 GPU baseline measurement (serialized GPU)"
   ],
   "notYetValid": [
    "performance optimization",
@@ -1035,6 +1033,11 @@
    "date": "2026-09-12",
    "by": "orchestrator (A5 revision)",
    "change": "A5 revised to clip-primary: stills supporting-only; 4-run matched protocol (/tmp/run-a5-clips.sh, chunks 10-21) + verified builder (scripts/build_a5_clips.py on experiment/a5-visual-3v4) with mismatch guards; review template per-scene + gate. Clip runs blocked on GPU device access in current sandbox."
+  },
+  {
+   "date": "2026-09-13",
+   "by": "orchestrator (A5 closure)",
+   "change": "A5 CLOSED with scoped human VISUAL_PASS (rater: owner): 3-step acceptable on tested mature rollouts (2 scenes + 2 reseed realizations), no consistent advantage either way, universal superiority not established. Seed-42 scene-2 transient did not recur. Verdict on experiment/a5-visual-3v4. Field-4 scope stands as written."
   }
  ]
 }
