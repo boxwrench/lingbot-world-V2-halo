@@ -42,4 +42,18 @@ conclusion, so gates 2-3 were not run.
 
 - `scripts/pure_compile_helpers.py` (norm islands + qk swap + prewarm)
 - `scripts/c6a_norm_check.py`, `tests/test_pure_islands_c6a.py` (CPU green)
-- This verdict. Full probe numbers in `/tmp/c6a-eval-20260912/norm_check.json`.
+- This verdict. Full probe numbers in `norm_check.json` (preserved in-repo
+  2026-09-12, B001 A2; formerly `/tmp`-only).
+
+## Numeric reconciliation (B001 A2, 2026-09-12)
+
+This verdict reports eager-vs-compiled **0.057** (`norm_affine`) /
+**0.0145** (`rmsnorm`) from the live probe stdout (max over autocast
+states). The preserved `norm_check.json` (one saved configuration) reports
+**0.0328** / **0.0145** with its own gate (`max_abs ≤ 2e-6`) FAILED.
+The `rmsnorm` values match exactly; the `norm_affine` values differ by
+comparison scope (live max-over-states vs one saved config), not by
+conclusion: both exceed the gate by ~4 orders of magnitude, and both are
+fatal under the bitwise-0.0 cache contract. The live stdout itself was not
+preserved — that gap is recorded, not repaired; the verdict stands on the
+preserved JSON plus the magnitude argument. Verdict unchanged: REJECTED.

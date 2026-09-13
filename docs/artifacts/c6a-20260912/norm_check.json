@@ -1,0 +1,34 @@
+{
+  "gate_pass": false,
+  "threshold_max_abs": 2e-06,
+  "checks": {
+    "norm_affine": {
+      "shape": [
+        1,
+        1008,
+        1536
+      ],
+      "dtype": "torch.float32",
+      "finite": true,
+      "expected_min": -14.624476432800293,
+      "expected_max": 15.895779609680176,
+      "max_abs": 0.032848358154296875,
+      "mean_abs": 0.0013122817035764456,
+      "max_relative": 0.01446610689163208
+    },
+    "rmsnorm": {
+      "shape": [
+        1,
+        1008,
+        1536
+      ],
+      "dtype": "torch.float32",
+      "finite": true,
+      "expected_min": -4.59375,
+      "expected_max": 4.9375,
+      "max_abs": 0.014503955841064453,
+      "mean_abs": 0.0011087667662650347,
+      "max_relative": 0.0039038658142089844
+    }
+  }
+}
