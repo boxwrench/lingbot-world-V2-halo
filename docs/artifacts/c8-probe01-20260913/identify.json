@@ -1,0 +1,13 @@
+{
+ "backend_flags": {
+  "preferred": "_ROCmFABackend.AOTriton",
+  "ck_avail": false
+ },
+ "cuda_events_seen": 1,
+ "top_cuda_kernels_us": [
+  [
+   "attn_fwd.kd",
+   0.0
+  ]
+ ]
+}
