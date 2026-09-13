@@ -374,7 +374,7 @@
    "id": "C4",
    "name": "Profile the quality-approved runtime",
    "type": "profile",
-   "status": "ready",
+   "status": "running",
    "priority": 40,
    "resource": "gpu-exclusive",
    "dependsOn": [
@@ -389,7 +389,9 @@
    "entryCriteria": [
     "C3 done"
    ],
-   "outputs": [],
+   "outputs": [
+    "docs/artifacts/c4-profile-20260912/ (waterfall, profile-summary, ranking; pending execution)"
+   ],
    "exitCriteria": [
     "waterfall + attribution profile captured for the frozen configuration",
     "measured hotspot ranking produced"
@@ -399,7 +401,7 @@
    ],
    "evidence": [],
    "result": null,
-   "notes": "Frozen point equals the RC1 configuration C0B measured, so C0B's ranking is admissible context, but C4 still requires its own waterfall+attribution capture for the frozen point. Design: one representative rolled waterfall action with per-forward GPU-synchronized boundaries plus A/A repeats, same RC1 command as C0B."
+   "notes": "Capture mirrors the C0B apparatus on the frozen point (== RC1 config): browser waterfall run (port 8781, 15 actions) + intrusive action-13 profile via the pure-compile wrapper. Tooling committed on experiment/c4-profile (24a860f)."
   },
   {
    "id": "C5A",
@@ -617,7 +619,7 @@
  ],
  "recommendedQueue": {
   "running": [
-   "C4 \u2014 profile the frozen runtime (gpu-exclusive)"
+   "C4 \u2014 frozen-point profile capture (gpu-exclusive)"
   ],
   "readyNow": [],
   "blocked": [
@@ -700,6 +702,11 @@
    "date": "2026-09-12",
    "by": "top-level orchestrator (autonomous C3 cycle)",
    "change": "Froze the eight-field semantic contract at the RC1 point (SEMANTIC_CONTRACT.md), all fields traceable to C2/C0B. C3 done; C4 ready. Main untouched."
+  },
+  {
+   "date": "2026-09-12",
+   "by": "top-level orchestrator (autonomous C4 cycle)",
+   "change": "C4 design: mirror C0B apparatus (waterfall browser run + intrusive action-13 profile) on the frozen point. C4 running."
   }
  ]
 }
