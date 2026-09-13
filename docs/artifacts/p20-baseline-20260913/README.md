@@ -8,12 +8,13 @@ not inherited.
 
 ## Runs
 
-- `waterfall/benchmark.json`, `aa-run-1/benchmark.json`,
-  `aa-run-2/benchmark.json` (15 rolled actions each, n=45 pooled).
+- `waterfall-benchmark.json`, `aa-run-1-benchmark.json`,
+  `aa-run-2-benchmark.json` (15 rolled actions each, n=45 pooled).
 - `environment/` (sanitized env capture: ROCm/PyTorch/UMA/host).
-- `summary.json` (pooled + per-run stats, `/tmp/p20-analyze.py` procedure).
-- Runner: `/tmp/run-p20-baseline.sh`. Server logs stay in
-  `/tmp/p20-20260913/` (not committed).
+- `summary.json` (pooled + per-run stats; procedure
+  `procedures/p20-analyze.py`).
+- Runner: `procedures/run-p20-baseline.sh` (recovered from `/tmp` per
+  P2.9-A1). Server logs committed here (`*-server.log`).
 
 ## Pooled results (n=45)
 

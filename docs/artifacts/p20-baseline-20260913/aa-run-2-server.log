@@ -1,0 +1,28 @@
+upstream: 45fa40673607c9acba6cf96a1f9396c95bcef25f
+working tree patches:
+ wan/image2video.py        | 72 ++++++++++++++++++++++++++++++++++++++++++++++-
+ wan/modules/model_fast.py | 62 +++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 129 insertions(+), 5 deletions(-)
+LingBot browser safety: Ctrl-C or Q/ESC stops the local model owner.
+Opening http://127.0.0.1:8783/ after the server starts; hard timeout 900s.
+LingBot browser server: http://127.0.0.1:8783/
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00001-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00002-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00003-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00004-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00005-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+WARNING:accelerate.utils.modeling:The safetensors archive passed at /home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast/transformers/model-00006-of-00006.safetensors does not contain metadata. Make sure to save your model with the `save_pretrained` method. Defaulting to 'pt' metadata.
+/home/keith/Desktop/github/lingbot-world-V2-halo/.upstream/lingbot-world-v2/wan/modules/vae2_1.py:649: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with amp.autocast(dtype=self.dtype):
+Exception ignored in atexit callback: <function shutdown_compile_workers at 0x7806e69c5580>
+Traceback (most recent call last):
+  File "/home/keith/ciru-ling-runtime/.venv/lib/python3.12/site-packages/torch/_inductor/async_compile.py", line 179, in shutdown_compile_workers
+    pool.shutdown()
+  File "/home/keith/ciru-ling-runtime/.venv/lib/python3.12/site-packages/torch/_inductor/compile_worker/subproc_pool.py", line 342, in shutdown
+    self.process.wait(300)
+  File "/usr/lib/python3.12/subprocess.py", line 1264, in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2047, in _wait
+    time.sleep(delay)
+KeyboardInterrupt: 

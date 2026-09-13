@@ -3,15 +3,20 @@
 Code under test == tagged accepted main (`9cc986c`), branch
 `experiment/p2-baseline`. Two parts (GPU serialized, quiet host):
 
-1. Forward-level timing: `/tmp/run-p21-profile.sh`
-   (`run_pure_compile_live.py`, 16 actions, accepted config) →
-   `live-metrics/` (live_metrics.json). Intrusive overhead present;
+1. Forward-level timing: `procedures/run-p21-profile.sh`
+   (recovered from `/tmp` per P2.9-A1;
+   `run_pure_compile_live.py`, 16 actions, accepted config) →
+   `live-metrics.json`. Intrusive overhead present;
    use for structure, not absolutes.
-2. Module-hook attribution: `/tmp/run-p21-module.sh`
-   (`run_interactive.py --profile-dit-from-chunk 18
+2. Module-hook attribution: `procedures/run-p21-module.sh`
+   (recovered from `/tmp` per P2.9-A1;
+   `run_interactive.py --profile-dit-from-chunk 18
    --profile-attention-from-chunk 18`, steady-state rolled chunks) →
    `module-metrics.json` (DecoderProfiler CUDA-event exclusive +
    DitAttentionProbe SDPA dispatch timings).
+
+Provenance addendum (P2.9-A1): `PROVENANCE-ADDENDUM.md` (model dir,
+upstream SHA, seeds, TunableOp context).
 
 ## Headline (per 3-forward denoise phase, P2.0 anchor 816 ms)
 
