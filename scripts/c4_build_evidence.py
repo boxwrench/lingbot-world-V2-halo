@@ -38,8 +38,11 @@ def main() -> int:
     raw, out = Path(args.raw_dir), Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    run = load(raw / "waterfall-run/benchmark.json")
-    rows = [r for r in run["records"] if rolled(r)]
+    bench_files = sorted((raw / "waterfall-run").glob("benchmark*.json"))
+    if not bench_files:
+        raise SystemExit("no benchmark files in waterfall-run")
+    rows = [r for f in bench_files for r in load(f)["records"] if rolled(r)]
+    run_label = f"{len(bench_files)} run(s): " + ", ".join(f.name for f in bench_files)
     if not rows:
         raise SystemExit("no rolled actions in waterfall run")
     med = {
@@ -61,6 +64,7 @@ def main() -> int:
         "selection": {
             "action_id": rep["action_id"],
             "rule": "rolled action nearest base-RGB and next-ready medians",
+            "source": run_label,
         },
         "medians_ms": med,
         "rolled_actions": len(rows),
