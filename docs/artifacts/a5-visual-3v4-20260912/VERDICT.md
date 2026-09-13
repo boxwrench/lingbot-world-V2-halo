@@ -16,7 +16,7 @@ same chunks 10–21 format). Rater: both clean; the seed-42 defect was
 transient ("almost like leaves blowing into view, then totally gone").
 Rater: both reseed versions now "close", as in scene one.
 
-## Proposed overall (awaiting rater confirmation)
+## Overall (CONFIRMED by rater 2026-09-13)
 
 ```text
 overall: VISUAL_PASS
