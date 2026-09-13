@@ -1,0 +1,303 @@
+{
+  "kind": "gfx1151_reset_discriminator",
+  "configuration": {
+    "seed": 42,
+    "chunks": 16,
+    "local_attn_size_frames_total_including_sink": 12,
+    "sink_size_frames": 6,
+    "denoise_schedule": "3-drop-957",
+    "scripted_actions": "w,w,j,w,l,l,s,s,j,w,d,d,w,l,a"
+  },
+  "provenance": {
+    "base_commit": "bad1234b0fba3033527f92788246f21091380708",
+    "upstream_commit": "45fa40673607c9acba6cf96a1f9396c95bcef25f",
+    "model_dir": "/home/keith/Desktop/github/lingbot-world-V2-halo/models/lingbot-world-v2-1.3b-causal-fast",
+    "image": "/home/keith/Desktop/github/lingbot-world-V2-halo-wt-c1r/.upstream/lingbot-world-v2/examples/03/image.jpg",
+    "action_path": "/home/keith/Desktop/github/lingbot-world-V2-halo-wt-c1r/.upstream/lingbot-world-v2/examples/03"
+  },
+  "capture_a": {
+    "position": {
+      "global_end_index": 1008,
+      "local_end_index": 1008,
+      "cache_capacity_tokens": 12096
+    },
+    "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+    "timestep_values": [
+      999,
+      899,
+      702
+    ],
+    "frozen": {
+      "noise_chunk_0": {
+        "kind": "tensor",
+        "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+        "shape": [
+          16,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "condition_chunk_0": {
+        "kind": "tensor",
+        "sha256": "10888b9b145608d6fa1a8ac95c13f3e4c5485230d0c80b69e4445c751db4785a",
+        "shape": [
+          20,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "plucker_chunk_0": {
+        "kind": "tensor",
+        "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+        "shape": [
+          1,
+          384,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "text_context": {
+        "kind": "list",
+        "items": [
+          {
+            "kind": "tensor",
+            "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+            "shape": [
+              38,
+              4096
+            ],
+            "dtype": "torch.bfloat16"
+          }
+        ]
+      },
+      "bootstrap_x0": {
+        "kind": "tensor",
+        "sha256": "087807ff92f33729aefbf4342dac986de67a6424f7a939b7727735191dbf5d3a",
+        "shape": [
+          16,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "layer0_clean_k": {
+        "kind": "tensor",
+        "sha256": "bba30ecc9cb5bdc24184a9558ce5aee254481185f8c64ff77f7b291856377fe9",
+        "shape": [
+          1,
+          1008,
+          12,
+          128
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "layer0_clean_v": {
+        "kind": "tensor",
+        "sha256": "235b7bbdac817ec347e013ffa45685a7febe0e076a4ec1deac37a31cc06e4ed5",
+        "shape": [
+          1,
+          1008,
+          12,
+          128
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    }
+  },
+  "capture_b": {
+    "position": {
+      "global_end_index": 1008,
+      "local_end_index": 1008,
+      "cache_capacity_tokens": 12096
+    },
+    "prompt_sha256": "9e12fe8451396955f1bde9b7b66f6f543ca5517aaf72dec5970de5306d88cd4b",
+    "timestep_values": [
+      999,
+      899,
+      702
+    ],
+    "frozen": {
+      "noise_chunk_0": {
+        "kind": "tensor",
+        "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+        "shape": [
+          16,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "condition_chunk_0": {
+        "kind": "tensor",
+        "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+        "shape": [
+          20,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "plucker_chunk_0": {
+        "kind": "tensor",
+        "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+        "shape": [
+          1,
+          384,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "text_context": {
+        "kind": "list",
+        "items": [
+          {
+            "kind": "tensor",
+            "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+            "shape": [
+              38,
+              4096
+            ],
+            "dtype": "torch.bfloat16"
+          }
+        ]
+      },
+      "bootstrap_x0": {
+        "kind": "tensor",
+        "sha256": "879e6232817a58c7a8a32b94ef0ddd2c5546cd70b04f070de882110cc8570509",
+        "shape": [
+          16,
+          1,
+          48,
+          84
+        ],
+        "dtype": "torch.float32"
+      },
+      "layer0_clean_k": {
+        "kind": "tensor",
+        "sha256": "1b3038ca43095890f48320787597a1ed0c46760b5c2b4f8862c0442e224e4ce4",
+        "shape": [
+          1,
+          1008,
+          12,
+          128
+        ],
+        "dtype": "torch.bfloat16"
+      },
+      "layer0_clean_v": {
+        "kind": "tensor",
+        "sha256": "4b5890ea420535dce1a46aa9b1dc8754858244cf7e4763ddb730d586505d2af7",
+        "shape": [
+          1,
+          1008,
+          12,
+          128
+        ],
+        "dtype": "torch.bfloat16"
+      }
+    }
+  },
+  "comparison_ab": {
+    "noise_chunk_0": {
+      "sha_equal": true,
+      "max_abs_diff": 0.0
+    },
+    "condition_chunk_0": {
+      "sha_equal": false,
+      "max_abs_diff": 0.15896141529083252
+    },
+    "plucker_chunk_0": {
+      "sha_equal": true,
+      "max_abs_diff": 0.0
+    },
+    "text_context": {
+      "sha_equal": false,
+      "max_abs_diff": null
+    },
+    "bootstrap_x0": {
+      "sha_equal": false,
+      "max_abs_diff": 0.16652874648571014
+    },
+    "layer0_clean_k": {
+      "sha_equal": false,
+      "max_abs_diff": 0.15625
+    },
+    "layer0_clean_v": {
+      "sha_equal": false,
+      "max_abs_diff": 1.4775390625
+    }
+  },
+  "gate_pass_ab_bitwise": false,
+  "rollout": null,
+  "capture_c": null,
+  "comparison_ac": null,
+  "classification": {
+    "classification": "BASELINE_NONDETERMINISM_OR_STRICT_HASH",
+    "detail": "Fresh bootstraps A and B differ without any rollout between them; do not claim persistent-state leakage. Use max_abs_diff to judge tolerance."
+  },
+  "state_probe": {
+    "timestep_values": [
+      999,
+      899,
+      702
+    ],
+    "context": {
+      "kind": "list",
+      "items": [
+        {
+          "kind": "tensor",
+          "sha256": "1226fa20c7a1b3816cb9070d0328bdea73b68290be0f568ce64030c58e9cd2d2",
+          "shape": [
+            38,
+            4096
+          ],
+          "dtype": "torch.bfloat16"
+        }
+      ]
+    },
+    "noise_0": {
+      "kind": "tensor",
+      "sha256": "ea637f57f8a9343f28457720b7b49bd23703b0204fb1bdaf997e39da38f773ff",
+      "shape": [
+        16,
+        1,
+        48,
+        84
+      ],
+      "dtype": "torch.float32"
+    },
+    "condition_0": {
+      "kind": "tensor",
+      "sha256": "b3aee553c3676d74c168c193d1be5ea79aabf95bae9cd96f5e1003616262d9c0",
+      "shape": [
+        20,
+        1,
+        48,
+        84
+      ],
+      "dtype": "torch.float32"
+    },
+    "plucker_0": {
+      "kind": "tensor",
+      "sha256": "356eed4b1e3960958d45f2845e04f53b65ef966dc127dc869a228d646b6abd73",
+      "shape": [
+        1,
+        384,
+        1,
+        48,
+        84
+      ],
+      "dtype": "torch.bfloat16"
+    }
+  }
+}
