@@ -43,14 +43,11 @@ def main() -> int:
     if not rows:
         raise SystemExit("no rolled actions in waterfall run")
     med = {
-        key: summary([float(r[field]) for r in rows])
-        for key, field in (
-            ("action_to_base_rgb_ms", "action_to_base_rgb_ms"),
-            ("action_to_next_ready_ms", "action_to_next_ready_ms"),
-            ("denoise_ms", "denoise_ms"),
-            ("transformer_ms", "transformer_ms"),
-            ("clean_kv_ms", "clean_kv_ms"),
-        )
+        "action_to_base_rgb_ms": summary([float(r["derived"]["action_to_base_rgb_ms"]) for r in rows]),
+        "action_to_next_ready_ms": summary([float(r["derived"]["action_to_next_ready_ms"]) for r in rows]),
+        "denoise_ms": summary([float(r["denoise_ms"]) for r in rows]),
+        "transformer_ms": summary([float(r["transformer_ms"]) for r in rows]),
+        "clean_kv_ms": summary([float(r["clean_kv_ms"]) for r in rows]),
     }
     rep = min(
         rows,
