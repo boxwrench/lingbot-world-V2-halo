@@ -849,6 +849,7 @@ def commit_clean_kv(
         x=[generated["x0"]],
         t=torch.stack([zero_timestep]).to(device),
         cross_attn_first_call=False,
+        kv_write_only=True,
         **generated["kwargs"],
     )
     sync_fn()
